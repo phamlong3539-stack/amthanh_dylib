@@ -1,0 +1,9 @@
+Package: com.phamlong.amthanh
+Name: amthanh
+Depends: mobilesubstrate
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: PHL Audio Menu Dylib
+Maintainer: Pham Long
+Author: Pham Long
+Section: Tweaks
