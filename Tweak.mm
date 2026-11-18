@@ -53,7 +53,21 @@ static void preventDebugging() {
     preventDebugging();
     
     dispatch_async(dispatch_get_main_queue(), ^{
-        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        // Lấy UIWindow chuẩn iOS hiện đại không bị lỗi biên dịch
+        UIWindow *keyWindow = nil;
+        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                for (UIWindow *window in scene.windows) {
+                    if (window.isKeyWindow) {
+                        keyWindow = window;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!keyWindow) {
+            keyWindow = [UIApplication sharedApplication].windows.firstObject;
+        }
         if (!keyWindow) return;
 
         // 1. Nút nổi (Floating Button) giao diện Tím Neon độc quyền PHL
