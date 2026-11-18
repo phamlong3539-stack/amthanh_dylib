@@ -51,9 +51,8 @@ static void preventDebugging() {
 
 - (void)initializeFramework {
     preventDebugging();
-    
+
     dispatch_async(dispatch_get_main_queue(), ^{
-        // Lấy UIWindow chuẩn iOS hiện đại không bị lỗi biên dịch
         UIWindow *keyWindow = nil;
         for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
             if (scene.activationState == UISceneActivationStateForegroundActive) {
@@ -80,12 +79,12 @@ static void preventDebugging() {
         [phlFloatingBtn setTitle:@"👑" forState:UIControlStateNormal];
         phlFloatingBtn.backgroundColor = [UIColor colorWithRed:0.04 green:0.02 blue:0.1 alpha:0.92];
         [phlFloatingBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
-        
-        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
-        [phlFloatingBtn addGestureRecognizer:pan];
+
+        UIPanGestureRecognizer *btnPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+        [phlFloatingBtn addGestureRecognizer:btnPan];
         [keyWindow addSubview:phlFloatingBtn];
 
-        // 2. Menu chính
+        // 2. Menu chính (cho phép kéo di chuyển toàn bộ khung)
         phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(85, 130, 275, 330)];
         phlMenuContainer.backgroundColor = [UIColor colorWithRed:0.04 green:0.02 blue:0.12 alpha:0.96];
         phlMenuContainer.layer.cornerRadius = 14;
@@ -93,6 +92,10 @@ static void preventDebugging() {
         phlMenuContainer.layer.borderColor = [UIColor colorWithRed:0.8 green:0.4 blue:1.0 alpha:1.0].CGColor;
         phlMenuContainer.hidden = YES;
         phlMenuContainer.alpha = 0.0;
+
+        UIPanGestureRecognizer *menuPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuPan:)];
+        menuPan.cancelsTouchesInView = NO;
+        [phlMenuContainer addGestureRecognizer:menuPan];
 
         UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 8, 255, 28)];
         titleLabel.text = @"👑 PHL PHAM LONG - AUDIO MENU";
@@ -127,16 +130,41 @@ static void preventDebugging() {
 }
 
 - (void)handlePan:(UIPanGestureRecognizer *)pan {
-    CGPoint translation = [pan translationInView:phlFloatingBtn.superview];
-    CGPoint center = phlFloatingBtn.center;
-    phlFloatingBtn.center = CGPointMake(center.x + translation.x, center.y + translation.y);
-    [pan setTranslation:CGPointZero inView:phlFloatingBtn.superview];
+    UIView *targetView = pan.view;
+    if (!targetView || !targetView.superview) return;
+    CGPoint translation = [pan translationInView:targetView.superview];
+    CGPoint newCenter = CGPointMake(targetView.center.x + translation.x, targetView.center.y + translation.y);
+
+    CGFloat halfW = targetView.bounds.size.width / 2.0;
+    CGFloat halfH = targetView.bounds.size.height / 2.0;
+    CGSize superSize = targetView.superview.bounds.size;
+    newCenter.x = MAX(halfW, MIN(superSize.width - halfW, newCenter.x));
+    newCenter.y = MAX(halfH, MIN(superSize.height - halfH, newCenter.y));
+
+    targetView.center = newCenter;
+    [pan setTranslation:CGPointZero inView:targetView.superview];
+}
+
+- (void)handleMenuPan:(UIPanGestureRecognizer *)pan {
+    UIView *menuView = pan.view;
+    if (!menuView || !menuView.superview) return;
+    CGPoint translation = [pan translationInView:menuView.superview];
+    CGPoint newCenter = CGPointMake(menuView.center.x + translation.x, menuView.center.y + translation.y);
+
+    CGFloat halfW = menuView.bounds.size.width / 2.0;
+    CGFloat halfH = menuView.bounds.size.height / 2.0;
+    CGSize superSize = menuView.superview.bounds.size;
+    newCenter.x = MAX(halfW, MIN(superSize.width - halfW, newCenter.x));
+    newCenter.y = MAX(halfH, MIN(superSize.height - halfH, newCenter.y));
+
+    menuView.center = newCenter;
+    [pan setTranslation:CGPointZero inView:menuView.superview];
 }
 
 - (void)fetchGitHubPlaylist {
     NSString *jsonURLStr = @"https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/playlist.json";
     NSURL *url = [NSURL URLWithString:jsonURLStr];
-    
+
     NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         if (error || !data) return;
         NSError *jsonError;
