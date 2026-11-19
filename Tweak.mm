@@ -256,7 +256,7 @@ static NSString *const kPHLCleanYouTubeJS =
     return btn;
 }
 
-- (void)layoutMenuSubviewsWithWidth:(CGFloat)menuW height:(CGFloat)menuH {
+- (void)layoutMenuSubviewsWithWidth:(CGFloat)menuW height:(CGFloat)menuH expanded:(BOOL)expanded {
     CGFloat padX = 10.0f;
     CGFloat innerW = menuW - padX * 2.0f;
 
@@ -264,25 +264,43 @@ static NSString *const kPHLCleanYouTubeJS =
     phlDragHeader.frame = CGRectMake(0, 0, menuW, 42.0f);
     phlCloseBtn.frame = CGRectMake(menuW - 34.0f, 8.0f, 24.0f, 24.0f);
 
-    CGFloat gap = 6.0f;
-    CGFloat btnW = (innerW - gap * 3.0f) / 4.0f;
-    CGFloat ctrlY = 46.0f;
-    phlPrevBtn.frame = CGRectMake(padX, ctrlY, btnW, 24.0f);
-    phlPlayPauseBtn.frame = CGRectMake(padX + (btnW + gap), ctrlY, btnW, 24.0f);
-    phlNextBtn.frame = CGRectMake(padX + (btnW + gap) * 2.0f, ctrlY, btnW, 24.0f);
-    phlRepeatBtn.frame = CGRectMake(padX + (btnW + gap) * 3.0f, ctrlY, btnW, 24.0f);
+    // Ẩn dải nút điều khiển nhạc GitHub khi mở YouTube để dồn chỗ cho trình duyệt
+    phlPrevBtn.hidden = expanded;
+    phlPlayPauseBtn.hidden = expanded;
+    phlNextBtn.hidden = expanded;
+    phlRepeatBtn.hidden = expanded;
 
-    CGFloat volY = 74.0f;
+    CGFloat volY = 0.0f;
+    CGFloat webToggleY = 0.0f;
+    CGFloat contentY = 0.0f;
+
+    if (expanded) {
+        // Dịch thanh âm lượng và nút thu gọn lên sát trên cùng ngay dưới header
+        volY = 44.0f;
+        webToggleY = 68.0f;
+        contentY = 95.0f;
+    } else {
+        CGFloat gap = 6.0f;
+        CGFloat btnW = (innerW - gap * 3.0f) / 4.0f;
+        CGFloat ctrlY = 46.0f;
+        phlPrevBtn.frame = CGRectMake(padX, ctrlY, btnW, 24.0f);
+        phlPlayPauseBtn.frame = CGRectMake(padX + (btnW + gap), ctrlY, btnW, 24.0f);
+        phlNextBtn.frame = CGRectMake(padX + (btnW + gap) * 2.0f, ctrlY, btnW, 24.0f);
+        phlRepeatBtn.frame = CGRectMake(padX + (btnW + gap) * 3.0f, ctrlY, btnW, 24.0f);
+
+        volY = 74.0f;
+        webToggleY = 99.0f;
+        contentY = 126.0f;
+    }
+
     phlMuteBtn.frame = CGRectMake(padX, volY, 26.0f, 22.0f);
     phlVolumeSlider.frame = CGRectMake(padX + 28.0f, volY, innerW - 56.0f, 22.0f);
     phlVolUpBtn.frame = CGRectMake(menuW - padX - 26.0f, volY, 26.0f, 22.0f);
 
-    CGFloat webToggleY = 99.0f;
     phlOpenBrowserBtn.frame = CGRectMake(padX, webToggleY, innerW, 23.0f);
 
-    CGFloat footerHeight = 50.0f;
-    CGFloat contentY = 126.0f;
-    CGFloat contentH = MAX(110.0f, menuH - contentY - footerHeight - 4.0f);
+    CGFloat footerHeight = 48.0f;
+    CGFloat contentH = MAX(120.0f, menuH - contentY - footerHeight - 4.0f);
 
     phlTableView.frame = CGRectMake(8.0f, contentY, menuW - 16.0f, contentH);
     phlWebPanel.frame = CGRectMake(8.0f, contentY, menuW - 16.0f, contentH);
@@ -301,11 +319,11 @@ static NSString *const kPHLCleanYouTubeJS =
     phlYtSearchBtn.frame = CGRectMake(4.0f + searchFieldW + 4.0f, 28.0f, searchBtnW, 22.0f);
 
     CGFloat webTop = 53.0f;
-    phlWebView.frame = CGRectMake(0.0f, webTop, panelW, MAX(70.0f, panelH - webTop));
+    phlWebView.frame = CGRectMake(0.0f, webTop, panelW, MAX(80.0f, panelH - webTop));
 
     CGFloat infoBtnY = menuH - footerHeight;
     phlAdminInfoBtn.frame = CGRectMake(padX, infoBtnY, innerW, 20.0f);
-    phlCopyrightLabel.frame = CGRectMake(6.0f, infoBtnY + 21.0f, menuW - 12.0f, 28.0f);
+    phlCopyrightLabel.frame = CGRectMake(6.0f, infoBtnY + 20.0f, menuW - 12.0f, 27.0f);
 }
 
 - (void)applyMenuFrameForExpanded:(BOOL)expanded animated:(BOOL)animated {
@@ -318,29 +336,28 @@ static NSString *const kPHLCleanYouTubeJS =
     CGFloat compactW = MIN(312.0f, screenW - 86.0f);
     if (compactW < 268.0f) compactW = MIN(300.0f, screenW - 20.0f);
 
-    // Phóng rộng khung khi mở YouTube để nhìn trọn video & danh sách kết quả
-    CGFloat expandedW = MAX(compactW, MIN(560.0f, screenW - 76.0f));
-    if (expandedW < 280.0f) expandedW = MAX(compactW, screenW - 16.0f);
+    CGFloat expandedW = MAX(compactW, MIN(580.0f, screenW - 74.0f));
+    if (expandedW < 280.0f) expandedW = MAX(compactW, screenW - 14.0f);
 
     CGFloat compactH = MIN(322.0f, MAX(250.0f, screenH - 24.0f));
-    CGFloat expandedH = MAX(compactH, MIN(680.0f, screenH - 12.0f));
+    CGFloat expandedH = MAX(compactH, MIN(700.0f, screenH - 10.0f));
 
     CGFloat targetW = expanded ? expandedW : compactW;
     CGFloat targetH = expanded ? expandedH : compactH;
 
     CGFloat curX = phlMenuContainer.frame.origin.x;
     CGFloat maxX = MAX(8.0f, screenW - targetW - 8.0f);
-    CGFloat targetX = expanded ? MIN(maxX, MAX(70.0f, (screenW - targetW) * 0.55f))
+    CGFloat targetX = expanded ? MIN(maxX, MAX(70.0f, (screenW - targetW) * 0.56f))
                                : MAX(8.0f, MIN(maxX, curX));
 
-    CGFloat targetY = expanded ? 6.0f
+    CGFloat targetY = expanded ? 5.0f
                                : MAX(12.0f, MIN(screenH - targetH - 8.0f, phlMenuContainer.frame.origin.y));
 
     CGRect targetFrame = CGRectMake(targetX, targetY, targetW, targetH);
 
     void (^applyBlock)(void) = ^{
         phlMenuContainer.frame = targetFrame;
-        [self layoutMenuSubviewsWithWidth:targetW height:targetH];
+        [self layoutMenuSubviewsWithWidth:targetW height:targetH expanded:expanded];
         [phlMenuContainer layoutIfNeeded];
     };
 
@@ -444,7 +461,7 @@ static NSString *const kPHLCleanYouTubeJS =
             [phlCloseBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlCloseBtn];
 
-            // Cụm điều khiển chính: Prev | Play/Pause | Next | Lặp
+            // Cụm điều khiển nhạc GitHub (tự ẩn khi mở YouTube)
             UIColor *ctrlBg = [UIColor colorWithRed:0.22 green:0.08 blue:0.42 alpha:0.92];
             UIColor *ctrlBorder = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.85];
 
@@ -500,7 +517,7 @@ static NSString *const kPHLCleanYouTubeJS =
             [phlVolUpBtn addTarget:self action:@selector(increaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlVolUpBtn];
 
-            // Nút chuyển chế độ trình duyệt YouTube (phóng rộng) / Danh sách GitHub (thu gọn)
+            // Nút chuyển chế độ trình duyệt YouTube / Danh sách GitHub
             phlOpenBrowserBtn = [self makeControlButtonWithTitle:@"🌐 MỞ YOUTUBE (PHÓNG RỘNG)"
                                                         fontSize:9.5
                                                          bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
@@ -623,7 +640,7 @@ static NSString *const kPHLCleanYouTubeJS =
             phlCopyrightLabel.numberOfLines = 2;
             [phlMenuContainer addSubview:phlCopyrightLabel];
 
-            [self layoutMenuSubviewsWithWidth:menuW height:menuH];
+            [self layoutMenuSubviewsWithWidth:menuW height:menuH expanded:NO];
             [keyWindow addSubview:phlMenuContainer];
         } else if (phlMenuContainer.superview != keyWindow) {
             [keyWindow addSubview:phlMenuContainer];
