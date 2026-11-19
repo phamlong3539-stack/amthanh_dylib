@@ -17,37 +17,32 @@ static void preventDebugging() {
     }
 }
 
-static NSString *const kPHLPrefBackgroundAudio = @"PHL_AllowBackgroundAudio";
 static NSString *const kPHLPrefRepeatOne = @"PHL_RepeatOneSong";
 static NSString *const kPHLPrefVolume = @"PHL_PlayerVolume";
 static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
+static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
 
 @interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate> {
     AVPlayer *phlAudioPlayer;
     AVPlayerItem *phlPlayerItem;
-    id phlTimeObserver;
 
     UIButton *phlFloatingBtn;
     UIView *phlMenuContainer;
     UITableView *phlTableView;
 
-    // Khu vực điều khiển trình phát chuyên nghiệp
+    // Khu vực điều khiển trình phát
     UILabel *phlNowPlayingLabel;
     UIButton *phlPlayPauseBtn;
     UIButton *phlRepeatBtn;
     UIButton *phlYouTubeBottomBtn;
-    UISlider *phlSeekSlider;
-    UILabel *phlCurrentTimeLabel;
-    UILabel *phlDurationLabel;
+    UIButton *phlAdminInfoBtn;
+    UILabel *phlCopyrightLabel;
     UISlider *phlVolumeSlider;
-    UISwitch *phlBgSwitch;
-    BOOL phlIsSeeking;
 
     NSMutableArray *phlPlaylist;
     NSString *phlStatusMessage;
     NSInteger phlCurrentIndex;
     BOOL phlIsMenuOpen;
-    BOOL phlAllowBackgroundPlay;
     BOOL phlRepeatOne;
     float phlCurrentVolume;
 }
@@ -74,13 +69,6 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
         phlStatusMessage = @"Đang tải danh sách nhạc...";
         phlCurrentIndex = -1;
         phlIsMenuOpen = NO;
-        phlIsSeeking = NO;
-
-        if ([defaults objectForKey:kPHLPrefBackgroundAudio] != nil) {
-            phlAllowBackgroundPlay = [defaults boolForKey:kPHLPrefBackgroundAudio];
-        } else {
-            phlAllowBackgroundPlay = YES;
-        }
 
         if ([defaults objectForKey:kPHLPrefRepeatOne] != nil) {
             phlRepeatOne = [defaults boolForKey:kPHLPrefRepeatOne];
@@ -95,35 +83,12 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
         }
 
         [self configureAudioSession];
-        [self registerLifecycleObservers];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(handleItemDidFinish:)
+                                                     name:AVPlayerItemDidPlayToEndTimeNotification
+                                                   object:nil];
     }
     return self;
-}
-
-- (void)registerLifecycleObservers {
-    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-    [nc addObserver:self selector:@selector(handleDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-    [nc addObserver:self selector:@selector(handleWillEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
-    [nc addObserver:self selector:@selector(handleItemDidFinish:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
-}
-
-- (void)handleDidEnterBackground:(NSNotification *)note {
-    if (phlAllowBackgroundPlay) {
-        [self configureAudioSession];
-        if (phlAudioPlayer && phlCurrentIndex >= 0) {
-            [phlAudioPlayer play];
-        }
-    } else {
-        if (phlAudioPlayer) {
-            [phlAudioPlayer pause];
-            [self syncPlayPauseButton];
-        }
-    }
-}
-
-- (void)handleWillEnterForeground:(NSNotification *)note {
-    [self configureAudioSession];
-    [self syncPlayPauseButton];
 }
 
 - (void)handleItemDidFinish:(NSNotification *)note {
@@ -140,13 +105,9 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
 - (void)configureAudioSession {
     NSError *sessionError = nil;
     AVAudioSession *session = [AVAudioSession sharedInstance];
-    if (phlAllowBackgroundPlay) {
-        [session setCategory:AVAudioSessionCategoryPlayback
-                 withOptions:AVAudioSessionCategoryOptionMixWithOthers
-                       error:&sessionError];
-    } else {
-        [session setCategory:AVAudioSessionCategoryAmbient error:&sessionError];
-    }
+    [session setCategory:AVAudioSessionCategoryPlayback
+             withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                   error:&sessionError];
     [session setActive:YES error:&sessionError];
 }
 
@@ -164,14 +125,6 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
         }
     }
     return [UIApplication sharedApplication].windows.firstObject;
-}
-
-- (NSString *)formatTimeSeconds:(double)seconds {
-    if (isnan(seconds) || isinf(seconds) || seconds < 0) return @"00:00";
-    int totalSec = (int)seconds;
-    int mins = totalSec / 60;
-    int secs = totalSec % 60;
-    return [NSString stringWithFormat:@"%02d:%02d", mins, secs];
 }
 
 - (void)initializeFramework {
@@ -203,8 +156,8 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
         }
 
         if (!phlMenuContainer) {
-            // 2. Menu trình phát nhạc chuyên nghiệp (kéo tự do toàn khung)
-            phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(76, 76, 300, 440)];
+            // 2. Menu chính (kéo tự do toàn khung, chân bản quyền cố định dưới cùng)
+            phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(76, 70, 304, 448)];
             phlMenuContainer.backgroundColor = [UIColor colorWithRed:0.04 green:0.02 blue:0.12 alpha:0.97];
             phlMenuContainer.layer.cornerRadius = 14;
             phlMenuContainer.layer.borderWidth = 1.5;
@@ -217,14 +170,14 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
             [phlMenuContainer addGestureRecognizer:menuPan];
 
             // Tiêu đề + nút đóng nhanh
-            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 8, 236, 22)];
+            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 8, 240, 22)];
             titleLabel.text = @"👑 PHL PHAM LONG - PRO AUDIO";
             titleLabel.textColor = [UIColor colorWithRed:0.92 green:0.7 blue:1.0 alpha:1.0];
             titleLabel.font = [UIFont boldSystemFontOfSize:12];
             [phlMenuContainer addSubview:titleLabel];
 
             UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            closeBtn.frame = CGRectMake(256, 6, 34, 24);
+            closeBtn.frame = CGRectMake(260, 6, 34, 24);
             [closeBtn setTitle:@"✕" forState:UIControlStateNormal];
             [closeBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.7 alpha:1.0] forState:UIControlStateNormal];
             closeBtn.titleLabel.font = [UIFont boldSystemFontOfSize:14];
@@ -232,66 +185,38 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
             [phlMenuContainer addSubview:closeBtn];
 
             // Tên bài đang phát
-            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 30, 276, 18)];
+            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 30, 280, 18)];
             phlNowPlayingLabel.text = @"♪ Chưa chọn bài hát";
             phlNowPlayingLabel.textColor = [UIColor cyanColor];
             phlNowPlayingLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightSemibold];
             [phlMenuContainer addSubview:phlNowPlayingLabel];
 
-            // Thanh tua nhạc (Seek Slider) + mốc thời gian
-            phlCurrentTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 50, 42, 16)];
-            phlCurrentTimeLabel.text = @"00:00";
-            phlCurrentTimeLabel.textColor = [UIColor lightGrayColor];
-            phlCurrentTimeLabel.font = [UIFont monospacedDigitSystemFontOfSize:10 weight:UIFontWeightRegular];
-            [phlMenuContainer addSubview:phlCurrentTimeLabel];
-
-            phlSeekSlider = [[UISlider alloc] initWithFrame:CGRectMake(56, 48, 188, 20)];
-            phlSeekSlider.minimumValue = 0.0f;
-            phlSeekSlider.maximumValue = 1.0f;
-            phlSeekSlider.value = 0.0f;
-            phlSeekSlider.minimumTrackTintColor = [UIColor colorWithRed:0.75 green:0.35 blue:1.0 alpha:1.0];
-            phlSeekSlider.maximumTrackTintColor = [UIColor colorWithWhite:0.25 alpha:1.0];
-            [phlSeekSlider addTarget:self action:@selector(seekSliderTouchDown:) forControlEvents:UIControlEventTouchDown];
-            [phlSeekSlider addTarget:self action:@selector(seekSliderValueChanged:) forControlEvents:UIControlEventValueChanged];
-            [phlSeekSlider addTarget:self action:@selector(seekSliderTouchEnded:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel];
-            [phlMenuContainer addSubview:phlSeekSlider];
-
-            phlDurationLabel = [[UILabel alloc] initWithFrame:CGRectMake(246, 50, 42, 16)];
-            phlDurationLabel.text = @"00:00";
-            phlDurationLabel.textColor = [UIColor lightGrayColor];
-            phlDurationLabel.font = [UIFont monospacedDigitSystemFontOfSize:10 weight:UIFontWeightRegular];
-            phlDurationLabel.textAlignment = NSTextAlignmentRight;
-            [phlMenuContainer addSubview:phlDurationLabel];
-
-            // Hàng nút điều khiển: -10s | Prev | Play/Pause | Next | +10s | Lặp
-            CGFloat ctrlY = 72;
-            NSArray *titles = @[@"-10s", @"⏮", @"▶", @"⏭", @"+10s", @"🔁"];
+            // Hàng điều khiển phát nhạc: Prev | Play/Pause | Next | Lặp
+            NSArray *titles = @[@"⏮", @"▶", @"⏭", @"🔁"];
             NSArray *selectors = @[
-                NSStringFromSelector(@selector(rewind10s)),
                 NSStringFromSelector(@selector(playPreviousSong)),
                 NSStringFromSelector(@selector(togglePlayPause)),
                 NSStringFromSelector(@selector(playNextSong)),
-                NSStringFromSelector(@selector(forward10s)),
                 NSStringFromSelector(@selector(toggleRepeatMode))
             ];
-            CGFloat btnW = 43.0f;
-            CGFloat gap = 3.5f;
+            CGFloat btnW = 66.0f;
+            CGFloat gap = 5.3f;
             CGFloat startX = 12.0f;
 
             for (NSInteger i = 0; i < (NSInteger)titles.count; i++) {
                 UIButton *b = [UIButton buttonWithType:UIButtonTypeSystem];
-                b.frame = CGRectMake(startX + i * (btnW + gap), ctrlY, btnW, 28);
+                b.frame = CGRectMake(startX + i * (btnW + gap), 53, btnW, 28);
                 [b setTitle:titles[i] forState:UIControlStateNormal];
-                b.titleLabel.font = [UIFont boldSystemFontOfSize:(i == 0 || i == 4) ? 10 : 13];
-                b.backgroundColor = [UIColor colorWithRed:0.14 green:0.07 blue:0.26 alpha:0.9];
+                b.titleLabel.font = [UIFont boldSystemFontOfSize:13];
+                b.backgroundColor = [UIColor colorWithRed:0.14 green:0.07 blue:0.26 alpha:0.92];
                 b.layer.cornerRadius = 7;
                 b.layer.borderWidth = 1.0;
-                b.layer.borderColor = [UIColor colorWithRed:0.6 green:0.3 blue:0.95 alpha:0.6].CGColor;
+                b.layer.borderColor = [UIColor colorWithRed:0.6 green:0.3 blue:0.95 alpha:0.65].CGColor;
                 [b setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
                 [b addTarget:self action:NSSelectorFromString(selectors[i]) forControlEvents:UIControlEventTouchUpInside];
 
-                if (i == 2) phlPlayPauseBtn = b;
-                if (i == 5) {
+                if (i == 1) phlPlayPauseBtn = b;
+                if (i == 3) {
                     phlRepeatBtn = b;
                     [self syncRepeatButton];
                 }
@@ -300,13 +225,13 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
 
             // Thanh chỉnh / giảm âm lượng
             UIButton *muteBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            muteBtn.frame = CGRectMake(12, 106, 36, 24);
+            muteBtn.frame = CGRectMake(12, 87, 36, 24);
             [muteBtn setTitle:@"🔉" forState:UIControlStateNormal];
             muteBtn.titleLabel.font = [UIFont systemFontOfSize:13];
             [muteBtn addTarget:self action:@selector(decreaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:muteBtn];
 
-            phlVolumeSlider = [[UISlider alloc] initWithFrame:CGRectMake(52, 108, 196, 20)];
+            phlVolumeSlider = [[UISlider alloc] initWithFrame:CGRectMake(52, 89, 200, 20)];
             phlVolumeSlider.minimumValue = 0.0f;
             phlVolumeSlider.maximumValue = 1.0f;
             phlVolumeSlider.value = phlCurrentVolume;
@@ -316,64 +241,70 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
             [phlMenuContainer addSubview:phlVolumeSlider];
 
             UIButton *volUpBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            volUpBtn.frame = CGRectMake(252, 106, 36, 24);
+            volUpBtn.frame = CGRectMake(256, 87, 36, 24);
             [volUpBtn setTitle:@"🔊" forState:UIControlStateNormal];
             volUpBtn.titleLabel.font = [UIFont systemFontOfSize:13];
             [volUpBtn addTarget:self action:@selector(increaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:volUpBtn];
 
-            // Công tắc cho phép nghe nhạc khi thoát / ẩn ứng dụng
-            UILabel *bgLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 134, 215, 26)];
-            bgLabel.text = @"Nghe nhạc khi thoát / ẩn app";
-            bgLabel.textColor = [UIColor colorWithRed:0.9 green:0.85 blue:1.0 alpha:1.0];
-            bgLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
-            [phlMenuContainer addSubview:bgLabel];
-
-            phlBgSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(235, 132, 51, 31)];
-            phlBgSwitch.transform = CGAffineTransformMakeScale(0.75, 0.75);
-            phlBgSwitch.on = phlAllowBackgroundPlay;
-            phlBgSwitch.onTintColor = [UIColor colorWithRed:0.75 green:0.35 blue:1.0 alpha:1.0];
-            [phlBgSwitch addTarget:self action:@selector(bgSwitchChanged:) forControlEvents:UIControlEventValueChanged];
-            [phlMenuContainer addSubview:phlBgSwitch];
-
             // Thanh chuyển ứng dụng nhanh
             NSArray *appLabels = @[@"TikTok", @"YouTube", @"Telegram"];
             NSArray *appSchemes = @[@"snssdk1233://", @"youtube://", @"tg://"];
-            CGFloat appBtnW = 88.0f;
+            CGFloat appBtnW = 89.3f;
             CGFloat appGap = 6.0f;
             for (NSInteger j = 0; j < (NSInteger)appLabels.count; j++) {
                 UIButton *appBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-                appBtn.frame = CGRectMake(12 + j * (appBtnW + appGap), 164, appBtnW, 24);
+                appBtn.frame = CGRectMake(12 + j * (appBtnW + appGap), 117, appBtnW, 24);
                 [appBtn setTitle:[NSString stringWithFormat:@"⇄ %@", appLabels[j]] forState:UIControlStateNormal];
                 appBtn.titleLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightSemibold];
                 [appBtn setTitleColor:[UIColor colorWithRed:0.85 green:0.95 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-                appBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.12 blue:0.24 alpha:0.9];
+                appBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.12 blue:0.24 alpha:0.92];
                 appBtn.layer.cornerRadius = 6;
                 objc_setAssociatedObject(appBtn, "phlSchemeKey", appSchemes[j], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
                 [appBtn addTarget:self action:@selector(openExternalApp:) forControlEvents:UIControlEventTouchUpInside];
                 [phlMenuContainer addSubview:appBtn];
             }
 
-            // Danh sách bài hát
-            phlTableView = [[UITableView alloc] initWithFrame:CGRectMake(8, 194, 284, 200) style:UITableViewStylePlain];
+            // Danh sách bài hát (cuộn độc lập, không đẩy chân menu)
+            phlTableView = [[UITableView alloc] initWithFrame:CGRectMake(8, 147, 288, 204) style:UITableViewStylePlain];
             phlTableView.backgroundColor = [UIColor clearColor];
             phlTableView.separatorColor = [UIColor colorWithWhite:0.22 alpha:1.0];
             phlTableView.delegate = self;
             phlTableView.dataSource = self;
             [phlMenuContainer addSubview:phlTableView];
 
-            // Nút chuyển hướng YouTube cố định ở dưới cùng menu
+            // --- PHẦN CHÂN CỐ ĐỊNH DƯỚI CÙNG (KHÔNG ĐỔI VỊ TRÍ KHI THÊM BÀI) ---
             phlYouTubeBottomBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            phlYouTubeBottomBtn.frame = CGRectMake(12, 400, 276, 30);
+            phlYouTubeBottomBtn.frame = CGRectMake(12, 356, 280, 28);
             [phlYouTubeBottomBtn setTitle:@"▶ Chuyển sang YouTube nghe nhạc" forState:UIControlStateNormal];
             [phlYouTubeBottomBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
             phlYouTubeBottomBtn.titleLabel.font = [UIFont boldSystemFontOfSize:11];
             phlYouTubeBottomBtn.backgroundColor = [UIColor colorWithRed:0.72 green:0.12 blue:0.22 alpha:0.95];
-            phlYouTubeBottomBtn.layer.cornerRadius = 8;
+            phlYouTubeBottomBtn.layer.cornerRadius = 7;
             phlYouTubeBottomBtn.layer.borderWidth = 1.0;
             phlYouTubeBottomBtn.layer.borderColor = [UIColor colorWithRed:1.0 green:0.45 blue:0.55 alpha:0.85].CGColor;
             [phlYouTubeBottomBtn addTarget:self action:@selector(openYouTubeRedirect) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlYouTubeBottomBtn];
+
+            phlAdminInfoBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+            phlAdminInfoBtn.frame = CGRectMake(12, 388, 280, 22);
+            [phlAdminInfoBtn setTitle:@"🌐 ADMIN PHẠM LONG • phamlong09.store" forState:UIControlStateNormal];
+            [phlAdminInfoBtn setTitleColor:[UIColor colorWithRed:0.45 green:0.95 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+            phlAdminInfoBtn.titleLabel.font = [UIFont boldSystemFontOfSize:10];
+            phlAdminInfoBtn.backgroundColor = [UIColor colorWithRed:0.11 green:0.05 blue:0.22 alpha:0.92];
+            phlAdminInfoBtn.layer.cornerRadius = 6;
+            phlAdminInfoBtn.layer.borderWidth = 1.0;
+            phlAdminInfoBtn.layer.borderColor = [UIColor colorWithRed:0.65 green:0.35 blue:1.0 alpha:0.6].CGColor;
+            [phlAdminInfoBtn addTarget:self action:@selector(openAdminInfoGroup) forControlEvents:UIControlEventTouchUpInside];
+            [phlMenuContainer addSubview:phlAdminInfoBtn];
+
+            phlCopyrightLabel = [[UILabel alloc] initWithFrame:CGRectMake(8, 412, 288, 32)];
+            phlCopyrightLabel.text = @"BẢN QUYỀN THUỘC ADMIN TELEGRAM: @PHL0990\nZALO: 0522608620";
+            phlCopyrightLabel.textColor = [UIColor colorWithRed:0.88 green:0.78 blue:1.0 alpha:0.95];
+            phlCopyrightLabel.font = [UIFont boldSystemFontOfSize:9];
+            phlCopyrightLabel.textAlignment = NSTextAlignmentCenter;
+            phlCopyrightLabel.numberOfLines = 2;
+            [phlMenuContainer addSubview:phlCopyrightLabel];
 
             [keyWindow addSubview:phlMenuContainer];
         } else if (phlMenuContainer.superview != keyWindow) {
@@ -488,34 +419,6 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
     [task resume];
 }
 
-- (void)setupTimeObserver {
-    if (!phlAudioPlayer) return;
-    if (phlTimeObserver) {
-        [phlAudioPlayer removeTimeObserver:phlTimeObserver];
-        phlTimeObserver = nil;
-    }
-
-    __weak typeof(self) weakSelf = self;
-    CMTime interval = CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC);
-    phlTimeObserver = [phlAudioPlayer addPeriodicTimeObserverForInterval:interval queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        if (!strongSelf || strongSelf->phlIsSeeking) return;
-
-        double currentSec = CMTimeGetSeconds(time);
-        CMTime durTime = strongSelf->phlAudioPlayer.currentItem.duration;
-        double totalSec = CMTimeGetSeconds(durTime);
-
-        strongSelf->phlCurrentTimeLabel.text = [strongSelf formatTimeSeconds:currentSec];
-        if (!isnan(totalSec) && !isinf(totalSec) && totalSec > 0) {
-            strongSelf->phlDurationLabel.text = [strongSelf formatTimeSeconds:totalSec];
-            strongSelf->phlSeekSlider.value = (float)MAX(0.0, MIN(1.0, currentSec / totalSec));
-        } else {
-            strongSelf->phlDurationLabel.text = @"00:00";
-            strongSelf->phlSeekSlider.value = 0.0f;
-        }
-    }];
-}
-
 - (void)playSongAtIndex:(NSInteger)index {
     if (index < 0 || index >= (NSInteger)phlPlaylist.count) return;
     NSDictionary *song = phlPlaylist[index];
@@ -531,9 +434,6 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
 
     phlCurrentIndex = index;
     phlNowPlayingLabel.text = [NSString stringWithFormat:@"♪ %@", title];
-    phlSeekSlider.value = 0.0f;
-    phlCurrentTimeLabel.text = @"00:00";
-    phlDurationLabel.text = @"00:00";
 
     phlPlayerItem = [AVPlayerItem playerItemWithURL:url];
     if (!phlAudioPlayer) {
@@ -542,7 +442,6 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
         [phlAudioPlayer replaceCurrentItemWithPlayerItem:phlPlayerItem];
     }
     phlAudioPlayer.volume = phlCurrentVolume;
-    [self setupTimeObserver];
     [phlAudioPlayer play];
     [self syncPlayPauseButton];
     [phlTableView reloadData];
@@ -583,61 +482,6 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
     [self playSongAtIndex:nextIdx];
 }
 
-- (void)rewind10s {
-    [self seekByOffsetSeconds:-10.0];
-}
-
-- (void)forward10s {
-    [self seekByOffsetSeconds:10.0];
-}
-
-- (void)seekByOffsetSeconds:(double)delta {
-    if (!phlAudioPlayer || !phlAudioPlayer.currentItem) return;
-    double cur = CMTimeGetSeconds(phlAudioPlayer.currentTime);
-    double dur = CMTimeGetSeconds(phlAudioPlayer.currentItem.duration);
-    if (isnan(cur) || isinf(cur)) cur = 0;
-
-    double target = MAX(0.0, cur + delta);
-    if (!isnan(dur) && !isinf(dur) && dur > 0) {
-        target = MIN(dur, target);
-    }
-
-    CMTime targetTime = CMTimeMakeWithSeconds(target, NSEC_PER_SEC);
-    [phlAudioPlayer seekToTime:targetTime toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
-    phlCurrentTimeLabel.text = [self formatTimeSeconds:target];
-}
-
-- (void)seekSliderTouchDown:(UISlider *)slider {
-    phlIsSeeking = YES;
-}
-
-- (void)seekSliderValueChanged:(UISlider *)slider {
-    if (!phlAudioPlayer || !phlAudioPlayer.currentItem) return;
-    double dur = CMTimeGetSeconds(phlAudioPlayer.currentItem.duration);
-    if (!isnan(dur) && !isinf(dur) && dur > 0) {
-        phlCurrentTimeLabel.text = [self formatTimeSeconds:(slider.value * dur)];
-    }
-}
-
-- (void)seekSliderTouchEnded:(UISlider *)slider {
-    if (!phlAudioPlayer || !phlAudioPlayer.currentItem) {
-        phlIsSeeking = NO;
-        return;
-    }
-    double dur = CMTimeGetSeconds(phlAudioPlayer.currentItem.duration);
-    if (!isnan(dur) && !isinf(dur) && dur > 0) {
-        double target = slider.value * dur;
-        CMTime targetTime = CMTimeMakeWithSeconds(target, NSEC_PER_SEC);
-        [phlAudioPlayer seekToTime:targetTime toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                phlIsSeeking = NO;
-            });
-        }];
-    } else {
-        phlIsSeeking = NO;
-    }
-}
-
 - (void)volumeSliderChanged:(UISlider *)slider {
     phlCurrentVolume = slider.value;
     [[NSUserDefaults standardUserDefaults] setFloat:phlCurrentVolume forKey:kPHLPrefVolume];
@@ -668,13 +512,7 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
     [phlRepeatBtn setTitle:(phlRepeatOne ? @"🔂" : @"🔁") forState:UIControlStateNormal];
     phlRepeatBtn.backgroundColor = phlRepeatOne
         ? [UIColor colorWithRed:0.45 green:0.15 blue:0.75 alpha:0.95]
-        : [UIColor colorWithRed:0.14 green:0.07 blue:0.26 alpha:0.9];
-}
-
-- (void)bgSwitchChanged:(UISwitch *)sender {
-    phlAllowBackgroundPlay = sender.on;
-    [[NSUserDefaults standardUserDefaults] setBool:phlAllowBackgroundPlay forKey:kPHLPrefBackgroundAudio];
-    [self configureAudioSession];
+        : [UIColor colorWithRed:0.14 green:0.07 blue:0.26 alpha:0.92];
 }
 
 - (NSURL *)resolveYouTubeTargetURL {
@@ -702,15 +540,13 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
 - (void)openYouTubeRedirect {
     NSURL *ytURL = [self resolveYouTubeTargetURL];
     if (!ytURL) return;
-
-    if (phlAllowBackgroundPlay && phlAudioPlayer && phlCurrentIndex >= 0) {
-        [self configureAudioSession];
-    } else if (phlAudioPlayer) {
-        [phlAudioPlayer pause];
-        [self syncPlayPauseButton];
-    }
-
     [[UIApplication sharedApplication] openURL:ytURL options:@{} completionHandler:nil];
+}
+
+- (void)openAdminInfoGroup {
+    NSURL *infoURL = [NSURL URLWithString:kPHLAdminInfoURL];
+    if (!infoURL) return;
+    [[UIApplication sharedApplication] openURL:infoURL options:@{} completionHandler:nil];
 }
 
 - (void)openExternalApp:(UIButton *)sender {
@@ -718,12 +554,6 @@ static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
     if (!scheme || scheme.length == 0) return;
     NSURL *appURL = [NSURL URLWithString:scheme];
     if (!appURL) return;
-
-    if (phlAllowBackgroundPlay && phlAudioPlayer && phlCurrentIndex >= 0) {
-        [self configureAudioSession];
-        [phlAudioPlayer play];
-    }
-
     [[UIApplication sharedApplication] openURL:appURL options:@{} completionHandler:nil];
 }
 
