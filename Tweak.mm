@@ -1,6 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <WebKit/WebKit.h>
+#import <MediaPlayer/MediaPlayer.h>
 #include <dlfcn.h>
 #include <sys/sysctl.h>
 
@@ -25,6 +26,8 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
 @interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, WKNavigationDelegate> {
     AVPlayer *phlAudioPlayer;
     AVPlayerItem *phlPlayerItem;
+    MPVolumeView *phlSystemVolumeView;
+    UISlider *phlSystemVolumeSlider;
 
     UIButton *phlFloatingBtn;
     UIView *phlMenuContainer;
@@ -121,6 +124,44 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     [session setActive:YES error:&sessionError];
 }
 
+- (void)bindSystemVolumeSlider {
+    if (phlSystemVolumeSlider) return;
+    phlSystemVolumeView = [[MPVolumeView alloc] initWithFrame:CGRectMake(-1000, -1000, 10, 10)];
+    phlSystemVolumeView.hidden = YES;
+    for (UIView *sub in phlSystemVolumeView.subviews) {
+        if ([sub isKindOfClass:[UISlider class]]) {
+            phlSystemVolumeSlider = (UISlider *)sub;
+            break;
+        }
+    }
+}
+
+- (void)applyUnifiedVolume:(float)vol {
+    float clamped = MAX(0.0f, MIN(1.0f, vol));
+    phlCurrentVolume = clamped;
+    [[NSUserDefaults standardUserDefaults] setFloat:clamped forKey:kPHLPrefVolume];
+
+    // 1. Âm lượng nhạc GitHub (AVPlayer)
+    if (phlAudioPlayer) {
+        phlAudioPlayer.volume = clamped;
+    }
+
+    // 2. Âm lượng trình duyệt web (WKWebView <video>/<audio>)
+    if (phlWebView) {
+        NSString *js = [NSString stringWithFormat:
+                        @"(function(){var v=%.3f;var m=(v<=0.001);document.querySelectorAll('video,audio').forEach(function(el){try{el.muted=m;el.volume=v;}catch(e){}});})();",
+                        clamped];
+        [phlWebView evaluateJavaScript:js completionHandler:nil];
+    }
+
+    // 3. Đồng bộ thanh âm lượng hệ thống nếu tìm thấy
+    [self bindSystemVolumeSlider];
+    if (phlSystemVolumeSlider) {
+        phlSystemVolumeSlider.value = clamped;
+        [phlSystemVolumeSlider sendActionsForControlEvents:UIControlEventValueChanged];
+    }
+}
+
 - (UIWindow *)resolveActiveWindow {
     for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
         if (scene.activationState == UISceneActivationStateForegroundActive) {
@@ -147,7 +188,7 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont systemFontOfSize:fontSize weight:UIFontWeightBold];
     btn.backgroundColor = bgColor;
-    btn.layer.cornerRadius = 9;
+    btn.layer.cornerRadius = 8;
     btn.layer.borderWidth = 1.0;
     btn.layer.borderColor = borderColor.CGColor;
     [btn addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
@@ -162,9 +203,10 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
         if (!keyWindow) return;
 
         CGFloat screenW = keyWindow.bounds.size.width;
-        CGFloat menuW = MIN(318.0f, screenW - 92.0f);
-        if (menuW < 268.0f) menuW = MIN(304.0f, screenW - 20.0f);
-        CGFloat menuH = 446.0f;
+        CGFloat menuW = MIN(312.0f, screenW - 92.0f);
+        if (menuW < 268.0f) menuW = MIN(300.0f, screenW - 20.0f);
+        // Thu gọn chiều cao để chân bản quyền hiển thị trọn vẹn và cân đối
+        CGFloat menuH = 356.0f;
 
         if (!phlFloatingBtn) {
             // 1. Nút nổi tròn bo tím Neon
@@ -188,10 +230,10 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
         }
 
         if (!phlMenuContainer) {
-            // 2. Khung menu chính (chỉ kéo qua thanh tiêu đề trên cùng để tránh chạm nhầm)
-            phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(72, 56, menuW, menuH)];
+            // 2. Khung menu chính gọn gàng (chỉ kéo qua thanh tiêu đề trên cùng)
+            phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(70, 28, menuW, menuH)];
             phlMenuContainer.backgroundColor = [UIColor colorWithRed:0.045 green:0.022 blue:0.125 alpha:0.98];
-            phlMenuContainer.layer.cornerRadius = 16;
+            phlMenuContainer.layer.cornerRadius = 15;
             phlMenuContainer.layer.borderWidth = 1.5;
             phlMenuContainer.layer.borderColor = [UIColor colorWithRed:0.82 green:0.42 blue:1.0 alpha:0.95].CGColor;
             phlMenuContainer.clipsToBounds = YES;
@@ -199,94 +241,94 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
             phlMenuContainer.alpha = 0.0;
 
             // Thanh tiêu đề dùng làm tay nắm kéo di chuyển toàn menu
-            phlDragHeader = [[UIView alloc] initWithFrame:CGRectMake(0, 0, menuW, 54)];
+            phlDragHeader = [[UIView alloc] initWithFrame:CGRectMake(0, 0, menuW, 46)];
             phlDragHeader.backgroundColor = [UIColor colorWithRed:0.11 green:0.05 blue:0.23 alpha:0.95];
             [phlMenuContainer addSubview:phlDragHeader];
 
             UIPanGestureRecognizer *headerPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
             [phlDragHeader addGestureRecognizer:headerPan];
 
-            UILabel *dragGripLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 6, menuW - 56, 12)];
+            UILabel *dragGripLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 4, menuW - 48, 10)];
             dragGripLabel.text = @"⋮⋮ KÉO THANH NÀY ĐỂ DI CHUYỂN";
             dragGripLabel.textColor = [UIColor colorWithRed:0.72 green:0.55 blue:0.98 alpha:0.85];
-            dragGripLabel.font = [UIFont systemFontOfSize:8 weight:UIFontWeightBold];
+            dragGripLabel.font = [UIFont systemFontOfSize:7.5 weight:UIFontWeightBold];
             [phlDragHeader addSubview:dragGripLabel];
 
-            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 18, menuW - 56, 18)];
+            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 14, menuW - 48, 16)];
             titleLabel.text = @"👑 PHL PHAM LONG • AUDIO";
             titleLabel.textColor = [UIColor colorWithRed:0.95 green:0.78 blue:1.0 alpha:1.0];
-            titleLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightHeavy];
+            titleLabel.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
             [phlDragHeader addSubview:titleLabel];
 
-            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 35, menuW - 24, 16)];
+            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 30, menuW - 20, 14)];
             phlNowPlayingLabel.text = @"♪ Chưa chọn bài hát";
             phlNowPlayingLabel.textColor = [UIColor colorWithRed:0.35 green:0.95 blue:1.0 alpha:1.0];
-            phlNowPlayingLabel.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightSemibold];
+            phlNowPlayingLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightSemibold];
             [phlDragHeader addSubview:phlNowPlayingLabel];
 
             UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            closeBtn.frame = CGRectMake(menuW - 38, 10, 28, 28);
+            closeBtn.frame = CGRectMake(menuW - 34, 9, 24, 24);
             [closeBtn setTitle:@"✕" forState:UIControlStateNormal];
             [closeBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.72 alpha:1.0] forState:UIControlStateNormal];
-            closeBtn.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
+            closeBtn.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
             closeBtn.backgroundColor = [UIColor colorWithRed:0.22 green:0.06 blue:0.18 alpha:0.85];
-            closeBtn.layer.cornerRadius = 14;
+            closeBtn.layer.cornerRadius = 12;
             [closeBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:closeBtn];
 
             // Cụm điều khiển chính: Prev | Play/Pause | Next | Lặp
-            CGFloat padX = 12.0f;
+            CGFloat padX = 10.0f;
             CGFloat innerW = menuW - padX * 2.0f;
-            CGFloat gap = 6.0f;
+            CGFloat gap = 5.0f;
             CGFloat btnW = (innerW - gap * 3.0f) / 4.0f;
-            CGFloat ctrlY = 60.0f;
+            CGFloat ctrlY = 51.0f;
 
             UIColor *ctrlBg = [UIColor colorWithRed:0.15 green:0.08 blue:0.29 alpha:0.95];
             UIColor *ctrlBorder = [UIColor colorWithRed:0.68 green:0.36 blue:1.0 alpha:0.7];
 
             UIButton *prevBtn = [self makeControlButtonWithTitle:@"⏮"
-                                                      fontSize:14
+                                                      fontSize:13
                                                        bgColor:ctrlBg
                                                    borderColor:ctrlBorder
                                                         action:@selector(playPreviousSong)];
-            prevBtn.frame = CGRectMake(padX, ctrlY, btnW, 30);
+            prevBtn.frame = CGRectMake(padX, ctrlY, btnW, 26);
             [phlMenuContainer addSubview:prevBtn];
 
             phlPlayPauseBtn = [self makeControlButtonWithTitle:@"▶"
-                                                    fontSize:15
+                                                    fontSize:14
                                                      bgColor:[UIColor colorWithRed:0.48 green:0.18 blue:0.86 alpha:0.96]
                                                  borderColor:[UIColor colorWithRed:0.9 green:0.62 blue:1.0 alpha:0.95]
                                                       action:@selector(togglePlayPause)];
-            phlPlayPauseBtn.frame = CGRectMake(padX + (btnW + gap), ctrlY, btnW, 30);
+            phlPlayPauseBtn.frame = CGRectMake(padX + (btnW + gap), ctrlY, btnW, 26);
             [phlMenuContainer addSubview:phlPlayPauseBtn];
 
             UIButton *nextBtn = [self makeControlButtonWithTitle:@"⏭"
-                                                      fontSize:14
+                                                      fontSize:13
                                                        bgColor:ctrlBg
                                                    borderColor:ctrlBorder
                                                         action:@selector(playNextSong)];
-            nextBtn.frame = CGRectMake(padX + (btnW + gap) * 2.0f, ctrlY, btnW, 30);
+            nextBtn.frame = CGRectMake(padX + (btnW + gap) * 2.0f, ctrlY, btnW, 26);
             [phlMenuContainer addSubview:nextBtn];
 
             phlRepeatBtn = [self makeControlButtonWithTitle:@"🔁"
-                                                 fontSize:14
+                                                 fontSize:13
                                                   bgColor:ctrlBg
                                               borderColor:ctrlBorder
                                                    action:@selector(toggleRepeatMode)];
-            phlRepeatBtn.frame = CGRectMake(padX + (btnW + gap) * 3.0f, ctrlY, btnW, 30);
+            phlRepeatBtn.frame = CGRectMake(padX + (btnW + gap) * 3.0f, ctrlY, btnW, 26);
             [self syncRepeatButton];
             [phlMenuContainer addSubview:phlRepeatBtn];
 
-            // Thanh chỉnh / giảm âm lượng
-            CGFloat volY = 96.0f;
+            // Thanh âm lượng chung cho cả nhạc GitHub và trình duyệt web
+            CGFloat volY = 81.0f;
             UIButton *muteBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            muteBtn.frame = CGRectMake(padX, volY, 30, 24);
+            muteBtn.frame = CGRectMake(padX, volY, 28, 22);
             [muteBtn setTitle:@"🔉" forState:UIControlStateNormal];
-            muteBtn.titleLabel.font = [UIFont systemFontOfSize:13];
+            muteBtn.titleLabel.font = [UIFont systemFontOfSize:12.5];
             [muteBtn addTarget:self action:@selector(decreaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:muteBtn];
 
-            phlVolumeSlider = [[UISlider alloc] initWithFrame:CGRectMake(padX + 34, volY, innerW - 68, 24)];
+            phlVolumeSlider = [[UISlider alloc] initWithFrame:CGRectMake(padX + 30, volY, innerW - 60, 22)];
             phlVolumeSlider.minimumValue = 0.0f;
             phlVolumeSlider.maximumValue = 1.0f;
             phlVolumeSlider.value = phlCurrentVolume;
@@ -297,31 +339,32 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
             [phlMenuContainer addSubview:phlVolumeSlider];
 
             UIButton *volUpBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            volUpBtn.frame = CGRectMake(menuW - padX - 30, volY, 30, 24);
+            volUpBtn.frame = CGRectMake(menuW - padX - 28, volY, 28, 22);
             [volUpBtn setTitle:@"🔊" forState:UIControlStateNormal];
-            volUpBtn.titleLabel.font = [UIFont systemFontOfSize:13];
+            volUpBtn.titleLabel.font = [UIFont systemFontOfSize:12.5];
             [volUpBtn addTarget:self action:@selector(increaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:volUpBtn];
 
             // Nút mở trình duyệt web & tìm YouTube ngay trên menu
-            CGFloat webToggleY = 125.0f;
+            CGFloat webToggleY = 107.0f;
             phlOpenBrowserBtn = [self makeControlButtonWithTitle:@"🌐 MỞ TRÌNH DUYỆT & TÌM YOUTUBE TRONG MENU"
-                                                        fontSize:10
+                                                        fontSize:9.5
                                                          bgColor:[UIColor colorWithRed:0.12 green:0.18 blue:0.36 alpha:0.96]
                                                      borderColor:[UIColor colorWithRed:0.35 green:0.85 blue:1.0 alpha:0.75]
                                                           action:@selector(toggleEmbeddedBrowser)];
-            phlOpenBrowserBtn.frame = CGRectMake(padX, webToggleY, innerW, 28);
+            phlOpenBrowserBtn.frame = CGRectMake(padX, webToggleY, innerW, 24);
             [phlOpenBrowserBtn setTitleColor:[UIColor colorWithRed:0.65 green:0.96 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
             [phlMenuContainer addSubview:phlOpenBrowserBtn];
 
-            // Vùng nội dung chính (Danh sách nhạc hoặc Trình duyệt YouTube nhúng)
-            CGFloat footerHeight = 68.0f;
-            CGFloat contentY = 159.0f;
-            CGFloat contentH = menuH - contentY - footerHeight - 6.0f;
+            // Vùng nội dung chính gọn gàng, chừa đủ chỗ cho chân bản quyền ở đáy
+            CGFloat footerHeight = 58.0f;
+            CGFloat contentY = 135.0f;
+            CGFloat contentH = menuH - contentY - footerHeight - 4.0f;
 
             phlTableView = [[UITableView alloc] initWithFrame:CGRectMake(8, contentY, menuW - 16, contentH) style:UITableViewStylePlain];
             phlTableView.backgroundColor = [UIColor clearColor];
             phlTableView.separatorColor = [UIColor colorWithWhite:0.22 alpha:1.0];
+            phlTableView.rowHeight = 40.0f;
             phlTableView.delegate = self;
             phlTableView.dataSource = self;
             [phlMenuContainer addSubview:phlTableView];
@@ -329,7 +372,7 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
             // Khung trình duyệt web nhúng ngay trên menu
             phlWebPanel = [[UIView alloc] initWithFrame:CGRectMake(8, contentY, menuW - 16, contentH)];
             phlWebPanel.backgroundColor = [UIColor colorWithRed:0.06 green:0.03 blue:0.15 alpha:0.98];
-            phlWebPanel.layer.cornerRadius = 10;
+            phlWebPanel.layer.cornerRadius = 9;
             phlWebPanel.layer.borderWidth = 1.0;
             phlWebPanel.layer.borderColor = [UIColor colorWithRed:0.45 green:0.8 blue:1.0 alpha:0.55].CGColor;
             phlWebPanel.clipsToBounds = YES;
@@ -339,94 +382,91 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
             CGFloat panelW = phlWebPanel.bounds.size.width;
             CGFloat panelH = phlWebPanel.bounds.size.height;
 
-            // Thanh điều hướng trình duyệt: ← | → | Đóng web
             UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            backBtn.frame = CGRectMake(6, 6, 26, 24);
+            backBtn.frame = CGRectMake(5, 5, 24, 22);
             [backBtn setTitle:@"←" forState:UIControlStateNormal];
             [backBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            backBtn.titleLabel.font = [UIFont boldSystemFontOfSize:13];
+            backBtn.titleLabel.font = [UIFont boldSystemFontOfSize:12];
             backBtn.backgroundColor = [UIColor colorWithRed:0.18 green:0.1 blue:0.32 alpha:0.9];
-            backBtn.layer.cornerRadius = 6;
+            backBtn.layer.cornerRadius = 5;
             [backBtn addTarget:self action:@selector(webGoBack) forControlEvents:UIControlEventTouchUpInside];
             [phlWebPanel addSubview:backBtn];
 
             UIButton *fwdBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            fwdBtn.frame = CGRectMake(35, 6, 26, 24);
+            fwdBtn.frame = CGRectMake(32, 5, 24, 22);
             [fwdBtn setTitle:@"→" forState:UIControlStateNormal];
             [fwdBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            fwdBtn.titleLabel.font = [UIFont boldSystemFontOfSize:13];
+            fwdBtn.titleLabel.font = [UIFont boldSystemFontOfSize:12];
             fwdBtn.backgroundColor = [UIColor colorWithRed:0.18 green:0.1 blue:0.32 alpha:0.9];
-            fwdBtn.layer.cornerRadius = 6;
+            fwdBtn.layer.cornerRadius = 5;
             [fwdBtn addTarget:self action:@selector(webGoForward) forControlEvents:UIControlEventTouchUpInside];
             [phlWebPanel addSubview:fwdBtn];
 
             UIButton *closeWebBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            closeWebBtn.frame = CGRectMake(panelW - 62, 6, 56, 24);
+            closeWebBtn.frame = CGRectMake(panelW - 56, 5, 51, 22);
             [closeWebBtn setTitle:@"Danh sách" forState:UIControlStateNormal];
             [closeWebBtn setTitleColor:[UIColor colorWithRed:0.95 green:0.75 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-            closeWebBtn.titleLabel.font = [UIFont boldSystemFontOfSize:9.5];
+            closeWebBtn.titleLabel.font = [UIFont boldSystemFontOfSize:9];
             closeWebBtn.backgroundColor = [UIColor colorWithRed:0.28 green:0.09 blue:0.22 alpha:0.92];
-            closeWebBtn.layer.cornerRadius = 6;
+            closeWebBtn.layer.cornerRadius = 5;
             [closeWebBtn addTarget:self action:@selector(closeEmbeddedBrowser) forControlEvents:UIControlEventTouchUpInside];
             [phlWebPanel addSubview:closeWebBtn];
 
-            // Thanh tìm kiếm YouTube ngay trên trình duyệt của menu
-            CGFloat searchBtnW = 46.0f;
-            CGFloat searchFieldW = panelW - 12.0f - searchBtnW - 4.0f;
+            CGFloat searchBtnW = 42.0f;
+            CGFloat searchFieldW = panelW - 10.0f - searchBtnW - 4.0f;
 
-            phlYouTubeSearchField = [[UITextField alloc] initWithFrame:CGRectMake(6, 34, searchFieldW, 26)];
+            phlYouTubeSearchField = [[UITextField alloc] initWithFrame:CGRectMake(5, 30, searchFieldW, 24)];
             phlYouTubeSearchField.placeholder = @"Tìm nhạc trên YouTube...";
             phlYouTubeSearchField.textColor = [UIColor whiteColor];
-            phlYouTubeSearchField.font = [UIFont systemFontOfSize:11];
+            phlYouTubeSearchField.font = [UIFont systemFontOfSize:10.5];
             phlYouTubeSearchField.backgroundColor = [UIColor colorWithRed:0.12 green:0.07 blue:0.22 alpha:0.95];
-            phlYouTubeSearchField.layer.cornerRadius = 7;
+            phlYouTubeSearchField.layer.cornerRadius = 6;
             phlYouTubeSearchField.layer.borderWidth = 1.0;
             phlYouTubeSearchField.layer.borderColor = [UIColor colorWithRed:0.65 green:0.35 blue:1.0 alpha:0.6].CGColor;
             phlYouTubeSearchField.returnKeyType = UIReturnKeySearch;
             phlYouTubeSearchField.clearButtonMode = UITextFieldViewModeWhileEditing;
             phlYouTubeSearchField.delegate = self;
 
-            UIView *leftPad = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 8, 26)];
+            UIView *leftPad = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 6, 24)];
             phlYouTubeSearchField.leftView = leftPad;
             phlYouTubeSearchField.leftViewMode = UITextFieldViewModeAlways;
             [phlWebPanel addSubview:phlYouTubeSearchField];
 
             UIButton *ytSearchBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            ytSearchBtn.frame = CGRectMake(6 + searchFieldW + 4.0f, 34, searchBtnW, 26);
+            ytSearchBtn.frame = CGRectMake(5 + searchFieldW + 4.0f, 30, searchBtnW, 24);
             [ytSearchBtn setTitle:@"🔍 YT" forState:UIControlStateNormal];
             [ytSearchBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            ytSearchBtn.titleLabel.font = [UIFont boldSystemFontOfSize:10];
+            ytSearchBtn.titleLabel.font = [UIFont boldSystemFontOfSize:9.5];
             ytSearchBtn.backgroundColor = [UIColor colorWithRed:0.74 green:0.12 blue:0.22 alpha:0.95];
-            ytSearchBtn.layer.cornerRadius = 7;
+            ytSearchBtn.layer.cornerRadius = 6;
             [ytSearchBtn addTarget:self action:@selector(triggerYouTubeSearch) forControlEvents:UIControlEventTouchUpInside];
             [phlWebPanel addSubview:ytSearchBtn];
 
-            // Khung WKWebView hiển thị trang YouTube trực tiếp trong menu
             WKWebViewConfiguration *webConfig = [[WKWebViewConfiguration alloc] init];
             webConfig.allowsInlineMediaPlayback = YES;
-            phlWebView = [[WKWebView alloc] initWithFrame:CGRectMake(0, 64, panelW, MAX(80.0f, panelH - 64)) configuration:webConfig];
+            phlWebView = [[WKWebView alloc] initWithFrame:CGRectMake(0, 57, panelW, MAX(60.0f, panelH - 57)) configuration:webConfig];
             phlWebView.navigationDelegate = self;
             phlWebView.scrollView.bounces = YES;
             [phlWebPanel addSubview:phlWebView];
 
-            // --- CHÂN CỐ ĐỊNH DƯỚI CÙNG (KHÔNG ĐỔI VỊ TRÍ KHI THÊM BÀI) ---
+            // --- CHÂN CỐ ĐỊNH DƯỚI CÙNG (HIỂN THỊ TRỌN VẸN TRONG KHUNG GỌN) ---
             CGFloat infoBtnY = menuH - footerHeight;
             phlAdminInfoBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            phlAdminInfoBtn.frame = CGRectMake(padX, infoBtnY, innerW, 28);
+            phlAdminInfoBtn.frame = CGRectMake(padX, infoBtnY, innerW, 22);
             [phlAdminInfoBtn setTitle:@"🛡 INFO & BẢN QUYỀN • phamlong09.store" forState:UIControlStateNormal];
             [phlAdminInfoBtn setTitleColor:[UIColor colorWithRed:0.45 green:0.96 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-            phlAdminInfoBtn.titleLabel.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightBold];
+            phlAdminInfoBtn.titleLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightBold];
             phlAdminInfoBtn.backgroundColor = [UIColor colorWithRed:0.14 green:0.06 blue:0.28 alpha:0.96];
-            phlAdminInfoBtn.layer.cornerRadius = 8;
+            phlAdminInfoBtn.layer.cornerRadius = 7;
             phlAdminInfoBtn.layer.borderWidth = 1.0;
             phlAdminInfoBtn.layer.borderColor = [UIColor colorWithRed:0.78 green:0.42 blue:1.0 alpha:0.85].CGColor;
             [phlAdminInfoBtn addTarget:self action:@selector(openAdminInfoGroup) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlAdminInfoBtn];
 
-            phlCopyrightLabel = [[UILabel alloc] initWithFrame:CGRectMake(8, infoBtnY + 30, menuW - 16, 34)];
+            phlCopyrightLabel = [[UILabel alloc] initWithFrame:CGRectMake(6, infoBtnY + 23, menuW - 12, 33)];
             phlCopyrightLabel.text = @"BẢN QUYỀN THUỘC ADMIN TELEGRAM: @PHL0990\nZALO: 0522608620";
             phlCopyrightLabel.textColor = [UIColor colorWithRed:0.9 green:0.82 blue:1.0 alpha:0.95];
-            phlCopyrightLabel.font = [UIFont systemFontOfSize:9 weight:UIFontWeightBold];
+            phlCopyrightLabel.font = [UIFont systemFontOfSize:8.5 weight:UIFontWeightBold];
             phlCopyrightLabel.textAlignment = NSTextAlignmentCenter;
             phlCopyrightLabel.numberOfLines = 2;
             [phlMenuContainer addSubview:phlCopyrightLabel];
@@ -438,6 +478,10 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
 
         [self fetchGitHubPlaylist];
     });
+}
+
+- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
+    [self applyUnifiedVolume:phlCurrentVolume];
 }
 
 - (void)toggleEmbeddedBrowser {
@@ -584,7 +628,7 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
 
     CGPoint translation = [pan translationInView:phlMenuContainer.superview];
     phlMenuContainer.center = CGPointMake(phlMenuContainer.center.x + translation.x, phlMenuContainer.center.y + translation.y);
-    [self clampViewToSafeBounds:phlMenuContainer topMargin:22.0f bottomMargin:16.0f];
+    [self clampViewToSafeBounds:phlMenuContainer topMargin:18.0f bottomMargin:14.0f];
     [pan setTranslation:CGPointZero inView:phlMenuContainer.superview];
 }
 
@@ -700,23 +744,19 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
 }
 
 - (void)volumeSliderChanged:(UISlider *)slider {
-    phlCurrentVolume = slider.value;
-    [[NSUserDefaults standardUserDefaults] setFloat:phlCurrentVolume forKey:kPHLPrefVolume];
-    if (phlAudioPlayer) {
-        phlAudioPlayer.volume = phlCurrentVolume;
-    }
+    [self applyUnifiedVolume:slider.value];
 }
 
 - (void)decreaseVolumeStep {
-    phlCurrentVolume = MAX(0.0f, phlCurrentVolume - 0.15f);
-    phlVolumeSlider.value = phlCurrentVolume;
-    [self volumeSliderChanged:phlVolumeSlider];
+    float nextVol = MAX(0.0f, phlCurrentVolume - 0.15f);
+    phlVolumeSlider.value = nextVol;
+    [self applyUnifiedVolume:nextVol];
 }
 
 - (void)increaseVolumeStep {
-    phlCurrentVolume = MIN(1.0f, phlCurrentVolume + 0.15f);
-    phlVolumeSlider.value = phlCurrentVolume;
-    [self volumeSliderChanged:phlVolumeSlider];
+    float nextVol = MIN(1.0f, phlCurrentVolume + 0.15f);
+    phlVolumeSlider.value = nextVol;
+    [self applyUnifiedVolume:nextVol];
 }
 
 - (void)toggleRepeatMode {
@@ -748,8 +788,8 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:cellID];
         cell.backgroundColor = [UIColor clearColor];
-        cell.textLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
-        cell.detailTextLabel.font = [UIFont systemFontOfSize:9];
+        cell.textLabel.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightMedium];
+        cell.detailTextLabel.font = [UIFont systemFontOfSize:8.5];
     }
 
     if (phlPlaylist.count == 0) {
