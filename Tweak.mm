@@ -151,24 +151,31 @@ static NSString *const kPHLWebAudioBridgeJS =
 @property (nonatomic, assign) BOOL pulseHighlight;
 @property (nonatomic, strong) CAShapeLayer *glyphLayer;
 @property (nonatomic, strong) CAShapeLayer *markerDotLayer;
++ (instancetype)buttonWithKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action;
+- (void)setupKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action;
 - (void)refreshTransportVisual;
 - (void)triggerPulseMark;
 @end
 
 @implementation PHLTransportButton
 
-- (instancetype)initWithKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action {
-    self = [super initWithType:UIButtonTypeCustom];
-    if (self) {
-        _iconKind = kind;
-        _activeState = NO;
-        _pulseHighlight = NO;
++ (instancetype)buttonWithKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action {
+    PHLTransportButton *btn = [PHLTransportButton buttonWithType:UIButtonTypeCustom];
+    [btn setupKind:kind actionTarget:target action:action];
+    return btn;
+}
 
-        self.layer.cornerRadius = 8.0f;
-        self.layer.borderWidth = 1.15f;
-        self.clipsToBounds = YES;
-        [self addTarget:target action:action forControlEvents:UIControlEventTouchUpInside];
+- (void)setupKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action {
+    _iconKind = kind;
+    _activeState = NO;
+    _pulseHighlight = NO;
 
+    self.layer.cornerRadius = 8.0f;
+    self.layer.borderWidth = 1.15f;
+    self.clipsToBounds = YES;
+    [self addTarget:target action:action forControlEvents:UIControlEventTouchUpInside];
+
+    if (!_glyphLayer) {
         _glyphLayer = [CAShapeLayer layer];
         _glyphLayer.fillColor = [UIColor clearColor].CGColor;
         _glyphLayer.strokeColor = [UIColor whiteColor].CGColor;
@@ -176,14 +183,15 @@ static NSString *const kPHLWebAudioBridgeJS =
         _glyphLayer.lineCap = kCALineCapRound;
         _glyphLayer.lineJoin = kCALineJoinRound;
         [self.layer addSublayer:_glyphLayer];
+    }
 
+    if (!_markerDotLayer) {
         _markerDotLayer = [CAShapeLayer layer];
         _markerDotLayer.hidden = YES;
         [self.layer addSublayer:_markerDotLayer];
-
-        [self refreshTransportVisual];
     }
-    return self;
+
+    [self refreshTransportVisual];
 }
 
 - (void)layoutSubviews {
@@ -229,7 +237,6 @@ static NSString *const kPHLWebAudioBridgeJS =
 
     switch (self.iconKind) {
         case PHLTransportIconPrev: {
-            // Vạch đứng bên trái + tam giác hướng trái
             CGFloat barX = cx - 5.5f;
             [path moveToPoint:CGPointMake(barX, cy - 4.5f)];
             [path addLineToPoint:CGPointMake(barX, cy + 4.5f)];
@@ -242,13 +249,11 @@ static NSString *const kPHLWebAudioBridgeJS =
         }
         case PHLTransportIconPlayPause: {
             if (self.activeState) {
-                // Hai vạch Pause
                 [path moveToPoint:CGPointMake(cx - 3.2f, cy - 4.8f)];
                 [path addLineToPoint:CGPointMake(cx - 3.2f, cy + 4.8f)];
                 [path moveToPoint:CGPointMake(cx + 3.2f, cy - 4.8f)];
                 [path addLineToPoint:CGPointMake(cx + 3.2f, cy + 4.8f)];
             } else {
-                // Tam giác Play hướng phải (như ảnh mẫu)
                 [path moveToPoint:CGPointMake(cx - 3.6f, cy - 5.2f)];
                 [path addLineToPoint:CGPointMake(cx + 4.8f, cy)];
                 [path addLineToPoint:CGPointMake(cx - 3.6f, cy + 5.2f)];
@@ -257,7 +262,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             break;
         }
         case PHLTransportIconNext: {
-            // Tam giác hướng phải + vạch đứng bên phải
             CGFloat barX = cx + 5.5f;
             [path moveToPoint:CGPointMake(cx - 5.5f, cy - 4.5f)];
             [path addLineToPoint:CGPointMake(barX - 1.8f, cy)];
@@ -269,7 +273,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             break;
         }
         case PHLTransportIconRepeat: {
-            // Hai cung mũi tên lặp lại nét mảnh
             CGFloat rx = 6.2f;
             CGFloat ry = 3.8f;
 
@@ -296,7 +299,6 @@ static NSString *const kPHLWebAudioBridgeJS =
         ? [UIColor colorWithRed:1.0 green:0.96 blue:0.65 alpha:1.0].CGColor
         : [UIColor whiteColor].CGColor;
 
-    // Dấu chấm đánh dấu ở góc phải trên khi nút đang bật/hoạt động
     self.markerDotLayer.hidden = !marked;
     if (marked) {
         UIBezierPath *dotPath = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(w - 7.5f, 3.5f, 4.2f, 4.2f)];
@@ -736,24 +738,24 @@ static NSString *const kPHLWebAudioBridgeJS =
             [phlMenuContainer addSubview:phlCloseBtn];
 
             // 4 nút điều khiển vẽ nét mảnh (không dùng biểu tượng emoji) + đánh dấu trạng thái
-            phlPrevBtn = [[PHLTransportButton alloc] initWithKind:PHLTransportIconPrev
-                                                     actionTarget:self
-                                                           action:@selector(playPreviousSong)];
+            phlPrevBtn = [PHLTransportButton buttonWithKind:PHLTransportIconPrev
+                                               actionTarget:self
+                                                     action:@selector(playPreviousSong)];
             [phlMenuContainer addSubview:phlPrevBtn];
 
-            phlPlayPauseBtn = [[PHLTransportButton alloc] initWithKind:PHLTransportIconPlayPause
-                                                         actionTarget:self
-                                                               action:@selector(togglePlayPause)];
+            phlPlayPauseBtn = [PHLTransportButton buttonWithKind:PHLTransportIconPlayPause
+                                                   actionTarget:self
+                                                         action:@selector(togglePlayPause)];
             [phlMenuContainer addSubview:phlPlayPauseBtn];
 
-            phlNextBtn = [[PHLTransportButton alloc] initWithKind:PHLTransportIconNext
-                                                     actionTarget:self
-                                                           action:@selector(playNextSong)];
+            phlNextBtn = [PHLTransportButton buttonWithKind:PHLTransportIconNext
+                                               actionTarget:self
+                                                     action:@selector(playNextSong)];
             [phlMenuContainer addSubview:phlNextBtn];
 
-            phlRepeatBtn = [[PHLTransportButton alloc] initWithKind:PHLTransportIconRepeat
-                                                       actionTarget:self
-                                                             action:@selector(toggleRepeatMode)];
+            phlRepeatBtn = [PHLTransportButton buttonWithKind:PHLTransportIconRepeat
+                                                 actionTarget:self
+                                                       action:@selector(toggleRepeatMode)];
             [self syncRepeatButton];
             [phlMenuContainer addSubview:phlRepeatBtn];
 
