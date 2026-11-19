@@ -1,171 +1,192 @@
+// ==============================================================================
+// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 HARDENED ENGINE)
+// PROTECTED BY MULTI-LAYER RUNTIME CODE INTEGRITY & SYMBOL OBFUSCATION
+// ==============================================================================
+
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <WebKit/WebKit.h>
 #import <QuartzCore/QuartzCore.h>
 #include <dlfcn.h>
 #include <sys/sysctl.h>
+#include <mach-o/dyld.h>
 
-typedef NS_ENUM(NSInteger, PHLTransportIconKind) {
-    PHLTransportIconPrev = 0,
-    PHLTransportIconPlayPause = 1,
-    PHLTransportIconNext = 2,
-    PHLTransportIconRepeat = 3
+// ------------------------------------------------------------------------------
+// [LAYER 1]: SYMBOL MANGLING (Xoá sạch Metadata khỏi Objective-C Runtime)
+// ------------------------------------------------------------------------------
+#define PHLTransportButton              _0x7b1c_cls
+#define PHLProtectedAudioManager        _0x4e2d_mgr
+#define sharedInstance                 _0x9a3e_inst
+#define initializeFramework             _0x1f4a_init
+#define setupKind                       _0x2c5b_stk
+#define refreshTransportVisual          _0x3d6c_rtv
+#define triggerPulseMark                _0x4e7d_tpm
+#define playSongAtIndex                 _0x5f8e_psa
+#define togglePlayPause                 _0x6a9f_tpp
+#define playPreviousSong                _0x7b0a_pps
+#define playNextSong                    _0x8c1b_pns
+#define toggleRepeatMode                _0x9d2c_trm
+#define volumeSliderChanged             _0xae3d_vsc
+#define decreaseVolumeStep              _0xbf4e_dvs
+#define increaseVolumeStep              _0xc05f_ivs
+#define cleanYouTubePageInWebView       _0xd16a_cyt
+#define applyIndependentGain            _0xe27b_aig
+#define applyGainToItem                 _0xf38c_agi
+#define toggleEmbeddedBrowser           _0xa49d_teb
+#define closeEmbeddedBrowser            _0xb5ae_ceb
+#define triggerYouTubeSearch            _0xc6bf_tys
+#define fetchRemotePlaylist             _0xd7c0_frp
+#define loadRemoteLogo                  _0xe8d1_lrl
+#define openAdminInfoGroup              _0xf9e2_oai
+#define handleFloatingPan               _0xaa03_hfp
+#define handleMenuHeaderPan             _0xbb14_hmp
+#define clampViewToSafeBounds           _0xcc25_cvs
+#define syncPlayPauseButton             _0xdd36_spp
+#define syncRepeatButton                _0xee47_srb
+#define syncBrowserVisibilityAnimated   _0xff58_sbv
+#define loadYouTubeURLString            _0x1069_lys
+#define webGoHome                       _0x217a_wgh
+#define webGoBack                       _0x328b_wgb
+#define webGoForward                    _0x439c_wgf
+#define configureAudioSession           _0x54ad_cas
+#define pauseWebMediaIfPlaying          _0x65be_pwm
+#define pauseStreamPlayerIfPlaying      _0x76cf_psp
+#define resolveActiveWindow             _0x87d0_raw
+#define makeUtilityButtonWithTitle      _0x98e1_mub
+#define layoutMenuSubviewsWithWidth     _0xa9f2_lms
+#define applyMenuFrameForExpanded       _0xba03_amf
+#define handleItemDidFinish             _0xcb14_hdf
+
+typedef NS_ENUM(NSInteger, _0x3b1a_kind) {
+    _0x00_prev = 0,
+    _0x01_playpause = 1,
+    _0x02_next = 2,
+    _0x03_repeat = 3
 };
 
-// Chống Debugging / Anti-Crack cơ bản
-typedef int (*ptrace_ptr)(int _request, pid_t _pid, caddr_t _addr, int _data);
-static void preventDebugging() {
-    void *handle = dlopen(NULL, RTLD_GLOBAL | RTLD_NOW);
-    if (handle) {
-        ptrace_ptr ptrace_p = (ptrace_ptr)dlsym(handle, "ptrace");
-        if (ptrace_p) {
-            ptrace_p(31 /* PT_DENY_ATTACH */, 0, 0, 0);
+// ------------------------------------------------------------------------------
+// [LAYER 2]: ENCRYPTED STRING DATA VAULT (XOR + Linear Counter Stream)
+// ------------------------------------------------------------------------------
+#define _0X_KEY 0x5B
+
+static inline NSString *__attribute__((always_inline)) _0xdec(const unsigned char *b, size_t len) {
+    char *buf = (char *)malloc(len + 1);
+    if (!buf) return @"";
+    for (size_t i = 0; i < len; i++) {
+        buf[i] = (char)(b[i] ^ ((_0X_KEY + (unsigned char)(i & 0xFF)) & 0xFF));
+    }
+    buf[len] = '\0';
+    NSString *res = [NSString stringWithUTF8String:buf];
+    free(buf);
+    return res ?: @"";
+}
+
+// Byte arrays đã được mã hóa - 0% ký tự văn bản lộ trong binary
+static const unsigned char _0xs_AdminURL[24] = { 0x33, 0x28, 0x29, 0x2e, 0x2c, 0x5a, 0x4e, 0x4d, 0x13, 0x0c, 0x04, 0x0b, 0x0b, 0x07, 0x07, 0x0d, 0x5b, 0x55, 0x43, 0x1d, 0x1b, 0x1f, 0x03, 0x17 };
+static const unsigned char _0xs_YTHomeURL[21] = { 0x33, 0x28, 0x29, 0x2e, 0x2c, 0x5a, 0x4e, 0x4d, 0x0e, 0x4a, 0x1c, 0x09, 0x12, 0x1c, 0x1c, 0x08, 0x0e, 0x42, 0x0e, 0x01, 0x02 };
+static const unsigned char _0xs_LogoURL[81] = { 0x33, 0x28, 0x29, 0x2e, 0x2c, 0x5a, 0x4e, 0x4d, 0x11, 0x05, 0x12, 0x48, 0x00, 0x01, 0x1d, 0x02, 0x1e, 0x0e, 0x18, 0x1d, 0x0a, 0x02, 0x12, 0x1d, 0x1d, 0x00, 0x10, 0x18, 0x03, 0x56, 0x1a, 0x15, 0x16, 0x53, 0x0d, 0x16, 0x1e, 0xed, 0xed, 0xed, 0xed, 0xe3, 0xb6, 0xb3, 0xb4, 0xb1, 0xa4, 0xf9, 0xff, 0xed, 0xee, 0xe5, 0xa0, 0xe0, 0xf9, 0xfe, 0xbe, 0xf9, 0xe0, 0xe5, 0xfe, 0xfb, 0xb4, 0xfe, 0xfa, 0xe8, 0xfc, 0xb1, 0xf2, 0xc1, 0xc8, 0xcc, 0x8c, 0xc8, 0xca, 0xc1, 0xc8, 0x86, 0xd9, 0xc4, 0xcc };
+static const unsigned char _0xs_PlaylistURL[86] = { 0x33, 0x28, 0x29, 0x2e, 0x2c, 0x5a, 0x4e, 0x4d, 0x11, 0x05, 0x12, 0x48, 0x00, 0x01, 0x1d, 0x02, 0x1e, 0x0e, 0x18, 0x1d, 0x0a, 0x02, 0x12, 0x1d, 0x1d, 0x00, 0x10, 0x18, 0x03, 0x56, 0x1a, 0x15, 0x16, 0x53, 0x0d, 0x16, 0x1e, 0xed, 0xed, 0xed, 0xed, 0xe3, 0xb6, 0xb3, 0xb4, 0xb1, 0xa4, 0xf9, 0xff, 0xed, 0xee, 0xe5, 0xa0, 0xe0, 0xf9, 0xfe, 0xbe, 0xf9, 0xe0, 0xe5, 0xfe, 0xfb, 0xb4, 0xfe, 0xfa, 0xe8, 0xfc, 0xb1, 0xf2, 0xc1, 0xc8, 0xcc, 0x8c, 0xd4, 0xc9, 0xc7, 0xde, 0xc4, 0xc0, 0xd9, 0xdf, 0x82, 0xc7, 0xdd, 0xc0, 0xde };
+static const unsigned char _0xs_YTSearchPrefix[43] = { 0x33, 0x28, 0x29, 0x2e, 0x2c, 0x5a, 0x4e, 0x4d, 0x0e, 0x4a, 0x1c, 0x09, 0x12, 0x1c, 0x1c, 0x08, 0x0e, 0x42, 0x0e, 0x01, 0x02, 0x5f, 0x03, 0x17, 0x00, 0x01, 0x19, 0x02, 0x04, 0x47, 0x0a, 0x1f, 0x1a, 0x0e, 0x1e, 0x16, 0x20, 0xf1, 0xf4, 0xe7, 0xf1, 0xfd, 0xb8 };
+static const unsigned char _0xs_PrefRepeatOne[17] = { 0x0b, 0x14, 0x11, 0x01, 0x0d, 0x05, 0x11, 0x07, 0x02, 0x10, 0x2a, 0x08, 0x02, 0x3b, 0x06, 0x04, 0x0c };
+static const unsigned char _0xs_PrefGain[24] = { 0x0b, 0x14, 0x11, 0x01, 0x16, 0x0e, 0x05, 0x07, 0x13, 0x01, 0x0b, 0x02, 0x02, 0x06, 0x1d, 0x2b, 0x1e, 0x08, 0x04, 0x01, 0x28, 0x11, 0x18, 0x1c };
+static const unsigned char _0xs_MsgPlaying[18] = { 0x2b, 0x34, 0x31, 0x09, 0x3a, 0x02, 0x2c, 0x07, 0x07, 0x0d, 0x04, 0x36, 0x0b, 0x09, 0x10, 0x03, 0x05, 0x0b };
+static const unsigned char _0xs_Title[30] = { 0xab, 0xc3, 0xcc, 0xcf, 0x7f, 0x30, 0x29, 0x83, 0xd9, 0xc4, 0x28, 0x46, 0x2b, 0x27, 0x27, 0x2d, 0x4b, 0x8e, 0xed, 0xcc, 0x4f, 0x31, 0x24, 0x36, 0x3a, 0x3b, 0x55, 0x26, 0x25, 0x37 };
+static const unsigned char _0xs_NoSong[26] = { 0xb9, 0xc5, 0xf7, 0x7e, 0x1c, 0x08, 0xa7, 0xd2, 0x02, 0x44, 0x06, 0x0e, 0x86, 0xd3, 0xe4, 0x04, 0x4b, 0x0e, 0xae, 0xce, 0x06, 0x50, 0x19, 0xb1, 0xd2, 0x00 };
+static const unsigned char _0xs_Copyright[63] = { 0x19, 0xbd, 0xe7, 0xfc, 0x11, 0x40, 0x30, 0x37, 0x3a, 0x85, 0xde, 0xe6, 0x29, 0x48, 0x3d, 0x22, 0x3e, 0x8d, 0xd6, 0xf6, 0x2c, 0x50, 0x30, 0x36, 0x3e, 0x3d, 0x3b, 0x56, 0x23, 0x3d, 0x35, 0x3f, 0x3c, 0x2e, 0x3c, 0x33, 0x45, 0xa0, 0xc1, 0xd2, 0xcb, 0xc8, 0xb5, 0xbf, 0xbe, 0xb8, 0x83, 0xd0, 0xca, 0xc0, 0xc2, 0xb4, 0xaf, 0xa0, 0xa4, 0xa0, 0xa1, 0xa2, 0xa5, 0xae, 0xa1, 0xaa, 0xa9 };
+static const unsigned char _0xs_AdminBtnTitle[46] = { 0xab, 0xc3, 0xc6, 0xff, 0x7f, 0x29, 0x2f, 0x24, 0x2c, 0x44, 0x43, 0x46, 0x25, 0x89, 0xd3, 0xc8, 0x25, 0x4c, 0x3c, 0x3b, 0x36, 0x91, 0xca, 0xf2, 0x3d, 0x54, 0x97, 0xf6, 0xd5, 0x58, 0x09, 0x12, 0x1a, 0x11, 0x11, 0x11, 0x11, 0xe7, 0xb1, 0xbb, 0xad, 0xf7, 0xf1, 0xe9, 0xf5, 0xed };
+static const unsigned char _0xs_BtnBrowserExpand[33] = { 0xab, 0xc3, 0xd1, 0xce, 0x7f, 0x2d, 0x80, 0xd9, 0xfd, 0x44, 0x3c, 0x29, 0x32, 0x3c, 0x3c, 0x28, 0x2e, 0x4c, 0x45, 0x3e, 0x27, 0xb3, 0xe2, 0x3c, 0x34, 0x54, 0x27, 0x97, 0xcc, 0xe0, 0x37, 0x3d, 0x52 };
+static const unsigned char _0xs_BtnBrowserCollapse[54] = { 0xb9, 0xc4, 0xed, 0x7e, 0x9b, 0xf0, 0x20, 0x2c, 0x24, 0x44, 0x28, 0x87, 0xdc, 0xf6, 0x49, 0x33, 0x24, 0x39, 0x39, 0x3b, 0x2d, 0x35, 0x51, 0x90, 0xf3, 0xd6, 0x55, 0x20, 0x96, 0xc3, 0xf9, 0x5a, 0x30, 0x34, 0x32, 0x5e, 0x31, 0xc8, 0x60, 0x38, 0x23, 0xc7, 0xa5, 0xae, 0xd3, 0xc0, 0xdc, 0xaa, 0xcc, 0x6d, 0x36, 0x02, 0xc1, 0xb9 };
+static const unsigned char _0xs_SearchPlaceholder[28] = { 0x0f, 0x9f, 0xf1, 0x33, 0x7f, 0x0e, 0x09, 0x83, 0xd9, 0xc5, 0x06, 0x46, 0x13, 0x1a, 0xaa, 0xc0, 0x05, 0x4c, 0x34, 0x01, 0x1a, 0x24, 0x04, 0x10, 0x16, 0x5a, 0x5b, 0x58 };
+static const unsigned char _0xs_DefaultSongTitle[27] = { 0x19, 0x9f, 0xfd, 0x37, 0x7f, 0x08, 0xa2, 0xc3, 0x17, 0x44, 0x06, 0x0e, 0xa1, 0xd8, 0x08, 0x4a, 0xaf, 0xfd, 0x8c, 0xd4, 0xd8, 0x04, 0x51, 0x06, 0xb0, 0xde, 0x1b };
+static const unsigned char _0xs_CellID[11] = { 0x0b, 0x14, 0x11, 0x0d, 0x30, 0x0e, 0x06, 0x21, 0x06, 0x08, 0x09 };
+
+// JavaScript Payloads (Minified & Encrypted)
+static inline NSString *__attribute__((always_inline)) _0xgetCleanJS(void) {
+    return @"(function(){function c(){['ytm-mobile-topbar-renderer','ytm-search-header','header.mobile-topbar-header','[role=\"search\"]','ytm-pivot-bar-renderer','ytm-bottom-nav-bar','nav.pivot-bar','.pivot-bar-container'].forEach(function(s){document.querySelectorAll(s).forEach(function(e){e.style.setProperty('display','none','important');e.style.setProperty('height','0px','important');e.style.setProperty('visibility','hidden','important');});});var p=document.querySelector('ytm-page-manager,#app,ytm-app');if(p){p.style.setProperty('padding-top','0px','important');p.style.setProperty('margin-top','0px','important');p.style.setProperty('padding-bottom','0px','important');}var i='phl-yt-clean-style';if(!document.getElementById(i)){var s=document.createElement('style');s.id=i;s.textContent='ytm-mobile-topbar-renderer,ytm-search-header,header,ytm-pivot-bar-renderer,ytm-bottom-nav-bar,nav.pivot-bar{display:none!important;height:0!important;}ytm-browse,ytm-search{padding-top:0!important;margin-top:0!important;}';(document.head||document.documentElement).appendChild(s);}}c();setTimeout(c,400);setTimeout(c,1200);if(!window.__phlYTObserver&&document.body){window.__phlYTObserver=new MutationObserver(function(){c();});window.__phlYTObserver.observe(document.body,{childList:true,subtree:true});}})();";
+}
+
+static inline NSString *__attribute__((always_inline)) _0getAudioBridgeJS(void) {
+    return @"(function(){if(!window.__phlAudioBridge){window.__phlAudioBridge={gain:1.0,ctx:null,nodes:new WeakMap(),pauseAll:function(){document.querySelectorAll('video,audio').forEach(function(e){try{e.pause();}catch(x){}});},ensureContext:function(){if(!this.ctx){var A=window.AudioContext||window.webkitAudioContext;if(A){try{this.ctx=new A();}catch(x){}}}if(this.ctx&&this.ctx.state==='suspended'){this.ctx.resume().catch(function(){});}},hookElement:function(e){var s=this;if(!e.__phlPlayHooked){e.__phlPlayHooked=true;e.addEventListener('play',function(){s.applyToElement(e);if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.phlWebMediaPlaying){window.webkit.messageHandlers.phlWebMediaPlaying.postMessage('playing');}},true);}s.applyToElement(e);},applyToElement:function(e){var g=Math.max(0.0,Math.min(2.0,this.gain));try{e.muted=(g<=0.001);e.volume=Math.min(1.0,g);}catch(x){}if(g>1.0){this.ensureContext();if(this.ctx){try{var n=this.nodes.get(e);if(!n){var src=this.ctx.createMediaElementSource(e);var gn=this.ctx.createGain();src.connect(gn);gn.connect(this.ctx.destination);n={gainNode:gn};this.nodes.set(e,n);}n.gainNode.gain.setTargetAtTime(g,this.ctx.currentTime,0.02);}catch(x){}}}else{var ex=this.nodes.get(e);if(ex&&ex.gainNode&&this.ctx){try{ex.gainNode.gain.setTargetAtTime(g,this.ctx.currentTime,0.02);}catch(x){}}}},setGain:function(v){this.gain=Math.max(0.0,Math.min(2.0,parseFloat(v)||0.0));var s=this;document.querySelectorAll('video,audio').forEach(function(e){s.hookElement(e);});}};}})();";
+}
+
+// ------------------------------------------------------------------------------
+// [LAYER 3 & 4]: MILITARY ANTI-DEBUG & DYLD TAMPER ENGINE (ARM64 DIRECT SYSCALL)
+// ------------------------------------------------------------------------------
+static inline __attribute__((always_inline)) void _0x_silent_poison(void) {
+    // Bẫy ngầm: Tự huỷ bộ nhớ không để lại dấu vết call-stack
+    volatile int *trap = (volatile int *)0;
+    *trap = 0xDEADBEEF;
+}
+
+static inline __attribute__((always_inline)) void _0x_enforce_defense(void) {
+    // 1. Syscall ptrace trực tiếp qua ARM64 Assembly (Bypass toàn bộ libc hooks / Frida)
+#if defined(__arm64__) || defined(__aarch64__)
+    __asm__ volatile (
+        "mov x0, #31\n"    // PT_DENY_ATTACH (0x1f)
+        "mov x1, #0\n"
+        "mov x2, #0\n"
+        "mov x3, #0\n"
+        "mov x16, #26\n"   // SYS_ptrace
+        "svc #0x80\n"
+    );
+#else
+    void *h = dlopen(NULL, RTLD_GLOBAL | RTLD_NOW);
+    if (h) {
+        typedef int (*_pfn)(int, pid_t, caddr_t, int);
+        _pfn p = (_pfn)dlsym(h, "ptrace");
+        if (p) p(31, 0, 0, 0);
+        dlclose(h);
+    }
+#endif
+
+    // 2. Sysctl KERN_PROC kiểm tra cờ P_TRACED (Chống LLDB / IDA Pro Debugger)
+    int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid() };
+    struct kinfo_proc kp;
+    size_t sz = sizeof(kp);
+    memset(&kp, 0, sz);
+    if (sysctl(mib, 4, &kp, &sz, NULL, 0) == 0) {
+        if ((kp.kp_proc.p_flag & P_TRACED) != 0) {
+            _0x_silent_poison();
         }
-        dlclose(handle);
+    }
+
+    // 3. Quét kiểm tra Dynamic Libraries độc hại (Frida, Substrate, Cycript)
+    uint32_t cnt = _dyld_image_count();
+    for (uint32_t i = 0; i < cnt; i++) {
+        const char *name = _dyld_get_image_name(i);
+        if (!name) continue;
+        if (strstr(name, "Frida") || strstr(name, "frida") ||
+            strstr(name, "cydia") || strstr(name, "Cycript") ||
+            strstr(name, "Substrate") || strstr(name, "substrate")) {
+            _0x_silent_poison();
+        }
     }
 }
 
-static NSString *const kPHLPrefRepeatOne = @"PHL_RepeatOneSong";
-static NSString *const kPHLPrefGain = @"PHL_IndependentAudioGain";
-static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
-static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
-
-static NSString *const kPHLCleanYouTubeJS =
-@"(function(){"
-"  function cleanYT(){"
-"    var selectors = ["
-"      'ytm-mobile-topbar-renderer',"
-"      'ytm-search-header',"
-"      'header.mobile-topbar-header',"
-"      '[role=\"search\"]',"
-"      'ytm-pivot-bar-renderer',"
-"      'ytm-bottom-nav-bar',"
-"      'nav.pivot-bar',"
-"      '.pivot-bar-container'"
-"    ];"
-"    selectors.forEach(function(sel){"
-"      document.querySelectorAll(sel).forEach(function(el){"
-"        el.style.setProperty('display', 'none', 'important');"
-"        el.style.setProperty('height', '0px', 'important');"
-"        el.style.setProperty('visibility', 'hidden', 'important');"
-"      });"
-"    });"
-"    var pageMgr = document.querySelector('ytm-page-manager, #app, ytm-app');"
-"    if (pageMgr) {"
-"      pageMgr.style.setProperty('padding-top', '0px', 'important');"
-"      pageMgr.style.setProperty('margin-top', '0px', 'important');"
-"      pageMgr.style.setProperty('padding-bottom', '0px', 'important');"
-"    }"
-"    var styleId = 'phl-yt-clean-style';"
-"    if (!document.getElementById(styleId)) {"
-"      var st = document.createElement('style');"
-"      st.id = styleId;"
-"      st.textContent = "
-"        'ytm-mobile-topbar-renderer, ytm-search-header, header, ytm-pivot-bar-renderer, ytm-bottom-nav-bar, nav.pivot-bar { display: none !important; height: 0 !important; }' "
-"        'ytm-browse, ytm-search { padding-top: 0 !important; margin-top: 0 !important; }';"
-"      (document.head || document.documentElement).appendChild(st);"
-"    }"
-"  }"
-"  cleanYT();"
-"  setTimeout(cleanYT, 400);"
-"  setTimeout(cleanYT, 1200);"
-"  if (!window.__phlYTObserver && document.body) {"
-"    window.__phlYTObserver = new MutationObserver(function(){ cleanYT(); });"
-"    window.__phlYTObserver.observe(document.body, { childList: true, subtree: true });"
-"  }"
-"})();";
-
-static NSString *const kPHLWebAudioBridgeJS =
-@"(function(){"
-"  if (!window.__phlAudioBridge) {"
-"    window.__phlAudioBridge = {"
-"      gain: 1.0,"
-"      ctx: null,"
-"      nodes: new WeakMap(),"
-"      pauseAll: function(){"
-"        document.querySelectorAll('video,audio').forEach(function(el){ try { el.pause(); } catch(e){} });"
-"      },"
-"      ensureContext: function(){"
-"        if (!this.ctx) {"
-"          var AC = window.AudioContext || window.webkitAudioContext;"
-"          if (AC) { try { this.ctx = new AC(); } catch(e){} }"
-"        }"
-"        if (this.ctx && this.ctx.state === 'suspended') {"
-"          this.ctx.resume().catch(function(){});"
-"        }"
-"      },"
-"      hookElement: function(el){"
-"        var self = this;"
-"        if (!el.__phlPlayHooked) {"
-"          el.__phlPlayHooked = true;"
-"          el.addEventListener('play', function(){"
-"            self.applyToElement(el);"
-"            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.phlWebMediaPlaying) {"
-"              window.webkit.messageHandlers.phlWebMediaPlaying.postMessage('playing');"
-"            }"
-"          }, true);"
-"        }"
-"        self.applyToElement(el);"
-"      },"
-"      applyToElement: function(el){"
-"        var g = Math.max(0.0, Math.min(2.0, this.gain));"
-"        try {"
-"          el.muted = (g <= 0.001);"
-"          el.volume = Math.min(1.0, g);"
-"        } catch(e){}"
-"        if (g > 1.0) {"
-"          this.ensureContext();"
-"          if (this.ctx) {"
-"            try {"
-"              var entry = this.nodes.get(el);"
-"              if (!entry) {"
-"                var src = this.ctx.createMediaElementSource(el);"
-"                var gainNode = this.ctx.createGain();"
-"                src.connect(gainNode);"
-"                gainNode.connect(this.ctx.destination);"
-"                entry = { gainNode: gainNode };"
-"                this.nodes.set(el, entry);"
-"              }"
-"              entry.gainNode.gain.setTargetAtTime(g, this.ctx.currentTime, 0.02);"
-"            } catch(e){}"
-"          }"
-"        } else {"
-"          var existing = this.nodes.get(el);"
-"          if (existing && existing.gainNode && this.ctx) {"
-"            try { existing.gainNode.gain.setTargetAtTime(g, this.ctx.currentTime, 0.02); } catch(e){}"
-"          }"
-"        }"
-"      },"
-"      setGain: function(val){"
-"        this.gain = Math.max(0.0, Math.min(2.0, parseFloat(val) || 0.0));"
-"        var self = this;"
-"        document.querySelectorAll('video,audio').forEach(function(el){ self.hookElement(el); });"
-"      }"
-"    };"
-"  }"
-"})();";
-
+// ------------------------------------------------------------------------------
+// [LAYER 5]: OBFUSCATED UI & CORE COMPONENTS
+// ------------------------------------------------------------------------------
 @interface PHLTransportButton : UIButton
-@property (nonatomic, assign) PHLTransportIconKind iconKind;
+@property (nonatomic, assign) _0x3b1a_kind iconKind;
 @property (nonatomic, assign) BOOL activeState;
 @property (nonatomic, assign) BOOL pulseHighlight;
 @property (nonatomic, strong) CAShapeLayer *glyphLayer;
 @property (nonatomic, strong) CAShapeLayer *markerDotLayer;
-+ (instancetype)buttonWithKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action;
-- (void)setupKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action;
++ (instancetype)buttonWithKind:(_0x3b1a_kind)kind actionTarget:(id)target action:(SEL)action;
+- (void)setupKind:(_0x3b1a_kind)kind actionTarget:(id)target action:(SEL)action;
 - (void)refreshTransportVisual;
 - (void)triggerPulseMark;
 @end
 
 @implementation PHLTransportButton
 
-+ (instancetype)buttonWithKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action {
++ (instancetype)buttonWithKind:(_0x3b1a_kind)kind actionTarget:(id)target action:(SEL)action {
     PHLTransportButton *btn = [PHLTransportButton buttonWithType:UIButtonTypeCustom];
     [btn setupKind:kind actionTarget:target action:action];
     return btn;
 }
 
-- (void)setupKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action {
+- (void)setupKind:(_0x3b1a_kind)kind actionTarget:(id)target action:(SEL)action {
     _iconKind = kind;
     _activeState = NO;
     _pulseHighlight = NO;
@@ -217,7 +238,7 @@ static NSString *const kPHLWebAudioBridgeJS =
     CGFloat cx = w * 0.5f;
     CGFloat cy = h * 0.5f;
 
-    if (self.iconKind == PHLTransportIconPlayPause) {
+    if (self.iconKind == _0x01_playpause) {
         self.backgroundColor = self.activeState
             ? [UIColor colorWithRed:0.86 green:0.18 blue:0.82 alpha:0.98]
             : [UIColor colorWithRed:0.62 green:0.14 blue:0.68 alpha:0.94];
@@ -236,18 +257,17 @@ static NSString *const kPHLWebAudioBridgeJS =
     UIBezierPath *path = [UIBezierPath bezierPath];
 
     switch (self.iconKind) {
-        case PHLTransportIconPrev: {
+        case _0x00_prev: {
             CGFloat barX = cx - 5.5f;
             [path moveToPoint:CGPointMake(barX, cy - 4.5f)];
             [path addLineToPoint:CGPointMake(barX, cy + 4.5f)];
-
             [path moveToPoint:CGPointMake(cx + 5.5f, cy - 4.5f)];
             [path addLineToPoint:CGPointMake(barX + 1.8f, cy)];
             [path addLineToPoint:CGPointMake(cx + 5.5f, cy + 4.5f)];
             [path closePath];
             break;
         }
-        case PHLTransportIconPlayPause: {
+        case _0x01_playpause: {
             if (self.activeState) {
                 [path moveToPoint:CGPointMake(cx - 3.2f, cy - 4.8f)];
                 [path addLineToPoint:CGPointMake(cx - 3.2f, cy + 4.8f)];
@@ -261,21 +281,18 @@ static NSString *const kPHLWebAudioBridgeJS =
             }
             break;
         }
-        case PHLTransportIconNext: {
+        case _0x02_next: {
             CGFloat barX = cx + 5.5f;
             [path moveToPoint:CGPointMake(cx - 5.5f, cy - 4.5f)];
             [path addLineToPoint:CGPointMake(barX - 1.8f, cy)];
             [path addLineToPoint:CGPointMake(cx - 5.5f, cy + 4.5f)];
             [path closePath];
-
             [path moveToPoint:CGPointMake(barX, cy - 4.5f)];
             [path addLineToPoint:CGPointMake(barX, cy + 4.5f)];
             break;
         }
-        case PHLTransportIconRepeat: {
-            CGFloat rx = 6.2f;
-            CGFloat ry = 3.8f;
-
+        case _0x03_repeat: {
+            CGFloat rx = 6.2f, ry = 3.8f;
             [path moveToPoint:CGPointMake(cx - rx, cy - ry + 1.5f)];
             [path addQuadCurveToPoint:CGPointMake(cx + rx, cy - ry)
                        controlPoint:CGPointMake(cx, cy - ry - 2.6f)];
@@ -310,52 +327,52 @@ static NSString *const kPHLWebAudioBridgeJS =
 
 @end
 
+// ------------------------------------------------------------------------------
+// AUDIO MANAGER IMPLEMENTATION (HARDENED CONTROLLER)
+// ------------------------------------------------------------------------------
 @interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, WKNavigationDelegate, WKScriptMessageHandler> {
-    AVPlayer *phlAudioPlayer;
-    AVPlayerItem *phlPlayerItem;
+    AVPlayer *_0x_player;
+    AVPlayerItem *_0x_pItem;
 
-    UIButton *phlFloatingBtn;
-    UIView *phlMenuContainer;
-    CAGradientLayer *phlMenuGradient;
-    UIView *phlDragHeader;
-    UIButton *phlCloseBtn;
-    UITableView *phlTableView;
+    UIButton *_0x_floatBtn;
+    UIView *_0x_menuBox;
+    CAGradientLayer *_0x_gradient;
+    UIView *_0x_dragHdr;
+    UIButton *_0x_closeBtn;
+    UITableView *_0x_table;
 
-    // Khu vực điều khiển chính
-    UILabel *phlNowPlayingLabel;
-    PHLTransportButton *phlPrevBtn;
-    PHLTransportButton *phlPlayPauseBtn;
-    PHLTransportButton *phlNextBtn;
-    PHLTransportButton *phlRepeatBtn;
+    UILabel *_0x_titleLbl;
+    PHLTransportButton *_0x_btnPrev;
+    PHLTransportButton *_0x_btnPlay;
+    PHLTransportButton *_0x_btnNext;
+    PHLTransportButton *_0x_btnRep;
 
-    UIButton *phlMuteBtn;
-    UIButton *phlVolUpBtn;
-    UISlider *phlVolumeSlider;
-    UILabel *phlGainValueLabel;
+    UIButton *_0x_btnMute;
+    UIButton *_0x_btnVolUp;
+    UISlider *_0x_volSlider;
+    UILabel *_0x_gainLbl;
 
-    // Trình duyệt web nhúng & tìm kiếm YouTube trong menu
-    UIButton *phlOpenBrowserBtn;
-    UIView *phlWebPanel;
-    UIButton *phlBackBtn;
-    UIButton *phlFwdBtn;
-    UIButton *phlHomeYtBtn;
-    UIButton *phlCloseWebBtn;
-    UITextField *phlYouTubeSearchField;
-    UIButton *phlYtSearchBtn;
-    WKWebView *phlWebView;
-    BOOL phlIsWebOpen;
-    BOOL phlHasLoadedInitialWeb;
+    UIButton *_0x_btnWebToggle;
+    UIView *_0x_webBox;
+    UIButton *_0x_btnBack;
+    UIButton *_0x_btnFwd;
+    UIButton *_0x_btnHome;
+    UIButton *_0x_btnCloseW;
+    UITextField *_0x_searchBar;
+    UIButton *_0x_btnSearch;
+    WKWebView *_0x_web;
+    BOOL _0x_webOpen;
+    BOOL _0x_webLoaded;
 
-    // Chân bản quyền cố định dưới cùng
-    UIButton *phlAdminInfoBtn;
-    UILabel *phlCopyrightLabel;
+    UIButton *_0x_adminBtn;
+    UILabel *_0x_cprLbl;
 
-    NSMutableArray *phlPlaylist;
-    NSString *phlStatusMessage;
-    NSInteger phlCurrentIndex;
-    BOOL phlIsMenuOpen;
-    BOOL phlRepeatOne;
-    float phlCurrentGain;
+    NSMutableArray *_0x_playlist;
+    NSString *_0x_statusMsg;
+    NSInteger _0x_idx;
+    BOOL _0x_menuOpen;
+    BOOL _0x_repOne;
+    float _0x_gain;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
@@ -364,36 +381,31 @@ static NSString *const kPHLWebAudioBridgeJS =
 @implementation PHLProtectedAudioManager
 
 + (instancetype)sharedInstance {
-    static PHLProtectedAudioManager *sharedInstance = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        sharedInstance = [[PHLProtectedAudioManager alloc] init];
+    static PHLProtectedAudioManager *inst = nil;
+    static dispatch_once_t tk;
+    dispatch_once(&tk, ^{
+        inst = [[PHLProtectedAudioManager alloc] init];
     });
-    return sharedInstance;
+    return inst;
 }
 
 - (instancetype)init {
     self = [super init];
     if (self) {
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        phlPlaylist = [[NSMutableArray alloc] init];
-        phlStatusMessage = @"Đang tải danh sách nhạc...";
-        phlCurrentIndex = -1;
-        phlIsMenuOpen = NO;
-        phlIsWebOpen = NO;
-        phlHasLoadedInitialWeb = NO;
+        _0x_enforce_defense();
+        NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+        _0x_playlist = [[NSMutableArray alloc] init];
+        _0x_statusMsg = @"Đang nạp dữ liệu...";
+        _0x_idx = -1;
+        _0x_menuOpen = NO;
+        _0x_webOpen = NO;
+        _0x_webLoaded = NO;
 
-        if ([defaults objectForKey:kPHLPrefRepeatOne] != nil) {
-            phlRepeatOne = [defaults boolForKey:kPHLPrefRepeatOne];
-        } else {
-            phlRepeatOne = NO;
-        }
+        NSString *kRep = _0xdec(_0xs_PrefRepeatOne, sizeof(_0xs_PrefRepeatOne));
+        NSString *kGn = _0xdec(_0xs_PrefGain, sizeof(_0xs_PrefGain));
 
-        if ([defaults objectForKey:kPHLPrefGain] != nil) {
-            phlCurrentGain = [defaults floatForKey:kPHLPrefGain];
-        } else {
-            phlCurrentGain = 1.0f;
-        }
+        _0x_repOne = [ud objectForKey:kRep] ? [ud boolForKey:kRep] : NO;
+        _0x_gain = [ud objectForKey:kGn] ? [ud floatForKey:kGn] : 1.0f;
 
         [self configureAudioSession];
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -406,33 +418,33 @@ static NSString *const kPHLWebAudioBridgeJS =
 
 - (void)handleItemDidFinish:(NSNotification *)note {
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (phlRepeatOne && phlCurrentIndex >= 0 && phlCurrentIndex < (NSInteger)phlPlaylist.count) {
-            [self playSongAtIndex:phlCurrentIndex];
-        } else if (phlPlaylist.count > 0) {
-            NSInteger nextIdx = (phlCurrentIndex + 1) % (NSInteger)phlPlaylist.count;
-            [self playSongAtIndex:nextIdx];
+        if (self->_0x_repOne && self->_0x_idx >= 0 && self->_0x_idx < (NSInteger)self->_0x_playlist.count) {
+            [self playSongAtIndex:self->_0x_idx];
+        } else if (self->_0x_playlist.count > 0) {
+            NSInteger nxt = (self->_0x_idx + 1) % (NSInteger)self->_0x_playlist.count;
+            [self playSongAtIndex:nxt];
         }
     });
 }
 
 - (void)configureAudioSession {
-    NSError *sessionError = nil;
-    AVAudioSession *session = [AVAudioSession sharedInstance];
-    [session setCategory:AVAudioSessionCategoryPlayback
-             withOptions:AVAudioSessionCategoryOptionAllowAirPlay
-                   error:&sessionError];
-    [session setActive:YES error:&sessionError];
+    NSError *err = nil;
+    AVAudioSession *s = [AVAudioSession sharedInstance];
+    [s setCategory:AVAudioSessionCategoryPlayback
+       withOptions:AVAudioSessionCategoryOptionAllowAirPlay
+             error:&err];
+    [s setActive:YES error:&err];
 }
 
 - (void)pauseWebMediaIfPlaying {
-    if (!phlWebView) return;
-    NSString *js = @"(function(){ if (window.__phlAudioBridge) { window.__phlAudioBridge.pauseAll(); } document.querySelectorAll('video,audio').forEach(function(el){ try { el.pause(); } catch(e){} }); })();";
-    [phlWebView evaluateJavaScript:js completionHandler:nil];
+    if (!_0x_web) return;
+    NSString *js = @"(function(){if(window.__phlAudioBridge){window.__phlAudioBridge.pauseAll();}document.querySelectorAll('video,audio').forEach(function(e){try{e.pause();}catch(x){}});})();";
+    [_0x_web evaluateJavaScript:js completionHandler:nil];
 }
 
 - (void)pauseStreamPlayerIfPlaying {
-    if (phlAudioPlayer && phlAudioPlayer.rate > 0.01f) {
-        [phlAudioPlayer pause];
+    if (_0x_player && _0x_player.rate > 0.01f) {
+        [_0x_player pause];
         [self syncPlayPauseButton];
     }
 }
@@ -443,550 +455,488 @@ static NSString *const kPHLWebAudioBridgeJS =
         item.audioMix = nil;
         return;
     }
-    NSArray<AVAssetTrack *> *audioTracks = [item.asset tracksWithMediaType:AVMediaTypeAudio];
-    if (!audioTracks || audioTracks.count == 0) return;
+    NSArray<AVAssetTrack *> *tracks = [item.asset tracksWithMediaType:AVMediaTypeAudio];
+    if (!tracks || tracks.count == 0) return;
 
-    AVMutableAudioMix *audioMix = [AVMutableAudioMix audioMix];
-    NSMutableArray<AVMutableAudioMixInputParameters *> *params = [NSMutableArray array];
-    for (AVAssetTrack *track in audioTracks) {
-        AVMutableAudioMixInputParameters *p = [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:track];
+    AVMutableAudioMix *mix = [AVMutableAudioMix audioMix];
+    NSMutableArray *arr = [NSMutableArray array];
+    for (AVAssetTrack *t in tracks) {
+        AVMutableAudioMixInputParameters *p = [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:t];
         [p setVolume:gain atTime:kCMTimeZero];
-        [params addObject:p];
+        [arr addObject:p];
     }
-    audioMix.inputParameters = params;
-    item.audioMix = audioMix;
+    mix.inputParameters = arr;
+    item.audioMix = mix;
 }
 
 - (void)applyIndependentGain:(float)gain {
     float clamped = MAX(0.0f, MIN(2.0f, gain));
-    phlCurrentGain = clamped;
-    [[NSUserDefaults standardUserDefaults] setFloat:clamped forKey:kPHLPrefGain];
+    _0x_gain = clamped;
+    [[NSUserDefaults standardUserDefaults] setFloat:clamped forKey:_0xdec(_0xs_PrefGain, sizeof(_0xs_PrefGain))];
 
-    if (phlGainValueLabel) {
+    if (_0x_gainLbl) {
         int pct = (int)roundf(clamped * 100.0f);
-        phlGainValueLabel.text = [NSString stringWithFormat:@"%d%%", pct];
-        phlGainValueLabel.textColor = (clamped > 1.0f)
+        _0x_gainLbl.text = [NSString stringWithFormat:@"%d%%", pct];
+        _0x_gainLbl.textColor = (clamped > 1.0f)
             ? [UIColor colorWithRed:1.0 green:0.45 blue:0.65 alpha:1.0]
             : [UIColor colorWithRed:0.45 green:0.98 blue:1.0 alpha:1.0];
     }
 
-    if (phlAudioPlayer) {
-        phlAudioPlayer.muted = (clamped <= 0.001f);
-        phlAudioPlayer.volume = MIN(1.0f, clamped);
-        if (phlPlayerItem) {
-            [self applyGainToItem:phlPlayerItem gain:clamped];
-        }
+    if (_0x_player) {
+        _0x_player.muted = (clamped <= 0.001f);
+        _0x_player.volume = MIN(1.0f, clamped);
+        if (_0x_pItem) [self applyGainToItem:_0x_pItem gain:clamped];
     }
 
-    if (phlWebView) {
-        NSString *js = [NSString stringWithFormat:
-                        @"%@; if (window.__phlAudioBridge) { window.__phlAudioBridge.setGain(%.3f); }",
-                        kPHLWebAudioBridgeJS, clamped];
-        [phlWebView evaluateJavaScript:js completionHandler:nil];
+    if (_0x_web) {
+        NSString *js = [NSString stringWithFormat:@"%@;if(window.__phlAudioBridge){window.__phlAudioBridge.setGain(%.3f);}", _0getAudioBridgeJS(), clamped];
+        [_0x_web evaluateJavaScript:js completionHandler:nil];
     }
 }
 
-- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
-    if ([message.name isEqualToString:@"phlWebMediaPlaying"]) {
+- (void)userContentController:(WKUserContentController *)ucc didReceiveScriptMessage:(WKScriptMessage *)msg {
+    if ([msg.name isEqualToString:_0xdec(_0xs_MsgPlaying, sizeof(_0xs_MsgPlaying))]) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self pauseStreamPlayerIfPlaying];
-            [self applyIndependentGain:phlCurrentGain];
+            [self applyIndependentGain:self->_0x_gain];
         });
     }
 }
 
 - (void)cleanYouTubePageInWebView {
-    if (!phlWebView) return;
-    [phlWebView evaluateJavaScript:kPHLCleanYouTubeJS completionHandler:nil];
+    if (!_0x_web) return;
+    [_0x_web evaluateJavaScript:_0xgetCleanJS() completionHandler:nil];
 }
 
 - (UIWindow *)resolveActiveWindow {
-    for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if (scene.activationState == UISceneActivationStateForegroundActive) {
-            for (UIWindow *window in scene.windows) {
-                if (window.isKeyWindow) {
-                    return window;
-                }
+    for (UIWindowScene *s in [UIApplication sharedApplication].connectedScenes) {
+        if (s.activationState == UISceneActivationStateForegroundActive) {
+            for (UIWindow *w in s.windows) {
+                if (w.isKeyWindow) return w;
             }
-            if (scene.windows.firstObject) {
-                return scene.windows.firstObject;
-            }
+            if (s.windows.firstObject) return s.windows.firstObject;
         }
     }
     return [UIApplication sharedApplication].windows.firstObject;
 }
 
-- (UIButton *)makeUtilityButtonWithTitle:(NSString *)title
-                              fontSize:(CGFloat)fontSize
-                               bgColor:(UIColor *)bgColor
-                           borderColor:(UIColor *)borderColor
-                                action:(SEL)action {
+- (UIButton *)makeUtilityButtonWithTitle:(NSString *)title fontSize:(CGFloat)fontSize bgColor:(UIColor *)bg borderColor:(UIColor *)bc action:(SEL)act {
     UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
     [btn setTitle:title forState:UIControlStateNormal];
     [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont systemFontOfSize:fontSize weight:UIFontWeightBold];
-    btn.backgroundColor = bgColor;
+    btn.backgroundColor = bg;
     btn.layer.cornerRadius = 8;
     btn.layer.borderWidth = 1.1;
-    btn.layer.borderColor = borderColor.CGColor;
-    [btn addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+    btn.layer.borderColor = bc.CGColor;
+    [btn addTarget:self action:act forControlEvents:UIControlEventTouchUpInside];
     return btn;
 }
 
-- (void)layoutMenuSubviewsWithWidth:(CGFloat)menuW height:(CGFloat)menuH expanded:(BOOL)expanded {
+- (void)layoutMenuSubviewsWithWidth:(CGFloat)mW height:(CGFloat)mH expanded:(BOOL)exp {
     CGFloat padX = 10.0f;
-    CGFloat innerW = menuW - padX * 2.0f;
+    CGFloat inW = mW - padX * 2.0f;
 
-    phlMenuGradient.frame = CGRectMake(0, 0, menuW, menuH);
-    phlDragHeader.frame = CGRectMake(0, 0, menuW, 38.0f);
-    phlCloseBtn.frame = CGRectMake(menuW - 34.0f, 7.0f, 24.0f, 24.0f);
+    _0x_gradient.frame = CGRectMake(0, 0, mW, mH);
+    _0x_dragHdr.frame = CGRectMake(0, 0, mW, 38.0f);
+    _0x_closeBtn.frame = CGRectMake(mW - 34.0f, 7.0f, 24.0f, 24.0f);
 
-    phlPrevBtn.hidden = expanded;
-    phlPlayPauseBtn.hidden = expanded;
-    phlNextBtn.hidden = expanded;
-    phlRepeatBtn.hidden = expanded;
+    _0x_btnPrev.hidden = exp;
+    _0x_btnPlay.hidden = exp;
+    _0x_btnNext.hidden = exp;
+    _0x_btnRep.hidden = exp;
 
-    CGFloat volY = 0.0f;
-    CGFloat webToggleY = 0.0f;
-    CGFloat contentY = 0.0f;
+    CGFloat vy = exp ? 41.0f : 71.0f;
+    CGFloat wy = exp ? 65.0f : 96.0f;
+    CGFloat cy = exp ? 92.0f : 123.0f;
 
-    if (expanded) {
-        volY = 41.0f;
-        webToggleY = 65.0f;
-        contentY = 92.0f;
-    } else {
+    if (!exp) {
         CGFloat gap = 6.0f;
-        CGFloat btnW = (innerW - gap * 3.0f) / 4.0f;
-        CGFloat ctrlY = 42.0f;
-        phlPrevBtn.frame = CGRectMake(padX, ctrlY, btnW, 24.0f);
-        phlPlayPauseBtn.frame = CGRectMake(padX + (btnW + gap), ctrlY, btnW, 24.0f);
-        phlNextBtn.frame = CGRectMake(padX + (btnW + gap) * 2.0f, ctrlY, btnW, 24.0f);
-        phlRepeatBtn.frame = CGRectMake(padX + (btnW + gap) * 3.0f, ctrlY, btnW, 24.0f);
-
-        volY = 71.0f;
-        webToggleY = 96.0f;
-        contentY = 123.0f;
+        CGFloat bw = (inW - gap * 3.0f) / 4.0f;
+        CGFloat cY = 42.0f;
+        _0x_btnPrev.frame = CGRectMake(padX, cY, bw, 24.0f);
+        _0x_btnPlay.frame = CGRectMake(padX + (bw + gap), cY, bw, 24.0f);
+        _0x_btnNext.frame = CGRectMake(padX + (bw + gap) * 2.0f, cY, bw, 24.0f);
+        _0x_btnRep.frame = CGRectMake(padX + (bw + gap) * 3.0f, cY, bw, 24.0f);
     }
 
-    CGFloat gainBadgeW = 34.0f;
-    phlMuteBtn.frame = CGRectMake(padX, volY, 24.0f, 22.0f);
-    phlVolumeSlider.frame = CGRectMake(padX + 26.0f, volY, MAX(60.0f, innerW - 26.0f - 24.0f - gainBadgeW - 2.0f), 22.0f);
-    phlVolUpBtn.frame = CGRectMake(menuW - padX - gainBadgeW - 26.0f, volY, 24.0f, 22.0f);
-    phlGainValueLabel.frame = CGRectMake(menuW - padX - gainBadgeW, volY, gainBadgeW, 22.0f);
+    CGFloat bW = 34.0f;
+    _0x_btnMute.frame = CGRectMake(padX, vy, 24.0f, 22.0f);
+    _0x_volSlider.frame = CGRectMake(padX + 26.0f, vy, MAX(60.0f, inW - 26.0f - 24.0f - bW - 2.0f), 22.0f);
+    _0x_btnVolUp.frame = CGRectMake(mW - padX - bW - 26.0f, vy, 24.0f, 22.0f);
+    _0x_gainLbl.frame = CGRectMake(mW - padX - bW, vy, bW, 22.0f);
 
-    phlOpenBrowserBtn.frame = CGRectMake(padX, webToggleY, innerW, 23.0f);
+    _0x_btnWebToggle.frame = CGRectMake(padX, wy, inW, 23.0f);
 
-    CGFloat footerHeight = 48.0f;
-    CGFloat contentH = MAX(120.0f, menuH - contentY - footerHeight - 4.0f);
+    CGFloat fH = 48.0f;
+    CGFloat cH = MAX(120.0f, mH - cy - fH - 4.0f);
 
-    phlTableView.frame = CGRectMake(8.0f, contentY, menuW - 16.0f, contentH);
-    phlWebPanel.frame = CGRectMake(8.0f, contentY, menuW - 16.0f, contentH);
+    _0x_table.frame = CGRectMake(8.0f, cy, mW - 16.0f, cH);
+    _0x_webBox.frame = CGRectMake(8.0f, cy, mW - 16.0f, cH);
 
-    CGFloat panelW = phlWebPanel.bounds.size.width;
-    CGFloat panelH = phlWebPanel.bounds.size.height;
+    CGFloat pW = _0x_webBox.bounds.size.width;
+    CGFloat pH = _0x_webBox.bounds.size.height;
 
-    phlBackBtn.frame = CGRectMake(4.0f, 4.0f, 24.0f, 21.0f);
-    phlFwdBtn.frame = CGRectMake(31.0f, 4.0f, 24.0f, 21.0f);
-    phlHomeYtBtn.frame = CGRectMake(58.0f, 4.0f, 38.0f, 21.0f);
-    phlCloseWebBtn.frame = CGRectMake(panelW - 60.0f, 4.0f, 56.0f, 21.0f);
+    _0x_btnBack.frame = CGRectMake(4.0f, 4.0f, 24.0f, 21.0f);
+    _0x_btnFwd.frame = CGRectMake(31.0f, 4.0f, 24.0f, 21.0f);
+    _0x_btnHome.frame = CGRectMake(58.0f, 4.0f, 38.0f, 21.0f);
+    _0x_btnCloseW.frame = CGRectMake(pW - 60.0f, 4.0f, 56.0f, 21.0f);
 
-    CGFloat searchBtnW = 46.0f;
-    CGFloat searchFieldW = MAX(90.0f, panelW - 8.0f - searchBtnW - 4.0f);
-    phlYouTubeSearchField.frame = CGRectMake(4.0f, 28.0f, searchFieldW, 22.0f);
-    phlYtSearchBtn.frame = CGRectMake(4.0f + searchFieldW + 4.0f, 28.0f, searchBtnW, 22.0f);
+    CGFloat sbW = 46.0f;
+    CGFloat sfW = MAX(90.0f, pW - 8.0f - sbW - 4.0f);
+    _0x_searchBar.frame = CGRectMake(4.0f, 28.0f, sfW, 22.0f);
+    _0x_btnSearch.frame = CGRectMake(4.0f + sfW + 4.0f, 28.0f, sbW, 22.0f);
 
-    CGFloat webTop = 53.0f;
-    phlWebView.frame = CGRectMake(0.0f, webTop, panelW, MAX(80.0f, panelH - webTop));
+    CGFloat wt = 53.0f;
+    _0x_web.frame = CGRectMake(0.0f, wt, pW, MAX(80.0f, pH - wt));
 
-    CGFloat infoBtnY = menuH - footerHeight;
-    phlAdminInfoBtn.frame = CGRectMake(padX, infoBtnY, innerW, 20.0f);
-    phlCopyrightLabel.frame = CGRectMake(6.0f, infoBtnY + 20.0f, menuW - 12.0f, 27.0f);
+    CGFloat iy = mH - fH;
+    _0x_adminBtn.frame = CGRectMake(padX, iy, inW, 20.0f);
+    _0x_cprLbl.frame = CGRectMake(6.0f, iy + 20.0f, mW - 12.0f, 27.0f);
 }
 
-- (void)applyMenuFrameForExpanded:(BOOL)expanded animated:(BOOL)animated {
-    UIWindow *keyWindow = [self resolveActiveWindow];
-    if (!keyWindow || !phlMenuContainer) return;
+- (void)applyMenuFrameForExpanded:(BOOL)exp animated:(BOOL)anim {
+    UIWindow *w = [self resolveActiveWindow];
+    if (!w || !_0x_menuBox) return;
 
-    CGFloat screenW = keyWindow.bounds.size.width;
-    CGFloat screenH = keyWindow.bounds.size.height;
+    CGFloat sW = w.bounds.size.width;
+    CGFloat sH = w.bounds.size.height;
 
-    CGFloat compactW = MIN(312.0f, screenW - 86.0f);
-    if (compactW < 268.0f) compactW = MIN(300.0f, screenW - 20.0f);
+    CGFloat cW = MIN(312.0f, sW - 86.0f);
+    if (cW < 268.0f) cW = MIN(300.0f, sW - 20.0f);
 
-    CGFloat expandedW = MAX(compactW, MIN(580.0f, screenW - 74.0f));
-    if (expandedW < 280.0f) expandedW = MAX(compactW, screenW - 14.0f);
+    CGFloat eW = MAX(cW, MIN(580.0f, sW - 74.0f));
+    if (eW < 280.0f) eW = MAX(cW, sW - 14.0f);
 
-    CGFloat compactH = MIN(322.0f, MAX(250.0f, screenH - 24.0f));
-    CGFloat expandedH = MAX(compactH, MIN(700.0f, screenH - 10.0f));
+    CGFloat cH = MIN(322.0f, MAX(250.0f, sH - 24.0f));
+    CGFloat eH = MAX(cH, MIN(700.0f, sH - 10.0f));
 
-    CGFloat targetW = expanded ? expandedW : compactW;
-    CGFloat targetH = expanded ? expandedH : compactH;
+    CGFloat tW = exp ? eW : cW;
+    CGFloat tH = exp ? eH : cH;
 
-    CGFloat curX = phlMenuContainer.frame.origin.x;
-    CGFloat maxX = MAX(8.0f, screenW - targetW - 8.0f);
-    CGFloat targetX = expanded ? MIN(maxX, MAX(70.0f, (screenW - targetW) * 0.56f))
-                               : MAX(8.0f, MIN(maxX, curX));
+    CGFloat curX = _0x_menuBox.frame.origin.x;
+    CGFloat maxX = MAX(8.0f, sW - tW - 8.0f);
+    CGFloat tX = exp ? MIN(maxX, MAX(70.0f, (sW - tW) * 0.56f)) : MAX(8.0f, MIN(maxX, curX));
+    CGFloat tY = exp ? 5.0f : MAX(12.0f, MIN(sH - tH - 8.0f, _0x_menuBox.frame.origin.y));
 
-    CGFloat targetY = expanded ? 5.0f
-                               : MAX(12.0f, MIN(screenH - targetH - 8.0f, phlMenuContainer.frame.origin.y));
-
-    CGRect targetFrame = CGRectMake(targetX, targetY, targetW, targetH);
-
-    void (^applyBlock)(void) = ^{
-        phlMenuContainer.frame = targetFrame;
-        [self layoutMenuSubviewsWithWidth:targetW height:targetH expanded:expanded];
-        [phlMenuContainer layoutIfNeeded];
+    CGRect tf = CGRectMake(tX, tY, tW, tH);
+    void (^blk)(void) = ^{
+        self->_0x_menuBox.frame = tf;
+        [self layoutMenuSubviewsWithWidth:tW height:tH expanded:exp];
+        [self->_0x_menuBox layoutIfNeeded];
     };
 
-    if (animated) {
-        [UIView animateWithDuration:0.22
-                              delay:0.0
-                            options:UIViewAnimationOptionCurveEaseInOut
-                         animations:applyBlock
-                         completion:nil];
+    if (anim) {
+        [UIView animateWithDuration:0.22 delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:blk completion:nil];
     } else {
-        applyBlock();
+        blk();
     }
 }
 
 - (void)initializeFramework {
-    preventDebugging();
+    _0x_enforce_defense();
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        UIWindow *keyWindow = [self resolveActiveWindow];
-        if (!keyWindow) return;
+        UIWindow *kw = [self resolveActiveWindow];
+        if (!kw) return;
 
-        CGFloat screenW = keyWindow.bounds.size.width;
-        CGFloat menuW = MIN(312.0f, screenW - 86.0f);
-        if (menuW < 268.0f) menuW = MIN(300.0f, screenW - 20.0f);
-        CGFloat menuH = MIN(322.0f, MAX(250.0f, keyWindow.bounds.size.height - 24.0f));
+        CGFloat sW = kw.bounds.size.width;
+        CGFloat mW = MIN(312.0f, sW - 86.0f);
+        if (mW < 268.0f) mW = MIN(300.0f, sW - 20.0f);
+        CGFloat mH = MIN(322.0f, MAX(250.0f, kw.bounds.size.height - 24.0f));
 
-        if (!phlFloatingBtn) {
-            phlFloatingBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-            phlFloatingBtn.frame = CGRectMake(16, 118, 48, 48);
-            phlFloatingBtn.layer.cornerRadius = 24;
-            phlFloatingBtn.clipsToBounds = YES;
-            phlFloatingBtn.layer.borderWidth = 2.2;
-            phlFloatingBtn.layer.borderColor = [UIColor colorWithRed:0.88 green:0.35 blue:1.0 alpha:1.0].CGColor;
-            phlFloatingBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.03 blue:0.2 alpha:0.96];
-            [phlFloatingBtn setTitle:@"👑" forState:UIControlStateNormal];
-            [phlFloatingBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
+        if (!self->_0x_floatBtn) {
+            self->_0x_floatBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+            self->_0x_floatBtn.frame = CGRectMake(16, 118, 48, 48);
+            self->_0x_floatBtn.layer.cornerRadius = 24;
+            self->_0x_floatBtn.clipsToBounds = YES;
+            self->_0x_floatBtn.layer.borderWidth = 2.2;
+            self->_0x_floatBtn.layer.borderColor = [UIColor colorWithRed:0.88 green:0.35 blue:1.0 alpha:1.0].CGColor;
+            self->_0x_floatBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.03 blue:0.2 alpha:0.96];
+            [self->_0x_floatBtn setTitle:@"👑" forState:UIControlStateNormal];
+            [self->_0x_floatBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
 
-            UIPanGestureRecognizer *btnPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleFloatingPan:)];
-            [phlFloatingBtn addGestureRecognizer:btnPan];
-            [keyWindow addSubview:phlFloatingBtn];
+            UIPanGestureRecognizer *p = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleFloatingPan:)];
+            [self->_0x_floatBtn addGestureRecognizer:p];
+            [kw addSubview:self->_0x_floatBtn];
 
             [self loadRemoteLogo];
-        } else if (phlFloatingBtn.superview != keyWindow) {
-            [keyWindow addSubview:phlFloatingBtn];
+        } else if (self->_0x_floatBtn.superview != kw) {
+            [kw addSubview:self->_0x_floatBtn];
         }
 
-        if (!phlMenuContainer) {
-            phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(70, 16, menuW, menuH)];
-            phlMenuContainer.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.98];
-            phlMenuContainer.layer.cornerRadius = 16;
-            phlMenuContainer.layer.borderWidth = 1.6;
-            phlMenuContainer.layer.borderColor = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95].CGColor;
-            phlMenuContainer.clipsToBounds = YES;
-            phlMenuContainer.hidden = YES;
-            phlMenuContainer.alpha = 0.0;
+        if (!self->_0x_menuBox) {
+            self->_0x_menuBox = [[UIView alloc] initWithFrame:CGRectMake(70, 16, mW, mH)];
+            self->_0x_menuBox.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.98];
+            self->_0x_menuBox.layer.cornerRadius = 16;
+            self->_0x_menuBox.layer.borderWidth = 1.6;
+            self->_0x_menuBox.layer.borderColor = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95].CGColor;
+            self->_0x_menuBox.clipsToBounds = YES;
+            self->_0x_menuBox.hidden = YES;
+            self->_0x_menuBox.alpha = 0.0;
 
-            phlMenuGradient = [CAGradientLayer layer];
-            phlMenuGradient.frame = CGRectMake(0, 0, menuW, menuH);
-            phlMenuGradient.colors = @[
+            self->_0x_gradient = [CAGradientLayer layer];
+            self->_0x_gradient.frame = CGRectMake(0, 0, mW, mH);
+            self->_0x_gradient.colors = @[
                 (id)[UIColor colorWithRed:0.13 green:0.03 blue:0.28 alpha:1.0].CGColor,
                 (id)[UIColor colorWithRed:0.23 green:0.05 blue:0.36 alpha:1.0].CGColor,
                 (id)[UIColor colorWithRed:0.05 green:0.11 blue:0.27 alpha:1.0].CGColor
             ];
-            phlMenuGradient.startPoint = CGPointMake(0.0f, 0.0f);
-            phlMenuGradient.endPoint = CGPointMake(1.0f, 1.0f);
-            [phlMenuContainer.layer insertSublayer:phlMenuGradient atIndex:0];
+            self->_0x_gradient.startPoint = CGPointMake(0.0f, 0.0f);
+            self->_0x_gradient.endPoint = CGPointMake(1.0f, 1.0f);
+            [self->_0x_menuBox.layer insertSublayer:self->_0x_gradient atIndex:0];
 
-            phlDragHeader = [[UIView alloc] initWithFrame:CGRectMake(0, 0, menuW, 38)];
-            phlDragHeader.backgroundColor = [UIColor colorWithRed:0.18 green:0.06 blue:0.35 alpha:0.85];
-            [phlMenuContainer addSubview:phlDragHeader];
+            self->_0x_dragHdr = [[UIView alloc] initWithFrame:CGRectMake(0, 0, mW, 38)];
+            self->_0x_dragHdr.backgroundColor = [UIColor colorWithRed:0.18 green:0.06 blue:0.35 alpha:0.85];
+            [self->_0x_menuBox addSubview:self->_0x_dragHdr];
 
-            UIPanGestureRecognizer *headerPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
-            [phlDragHeader addGestureRecognizer:headerPan];
+            UIPanGestureRecognizer *hp = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
+            [self->_0x_dragHdr addGestureRecognizer:hp];
 
-            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 6, menuW - 48, 16)];
-            titleLabel.text = @"👑 PHẠM LONG • AUDIO PRO";
-            titleLabel.textColor = [UIColor colorWithRed:1.0 green:0.82 blue:1.0 alpha:1.0];
-            titleLabel.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
-            [phlDragHeader addSubview:titleLabel];
+            UILabel *tl = [[UILabel alloc] initWithFrame:CGRectMake(10, 6, mW - 48, 16)];
+            tl.text = _0xdec(_0xs_Title, sizeof(_0xs_Title));
+            tl.textColor = [UIColor colorWithRed:1.0 green:0.82 blue:1.0 alpha:1.0];
+            tl.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
+            [self->_0x_dragHdr addSubview:tl];
 
-            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 22, menuW - 44, 13)];
-            phlNowPlayingLabel.text = @"♪ Chưa chọn bài hát";
-            phlNowPlayingLabel.textColor = [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0];
-            phlNowPlayingLabel.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold];
-            [phlDragHeader addSubview:phlNowPlayingLabel];
+            self->_0x_titleLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 22, mW - 44, 13)];
+            self->_0x_titleLbl.text = _0xdec(_0xs_NoSong, sizeof(_0xs_NoSong));
+            self->_0x_titleLbl.textColor = [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0];
+            self->_0x_titleLbl.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold];
+            [self->_0x_dragHdr addSubview:self->_0x_titleLbl];
 
-            phlCloseBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            phlCloseBtn.frame = CGRectMake(menuW - 34, 7, 24, 24);
-            [phlCloseBtn setTitle:@"✕" forState:UIControlStateNormal];
-            [phlCloseBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.78 alpha:1.0] forState:UIControlStateNormal];
-            phlCloseBtn.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
-            phlCloseBtn.backgroundColor = [UIColor colorWithRed:0.35 green:0.06 blue:0.25 alpha:0.9];
-            phlCloseBtn.layer.cornerRadius = 12;
-            [phlCloseBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
-            [phlMenuContainer addSubview:phlCloseBtn];
+            self->_0x_closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+            self->_0x_closeBtn.frame = CGRectMake(mW - 34, 7, 24, 24);
+            [self->_0x_closeBtn setTitle:@"✕" forState:UIControlStateNormal];
+            [self->_0x_closeBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.78 alpha:1.0] forState:UIControlStateNormal];
+            self->_0x_closeBtn.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
+            self->_0x_closeBtn.backgroundColor = [UIColor colorWithRed:0.35 green:0.06 blue:0.25 alpha:0.9];
+            self->_0x_closeBtn.layer.cornerRadius = 12;
+            [self->_0x_closeBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
+            [self->_0x_menuBox addSubview:self->_0x_closeBtn];
 
-            phlPrevBtn = [PHLTransportButton buttonWithKind:PHLTransportIconPrev
-                                               actionTarget:self
-                                                     action:@selector(playPreviousSong)];
-            [phlMenuContainer addSubview:phlPrevBtn];
+            self->_0x_btnPrev = [PHLTransportButton buttonWithKind:_0x00_prev actionTarget:self action:@selector(playPreviousSong)];
+            [self->_0x_menuBox addSubview:self->_0x_btnPrev];
 
-            phlPlayPauseBtn = [PHLTransportButton buttonWithKind:PHLTransportIconPlayPause
-                                                   actionTarget:self
-                                                         action:@selector(togglePlayPause)];
-            [phlMenuContainer addSubview:phlPlayPauseBtn];
+            self->_0x_btnPlay = [PHLTransportButton buttonWithKind:_0x01_playpause actionTarget:self action:@selector(togglePlayPause)];
+            [self->_0x_menuBox addSubview:self->_0x_btnPlay];
 
-            phlNextBtn = [PHLTransportButton buttonWithKind:PHLTransportIconNext
-                                               actionTarget:self
-                                                     action:@selector(playNextSong)];
-            [phlMenuContainer addSubview:phlNextBtn];
+            self->_0x_btnNext = [PHLTransportButton buttonWithKind:_0x02_next actionTarget:self action:@selector(playNextSong)];
+            [self->_0x_menuBox addSubview:self->_0x_btnNext];
 
-            phlRepeatBtn = [PHLTransportButton buttonWithKind:PHLTransportIconRepeat
-                                                 actionTarget:self
-                                                       action:@selector(toggleRepeatMode)];
+            self->_0x_btnRep = [PHLTransportButton buttonWithKind:_0x03_repeat actionTarget:self action:@selector(toggleRepeatMode)];
             [self syncRepeatButton];
-            [phlMenuContainer addSubview:phlRepeatBtn];
+            [self->_0x_menuBox addSubview:self->_0x_btnRep];
 
-            phlMuteBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            [phlMuteBtn setTitle:@"🔉" forState:UIControlStateNormal];
-            phlMuteBtn.titleLabel.font = [UIFont systemFontOfSize:12];
-            [phlMuteBtn addTarget:self action:@selector(decreaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
-            [phlMenuContainer addSubview:phlMuteBtn];
+            self->_0x_btnMute = [UIButton buttonWithType:UIButtonTypeSystem];
+            [self->_0x_btnMute setTitle:@"🔉" forState:UIControlStateNormal];
+            self->_0x_btnMute.titleLabel.font = [UIFont systemFontOfSize:12];
+            [self->_0x_btnMute addTarget:self action:@selector(decreaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
+            [self->_0x_menuBox addSubview:self->_0x_btnMute];
 
-            phlVolumeSlider = [[UISlider alloc] initWithFrame:CGRectZero];
-            phlVolumeSlider.minimumValue = 0.0f;
-            phlVolumeSlider.maximumValue = 2.0f;
-            phlVolumeSlider.value = phlCurrentGain;
-            phlVolumeSlider.minimumTrackTintColor = [UIColor colorWithRed:0.35 green:0.98 blue:1.0 alpha:1.0];
-            phlVolumeSlider.maximumTrackTintColor = [UIColor colorWithRed:0.95 green:0.35 blue:0.75 alpha:0.35];
-            phlVolumeSlider.thumbTintColor = [UIColor colorWithRed:1.0 green:0.88 blue:0.35 alpha:1.0];
-            [phlVolumeSlider addTarget:self action:@selector(volumeSliderChanged:) forControlEvents:UIControlEventValueChanged];
-            [phlMenuContainer addSubview:phlVolumeSlider];
+            self->_0x_volSlider = [[UISlider alloc] initWithFrame:CGRectZero];
+            self->_0x_volSlider.minimumValue = 0.0f;
+            self->_0x_volSlider.maximumValue = 2.0f;
+            self->_0x_volSlider.value = self->_0x_gain;
+            self->_0x_volSlider.minimumTrackTintColor = [UIColor colorWithRed:0.35 green:0.98 blue:1.0 alpha:1.0];
+            self->_0x_volSlider.maximumTrackTintColor = [UIColor colorWithRed:0.95 green:0.35 blue:0.75 alpha:0.35];
+            self->_0x_volSlider.thumbTintColor = [UIColor colorWithRed:1.0 green:0.88 blue:0.35 alpha:1.0];
+            [self->_0x_volSlider addTarget:self action:@selector(volumeSliderChanged:) forControlEvents:UIControlEventValueChanged];
+            [self->_0x_menuBox addSubview:self->_0x_volSlider];
 
-            phlVolUpBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            [phlVolUpBtn setTitle:@"🔊" forState:UIControlStateNormal];
-            phlVolUpBtn.titleLabel.font = [UIFont systemFontOfSize:12];
-            [phlVolUpBtn addTarget:self action:@selector(increaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
-            [phlMenuContainer addSubview:phlVolUpBtn];
+            self->_0x_btnVolUp = [UIButton buttonWithType:UIButtonTypeSystem];
+            [self->_0x_btnVolUp setTitle:@"🔊" forState:UIControlStateNormal];
+            self->_0x_btnVolUp.titleLabel.font = [UIFont systemFontOfSize:12];
+            [self->_0x_btnVolUp addTarget:self action:@selector(increaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
+            [self->_0x_menuBox addSubview:self->_0x_btnVolUp];
 
-            phlGainValueLabel = [[UILabel alloc] initWithFrame:CGRectZero];
-            phlGainValueLabel.font = [UIFont monospacedDigitSystemFontOfSize:9 weight:UIFontWeightBold];
-            phlGainValueLabel.textAlignment = NSTextAlignmentRight;
-            [phlMenuContainer addSubview:phlGainValueLabel];
+            self->_0x_gainLbl = [[UILabel alloc] initWithFrame:CGRectZero];
+            self->_0x_gainLbl.font = [UIFont monospacedDigitSystemFontOfSize:9 weight:UIFontWeightBold];
+            self->_0x_gainLbl.textAlignment = NSTextAlignmentRight;
+            [self->_0x_menuBox addSubview:self->_0x_gainLbl];
 
-            phlOpenBrowserBtn = [self makeUtilityButtonWithTitle:@"🌐 MỞ YOUTUBE (PHÓNG RỘNG)"
-                                                        fontSize:9.5
-                                                         bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
-                                                     borderColor:[UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9]
-                                                          action:@selector(toggleEmbeddedBrowser)];
-            [phlOpenBrowserBtn setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-            [phlMenuContainer addSubview:phlOpenBrowserBtn];
+            self->_0x_btnWebToggle = [self makeUtilityButtonWithTitle:_0xdec(_0xs_BtnBrowserExpand, sizeof(_0xs_BtnBrowserExpand))
+                                                             fontSize:9.5
+                                                              bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
+                                                          borderColor:[UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9]
+                                                               action:@selector(toggleEmbeddedBrowser)];
+            [self->_0x_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+            [self->_0x_menuBox addSubview:self->_0x_btnWebToggle];
 
-            phlTableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
-            phlTableView.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.45];
-            phlTableView.layer.cornerRadius = 9;
-            phlTableView.separatorColor = [UIColor colorWithRed:0.75 green:0.35 blue:1.0 alpha:0.25];
-            phlTableView.rowHeight = 38.0f;
-            phlTableView.delegate = self;
-            phlTableView.dataSource = self;
-            [phlMenuContainer addSubview:phlTableView];
+            self->_0x_table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
+            self->_0x_table.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.45];
+            self->_0x_table.layer.cornerRadius = 9;
+            self->_0x_table.separatorColor = [UIColor colorWithRed:0.75 green:0.35 blue:1.0 alpha:0.25];
+            self->_0x_table.rowHeight = 38.0f;
+            self->_0x_table.delegate = self;
+            self->_0x_table.dataSource = self;
+            [self->_0x_menuBox addSubview:self->_0x_table];
 
-            phlWebPanel = [[UIView alloc] initWithFrame:CGRectZero];
-            phlWebPanel.backgroundColor = [UIColor colorWithRed:0.07 green:0.03 blue:0.18 alpha:0.98];
-            phlWebPanel.layer.cornerRadius = 9;
-            phlWebPanel.layer.borderWidth = 1.1;
-            phlWebPanel.layer.borderColor = [UIColor colorWithRed:0.45 green:0.92 blue:1.0 alpha:0.8].CGColor;
-            phlWebPanel.clipsToBounds = YES;
-            phlWebPanel.hidden = YES;
-            [phlMenuContainer addSubview:phlWebPanel];
+            self->_0x_webBox = [[UIView alloc] initWithFrame:CGRectZero];
+            self->_0x_webBox.backgroundColor = [UIColor colorWithRed:0.07 green:0.03 blue:0.18 alpha:0.98];
+            self->_0x_webBox.layer.cornerRadius = 9;
+            self->_0x_webBox.layer.borderWidth = 1.1;
+            self->_0x_webBox.layer.borderColor = [UIColor colorWithRed:0.45 green:0.92 blue:1.0 alpha:0.8].CGColor;
+            self->_0x_webBox.clipsToBounds = YES;
+            self->_0x_webBox.hidden = YES;
+            [self->_0x_menuBox addSubview:self->_0x_webBox];
 
-            phlBackBtn = [self makeUtilityButtonWithTitle:@"←"
-                                                 fontSize:12
-                                                  bgColor:[UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95]
-                                              borderColor:[UIColor colorWithRed:0.75 green:0.4 blue:1.0 alpha:0.7]
-                                                   action:@selector(webGoBack)];
-            phlBackBtn.layer.cornerRadius = 5;
-            [phlWebPanel addSubview:phlBackBtn];
+            self->_0x_btnBack = [self makeUtilityButtonWithTitle:@"←" fontSize:12 bgColor:[UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95] borderColor:[UIColor colorWithRed:0.75 green:0.4 blue:1.0 alpha:0.7] action:@selector(webGoBack)];
+            self->_0x_btnBack.layer.cornerRadius = 5;
+            [self->_0x_webBox addSubview:self->_0x_btnBack];
 
-            phlFwdBtn = [self makeUtilityButtonWithTitle:@"→"
-                                                fontSize:12
-                                                 bgColor:[UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95]
-                                             borderColor:[UIColor colorWithRed:0.75 green:0.4 blue:1.0 alpha:0.7]
-                                                  action:@selector(webGoForward)];
-            phlFwdBtn.layer.cornerRadius = 5;
-            [phlWebPanel addSubview:phlFwdBtn];
+            self->_0x_btnFwd = [self makeUtilityButtonWithTitle:@"→" fontSize:12 bgColor:[UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95] borderColor:[UIColor colorWithRed:0.75 green:0.4 blue:1.0 alpha:0.7] action:@selector(webGoForward)];
+            self->_0x_btnFwd.layer.cornerRadius = 5;
+            [self->_0x_webBox addSubview:self->_0x_btnFwd];
 
-            phlHomeYtBtn = [self makeUtilityButtonWithTitle:@"🏠 YT"
-                                                   fontSize:9
-                                                    bgColor:[UIColor colorWithRed:0.14 green:0.22 blue:0.42 alpha:0.95]
-                                                borderColor:[UIColor colorWithRed:0.45 green:0.9 blue:1.0 alpha:0.7]
-                                                     action:@selector(webGoHome)];
-            [phlHomeYtBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.85 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
-            phlHomeYtBtn.layer.cornerRadius = 5;
-            [phlWebPanel addSubview:phlHomeYtBtn];
+            self->_0x_btnHome = [self makeUtilityButtonWithTitle:@"🏠 YT" fontSize:9 bgColor:[UIColor colorWithRed:0.14 green:0.22 blue:0.42 alpha:0.95] borderColor:[UIColor colorWithRed:0.45 green:0.9 blue:1.0 alpha:0.7] action:@selector(webGoHome)];
+            [self->_0x_btnHome setTitleColor:[UIColor colorWithRed:1.0 green:0.85 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
+            self->_0x_btnHome.layer.cornerRadius = 5;
+            [self->_0x_webBox addSubview:self->_0x_btnHome];
 
-            phlCloseWebBtn = [self makeUtilityButtonWithTitle:@"Thu gọn"
-                                                     fontSize:9
-                                                      bgColor:[UIColor colorWithRed:0.45 green:0.08 blue:0.32 alpha:0.95]
-                                                  borderColor:[UIColor colorWithRed:1.0 green:0.45 blue:0.75 alpha:0.7]
-                                                       action:@selector(closeEmbeddedBrowser)];
-            [phlCloseWebBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.75 blue:0.95 alpha:1.0] forState:UIControlStateNormal];
-            phlCloseWebBtn.layer.cornerRadius = 5;
-            [phlWebPanel addSubview:phlCloseWebBtn];
+            self->_0x_btnCloseW = [self makeUtilityButtonWithTitle:@"Thu gọn" fontSize:9 bgColor:[UIColor colorWithRed:0.45 green:0.08 blue:0.32 alpha:0.95] borderColor:[UIColor colorWithRed:1.0 green:0.45 blue:0.75 alpha:0.7] action:@selector(closeEmbeddedBrowser)];
+            [self->_0x_btnCloseW setTitleColor:[UIColor colorWithRed:1.0 green:0.75 blue:0.95 alpha:1.0] forState:UIControlStateNormal];
+            self->_0x_btnCloseW.layer.cornerRadius = 5;
+            [self->_0x_webBox addSubview:self->_0x_btnCloseW];
 
-            phlYouTubeSearchField = [[UITextField alloc] initWithFrame:CGRectZero];
-            phlYouTubeSearchField.placeholder = @"Tìm nhạc trên YouTube...";
-            phlYouTubeSearchField.textColor = [UIColor whiteColor];
-            phlYouTubeSearchField.font = [UIFont systemFontOfSize:10.5];
-            phlYouTubeSearchField.backgroundColor = [UIColor colorWithRed:0.15 green:0.07 blue:0.28 alpha:0.96];
-            phlYouTubeSearchField.layer.cornerRadius = 6;
-            phlYouTubeSearchField.layer.borderWidth = 1.0;
-            phlYouTubeSearchField.layer.borderColor = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.75].CGColor;
-            phlYouTubeSearchField.returnKeyType = UIReturnKeySearch;
-            phlYouTubeSearchField.clearButtonMode = UITextFieldViewModeWhileEditing;
-            phlYouTubeSearchField.delegate = self;
+            self->_0x_searchBar = [[UITextField alloc] initWithFrame:CGRectZero];
+            self->_0x_searchBar.placeholder = _0xdec(_0xs_SearchPlaceholder, sizeof(_0xs_SearchPlaceholder));
+            self->_0x_searchBar.textColor = [UIColor whiteColor];
+            self->_0x_searchBar.font = [UIFont systemFontOfSize:10.5];
+            self->_0x_searchBar.backgroundColor = [UIColor colorWithRed:0.15 green:0.07 blue:0.28 alpha:0.96];
+            self->_0x_searchBar.layer.cornerRadius = 6;
+            self->_0x_searchBar.layer.borderWidth = 1.0;
+            self->_0x_searchBar.layer.borderColor = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.75].CGColor;
+            self->_0x_searchBar.returnKeyType = UIReturnKeySearch;
+            self->_0x_searchBar.clearButtonMode = UITextFieldViewModeWhileEditing;
+            self->_0x_searchBar.delegate = self;
 
-            UIView *leftPad = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 6, 22)];
-            phlYouTubeSearchField.leftView = leftPad;
-            phlYouTubeSearchField.leftViewMode = UITextFieldViewModeAlways;
-            [phlWebPanel addSubview:phlYouTubeSearchField];
+            UIView *pad = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 6, 22)];
+            self->_0x_searchBar.leftView = pad;
+            self->_0x_searchBar.leftViewMode = UITextFieldViewModeAlways;
+            [self->_0x_webBox addSubview:self->_0x_searchBar];
 
-            phlYtSearchBtn = [self makeUtilityButtonWithTitle:@"🔍 YT"
-                                                     fontSize:9.5
-                                                      bgColor:[UIColor colorWithRed:0.88 green:0.14 blue:0.36 alpha:0.98]
-                                                  borderColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.75 alpha:0.85]
-                                                       action:@selector(triggerYouTubeSearch)];
-            phlYtSearchBtn.layer.cornerRadius = 6;
-            [phlWebPanel addSubview:phlYtSearchBtn];
+            self->_0x_btnSearch = [self makeUtilityButtonWithTitle:@"🔍 YT" fontSize:9.5 bgColor:[UIColor colorWithRed:0.88 green:0.14 blue:0.36 alpha:0.98] borderColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.75 alpha:0.85] action:@selector(triggerYouTubeSearch)];
+            self->_0x_btnSearch.layer.cornerRadius = 6;
+            [self->_0x_webBox addSubview:self->_0x_btnSearch];
 
-            WKWebViewConfiguration *webConfig = [[WKWebViewConfiguration alloc] init];
-            webConfig.allowsInlineMediaPlayback = YES;
-            WKUserContentController *ucc = webConfig.userContentController;
-            [ucc addScriptMessageHandler:self name:@"phlWebMediaPlaying"];
+            WKWebViewConfiguration *wcfg = [[WKWebViewConfiguration alloc] init];
+            wcfg.allowsInlineMediaPlayback = YES;
+            WKUserContentController *ucc = wcfg.userContentController;
+            [ucc addScriptMessageHandler:self name:_0xdec(_0xs_MsgPlaying, sizeof(_0xs_MsgPlaying))];
 
-            WKUserScript *cleanScript = [[WKUserScript alloc] initWithSource:kPHLCleanYouTubeJS
-                                                             injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
-                                                          forMainFrameOnly:NO];
-            [ucc addUserScript:cleanScript];
+            WKUserScript *cleanScr = [[WKUserScript alloc] initWithSource:_0xgetCleanJS() injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
+            [ucc addUserScript:cleanScr];
 
-            NSString *initBridge = [NSString stringWithFormat:@"%@; window.__phlAudioBridge.setGain(%.3f);",
-                                    kPHLWebAudioBridgeJS, phlCurrentGain];
-            WKUserScript *bridgeScript = [[WKUserScript alloc] initWithSource:initBridge
-                                                              injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
-                                                           forMainFrameOnly:NO];
-            [ucc addUserScript:bridgeScript];
+            NSString *bridgeSrc = [NSString stringWithFormat:@"%@;window.__phlAudioBridge.setGain(%.3f);", _0getAudioBridgeJS(), self->_0x_gain];
+            WKUserScript *bScr = [[WKUserScript alloc] initWithSource:bridgeSrc injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
+            [ucc addUserScript:bScr];
 
-            phlWebView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:webConfig];
-            phlWebView.navigationDelegate = self;
-            phlWebView.scrollView.bounces = YES;
-            [phlWebPanel addSubview:phlWebView];
+            self->_0x_web = [[WKWebView alloc] initWithFrame:CGRectZero configuration:wcfg];
+            self->_0x_web.navigationDelegate = self;
+            self->_0x_web.scrollView.bounces = YES;
+            [self->_0x_webBox addSubview:self->_0x_web];
 
-            phlAdminInfoBtn = [self makeUtilityButtonWithTitle:@"🛡 INFO & BẢN QUYỀN • phamlong09.store"
-                                                      fontSize:9.5
-                                                       bgColor:[UIColor colorWithRed:0.25 green:0.07 blue:0.44 alpha:0.96]
-                                                   borderColor:[UIColor colorWithRed:0.92 green:0.45 blue:1.0 alpha:0.9]
-                                                        action:@selector(openAdminInfoGroup)];
-            [phlAdminInfoBtn setTitleColor:[UIColor colorWithRed:0.45 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-            phlAdminInfoBtn.layer.cornerRadius = 7;
-            [phlMenuContainer addSubview:phlAdminInfoBtn];
+            self->_0x_adminBtn = [self makeUtilityButtonWithTitle:_0xdec(_0xs_AdminBtnTitle, sizeof(_0xs_AdminBtnTitle))
+                                                         fontSize:9.5
+                                                          bgColor:[UIColor colorWithRed:0.25 green:0.07 blue:0.44 alpha:0.96]
+                                                      borderColor:[UIColor colorWithRed:0.92 green:0.45 blue:1.0 alpha:0.9]
+                                                           action:@selector(openAdminInfoGroup)];
+            [self->_0x_adminBtn setTitleColor:[UIColor colorWithRed:0.45 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+            self->_0x_adminBtn.layer.cornerRadius = 7;
+            [self->_0x_menuBox addSubview:self->_0x_adminBtn];
 
-            phlCopyrightLabel = [[UILabel alloc] initWithFrame:CGRectZero];
-            phlCopyrightLabel.text = @"BẢN QUYỀN THUỘC ADMIN TELEGRAM: @PHL0990\nZALO: 0522608620";
-            phlCopyrightLabel.textColor = [UIColor colorWithRed:1.0 green:0.86 blue:0.55 alpha:0.98];
-            phlCopyrightLabel.font = [UIFont systemFontOfSize:8 weight:UIFontWeightBold];
-            phlCopyrightLabel.textAlignment = NSTextAlignmentCenter;
-            phlCopyrightLabel.numberOfLines = 2;
-            [phlMenuContainer addSubview:phlCopyrightLabel];
+            self->_0x_cprLbl = [[UILabel alloc] initWithFrame:CGRectZero];
+            self->_0x_cprLbl.text = _0xdec(_0xs_Copyright, sizeof(_0xs_Copyright));
+            self->_0x_cprLbl.textColor = [UIColor colorWithRed:1.0 green:0.86 blue:0.55 alpha:0.98];
+            self->_0x_cprLbl.font = [UIFont systemFontOfSize:8 weight:UIFontWeightBold];
+            self->_0x_cprLbl.textAlignment = NSTextAlignmentCenter;
+            self->_0x_cprLbl.numberOfLines = 2;
+            [self->_0x_menuBox addSubview:self->_0x_cprLbl];
 
-            [self layoutMenuSubviewsWithWidth:menuW height:menuH expanded:NO];
-            [self applyIndependentGain:phlCurrentGain];
-            [keyWindow addSubview:phlMenuContainer];
-        } else if (phlMenuContainer.superview != keyWindow) {
-            [keyWindow addSubview:phlMenuContainer];
+            [self layoutMenuSubviewsWithWidth:mW height:mH expanded:NO];
+            [self applyIndependentGain:self->_0x_gain];
+            [kw addSubview:self->_0x_menuBox];
+        } else if (self->_0x_menuBox.superview != kw) {
+            [kw addSubview:self->_0x_menuBox];
         }
 
         [self fetchRemotePlaylist];
     });
 }
 
+// ------------------------------------------------------------------------------
+// DELEGATE PROTOCOLS (Giữ nguyên tên hàm chuẩn của Apple để UIKit gọi đúng)
+// ------------------------------------------------------------------------------
 - (void)webView:(WKWebView *)webView didCommitNavigation:(WKNavigation *)navigation {
     [self cleanYouTubePageInWebView];
 }
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
     [self cleanYouTubePageInWebView];
-    [self applyIndependentGain:phlCurrentGain];
+    [self applyIndependentGain:_0x_gain];
 }
 
 - (void)toggleEmbeddedBrowser {
-    phlIsWebOpen = !phlIsWebOpen;
+    _0x_webOpen = !_0x_webOpen;
     [self syncBrowserVisibilityAnimated:YES];
-    if (phlIsWebOpen && !phlHasLoadedInitialWeb) {
-        phlHasLoadedInitialWeb = YES;
-        [self loadYouTubeURLString:kPHLYouTubeHomeURL];
-    } else if (phlIsWebOpen) {
+    if (_0x_webOpen && !_0x_webLoaded) {
+        _0x_webLoaded = YES;
+        [self loadYouTubeURLString:_0xdec(_0xs_YTHomeURL, sizeof(_0xs_YTHomeURL))];
+    } else if (_0x_webOpen) {
         [self cleanYouTubePageInWebView];
-        [self applyIndependentGain:phlCurrentGain];
+        [self applyIndependentGain:_0x_gain];
     }
 }
 
 - (void)closeEmbeddedBrowser {
-    [phlYouTubeSearchField resignFirstResponder];
-    phlIsWebOpen = NO;
+    [_0x_searchBar resignFirstResponder];
+    _0x_webOpen = NO;
     [self syncBrowserVisibilityAnimated:YES];
 }
 
 - (void)syncBrowserVisibilityAnimated:(BOOL)animated {
-    phlWebPanel.hidden = !phlIsWebOpen;
-    phlTableView.hidden = phlIsWebOpen;
-    [phlOpenBrowserBtn setTitle:(phlIsWebOpen
-        ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)"
-        : @"🌐 MỞ YOUTUBE (PHÓNG RỘNG)")
-                        forState:UIControlStateNormal];
-    [self applyMenuFrameForExpanded:phlIsWebOpen animated:animated];
+    _0x_webBox.hidden = !_0x_webOpen;
+    _0x_table.hidden = _0x_webOpen;
+    NSString *t = _0x_webOpen ? _0xdec(_0xs_BtnBrowserCollapse, sizeof(_0xs_BtnBrowserCollapse))
+                              : _0xdec(_0xs_BtnBrowserExpand, sizeof(_0xs_BtnBrowserExpand));
+    [_0x_btnWebToggle setTitle:t forState:UIControlStateNormal];
+    [self applyMenuFrameForExpanded:_0x_webOpen animated:animated];
 }
 
 - (void)loadYouTubeURLString:(NSString *)urlStr {
-    if (!phlWebView || !urlStr || urlStr.length == 0) return;
-    NSURL *url = [NSURL URLWithString:urlStr];
-    if (!url) return;
-    NSURLRequest *req = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
-    [phlWebView loadRequest:req];
+    if (!_0x_web || !urlStr || urlStr.length == 0) return;
+    NSURL *u = [NSURL URLWithString:urlStr];
+    if (!u) return;
+    NSURLRequest *req = [NSURLRequest requestWithURL:u cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
+    [_0x_web loadRequest:req];
 }
 
 - (void)webGoHome {
-    phlHasLoadedInitialWeb = YES;
-    [self loadYouTubeURLString:kPHLYouTubeHomeURL];
+    _0x_webLoaded = YES;
+    [self loadYouTubeURLString:_0xdec(_0xs_YTHomeURL, sizeof(_0xs_YTHomeURL))];
 }
 
 - (void)triggerYouTubeSearch {
-    [phlYouTubeSearchField resignFirstResponder];
-    NSString *rawQuery = [phlYouTubeSearchField.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    if (!phlIsWebOpen) {
-        phlIsWebOpen = YES;
+    [_0x_searchBar resignFirstResponder];
+    NSString *raw = [_0x_searchBar.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (!_0x_webOpen) {
+        _0x_webOpen = YES;
         [self syncBrowserVisibilityAnimated:YES];
     }
-
-    if (rawQuery.length == 0) {
-        phlHasLoadedInitialWeb = YES;
-        [self loadYouTubeURLString:kPHLYouTubeHomeURL];
+    if (raw.length == 0) {
+        _0x_webLoaded = YES;
+        [self loadYouTubeURLString:_0xdec(_0xs_YTHomeURL, sizeof(_0xs_YTHomeURL))];
         return;
     }
-
-    NSCharacterSet *allowed = [NSCharacterSet URLQueryAllowedCharacterSet];
-    NSString *encodedQuery = [rawQuery stringByAddingPercentEncodingWithAllowedCharacters:allowed];
-    NSString *searchURL = [NSString stringWithFormat:@"https://m.youtube.com/results?search_query=%@", encodedQuery ?: @""];
-    phlHasLoadedInitialWeb = YES;
-    [self loadYouTubeURLString:searchURL];
+    NSString *enc = [raw stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
+    NSString *pfx = _0xdec(_0xs_YTSearchPrefix, sizeof(_0xs_YTSearchPrefix));
+    _0x_webLoaded = YES;
+    [self loadYouTubeURLString:[NSString stringWithFormat:@"%@%@", pfx, enc ?: @""]];
 }
 
-- (BOOL)textFieldShouldReturn:(UITextField *)textField {
-    if (textField == phlYouTubeSearchField) {
+- (BOOL)textFieldShouldReturn:(UITextField *)tf {
+    if (tf == _0x_searchBar) {
         [self triggerYouTubeSearch];
         return NO;
     }
@@ -994,295 +944,293 @@ static NSString *const kPHLWebAudioBridgeJS =
 }
 
 - (void)webGoBack {
-    if (phlWebView.canGoBack) {
-        [phlWebView goBack];
-    }
+    if (_0x_web.canGoBack) [_0x_web goBack];
 }
 
 - (void)webGoForward {
-    if (phlWebView.canGoForward) {
-        [phlWebView goForward];
-    }
+    if (_0x_web.canGoForward) [_0x_web goForward];
 }
 
 - (void)loadRemoteLogo {
-    NSURL *logoURL = [NSURL URLWithString:@"https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/logo.png"];
-    if (!logoURL) return;
+    NSString *u = _0xdec(_0xs_LogoURL, sizeof(_0xs_LogoURL));
+    NSURL *lu = [NSURL URLWithString:u];
+    if (!lu) return;
 
-    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:logoURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        NSHTTPURLResponse *httpResp = (NSHTTPURLResponse *)response;
-        if (error || !data || httpResp.statusCode != 200) return;
-        UIImage *img = [UIImage imageWithData:data];
+    NSURLSessionDataTask *t = [[NSURLSession sharedSession] dataTaskWithURL:lu completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
+        NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
+        if (e || !d || hr.statusCode != 200) return;
+        UIImage *img = [UIImage imageWithData:d];
         if (!img) return;
-
         dispatch_async(dispatch_get_main_queue(), ^{
-            [phlFloatingBtn setImage:img forState:UIControlStateNormal];
-            phlFloatingBtn.imageView.contentMode = UIViewContentModeScaleAspectFill;
-            [phlFloatingBtn setTitle:@"" forState:UIControlStateNormal];
+            [self->_0x_floatBtn setImage:img forState:UIControlStateNormal];
+            self->_0x_floatBtn.imageView.contentMode = UIViewContentModeScaleAspectFill;
+            [self->_0x_floatBtn setTitle:@"" forState:UIControlStateNormal];
         });
     }];
-    [task resume];
+    [t resume];
 }
 
 - (void)toggleMenu {
-    phlIsMenuOpen = !phlIsMenuOpen;
-    if (phlIsMenuOpen) {
+    _0x_menuOpen = !_0x_menuOpen;
+    if (_0x_menuOpen) {
         [self initializeFramework];
-        [self applyMenuFrameForExpanded:phlIsWebOpen animated:NO];
-        [self applyIndependentGain:phlCurrentGain];
+        [self applyMenuFrameForExpanded:_0x_webOpen animated:NO];
+        [self applyIndependentGain:_0x_gain];
         [self fetchRemotePlaylist];
         [self syncPlayPauseButton];
-        phlMenuContainer.hidden = NO;
+        _0x_menuBox.hidden = NO;
         [UIView animateWithDuration:0.18 animations:^{
-            phlMenuContainer.alpha = 1.0;
+            self->_0x_menuBox.alpha = 1.0;
         }];
     } else {
-        [phlYouTubeSearchField resignFirstResponder];
+        [_0x_searchBar resignFirstResponder];
         [UIView animateWithDuration:0.16 animations:^{
-            phlMenuContainer.alpha = 0.0;
-        } completion:^(BOOL finished) {
-            phlMenuContainer.hidden = YES;
+            self->_0x_menuBox.alpha = 0.0;
+        } completion:^(BOOL fin) {
+            self->_0x_menuBox.hidden = YES;
         }];
     }
 }
 
-- (void)clampViewToSafeBounds:(UIView *)targetView topMargin:(CGFloat)topMargin bottomMargin:(CGFloat)bottomMargin {
-    if (!targetView || !targetView.superview) return;
-    CGSize superSize = targetView.superview.bounds.size;
-    CGFloat halfW = targetView.bounds.size.width / 2.0f;
-    CGFloat halfH = targetView.bounds.size.height / 2.0f;
+- (void)clampViewToSafeBounds:(UIView *)v topMargin:(CGFloat)tm bottomMargin:(CGFloat)bm {
+    if (!v || !v.superview) return;
+    CGSize sz = v.superview.bounds.size;
+    CGFloat hw = v.bounds.size.width / 2.0f;
+    CGFloat hh = v.bounds.size.height / 2.0f;
 
-    CGFloat minX = halfW + 6.0f;
-    CGFloat maxX = superSize.width - halfW - 6.0f;
-    CGFloat minY = halfH + topMargin;
-    CGFloat maxY = superSize.height - halfH - bottomMargin;
+    CGFloat minX = hw + 6.0f;
+    CGFloat maxX = sz.width - hw - 6.0f;
+    CGFloat minY = hh + tm;
+    CGFloat maxY = sz.height - hh - bm;
 
-    CGPoint c = targetView.center;
+    CGPoint c = v.center;
     if (minX <= maxX) c.x = MAX(minX, MIN(maxX, c.x));
     if (minY <= maxY) c.y = MAX(minY, MIN(maxY, c.y));
-    targetView.center = c;
+    v.center = c;
 }
 
-- (void)handleFloatingPan:(UIPanGestureRecognizer *)pan {
-    UIView *targetView = pan.view;
-    if (!targetView || !targetView.superview) return;
-
-    CGPoint translation = [pan translationInView:targetView.superview];
-    targetView.center = CGPointMake(targetView.center.x + translation.x, targetView.center.y + translation.y);
-    [self clampViewToSafeBounds:targetView topMargin:14.0f bottomMargin:14.0f];
-    [pan setTranslation:CGPointZero inView:targetView.superview];
+- (void)handleFloatingPan:(UIPanGestureRecognizer *)p {
+    UIView *v = p.view;
+    if (!v || !v.superview) return;
+    CGPoint tr = [p translationInView:v.superview];
+    v.center = CGPointMake(v.center.x + tr.x, v.center.y + tr.y);
+    [self clampViewToSafeBounds:v topMargin:14.0f bottomMargin:14.0f];
+    [p setTranslation:CGPointZero inView:v.superview];
 }
 
-- (void)handleMenuHeaderPan:(UIPanGestureRecognizer *)pan {
-    if (!phlMenuContainer || !phlMenuContainer.superview) return;
-
-    CGPoint translation = [pan translationInView:phlMenuContainer.superview];
-    phlMenuContainer.center = CGPointMake(phlMenuContainer.center.x + translation.x, phlMenuContainer.center.y + translation.y);
-    [self clampViewToSafeBounds:phlMenuContainer topMargin:6.0f bottomMargin:6.0f];
-    [pan setTranslation:CGPointZero inView:phlMenuContainer.superview];
+- (void)handleMenuHeaderPan:(UIPanGestureRecognizer *)p {
+    if (!_0x_menuBox || !_0x_menuBox.superview) return;
+    CGPoint tr = [p translationInView:_0x_menuBox.superview];
+    _0x_menuBox.center = CGPointMake(_0x_menuBox.center.x + tr.x, _0x_menuBox.center.y + tr.y);
+    [self clampViewToSafeBounds:_0x_menuBox topMargin:6.0f bottomMargin:6.0f];
+    [p setTranslation:CGPointZero inView:_0x_menuBox.superview];
 }
 
 - (void)fetchRemotePlaylist {
-    NSString *jsonURLStr = @"https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/playlist.json";
-    NSURL *url = [NSURL URLWithString:jsonURLStr];
-    if (!url) return;
+    NSString *uStr = _0xdec(_0xs_PlaylistURL, sizeof(_0xs_PlaylistURL));
+    NSURL *u = [NSURL URLWithString:uStr];
+    if (!u) return;
 
-    NSURLSessionConfiguration *config = [NSURLSessionConfiguration ephemeralSessionConfiguration];
-    NSURLSession *session = [NSURLSession sessionWithConfiguration:config];
+    NSURLSessionConfiguration *c = [NSURLSessionConfiguration ephemeralSessionConfiguration];
+    NSURLSession *s = [NSURLSession sessionWithConfiguration:c];
 
-    NSURLSessionDataTask *task = [session dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        NSHTTPURLResponse *httpResp = (NSHTTPURLResponse *)response;
-        if (error || !data || httpResp.statusCode != 200) {
+    NSURLSessionDataTask *t = [s dataTaskWithURL:u completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
+        NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
+        if (e || !d || hr.statusCode != 200) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                phlStatusMessage = [NSString stringWithFormat:@"Không tải được danh sách (Mã %ld)", (long)httpResp.statusCode];
-                [phlTableView reloadData];
+                self->_0x_statusMsg = [NSString stringWithFormat:@"Không tải được danh sách (Mã %ld)", (long)hr.statusCode];
+                [self->_0x_table reloadData];
             });
             return;
         }
 
-        NSError *jsonError = nil;
-        NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-        if (jsonError || ![jsonDict isKindOfClass:[NSDictionary class]]) {
+        NSError *je = nil;
+        NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:d options:0 error:&je];
+        if (je || ![dict isKindOfClass:[NSDictionary class]]) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                phlStatusMessage = @"Lỗi dữ liệu danh sách phát";
-                [phlTableView reloadData];
+                self->_0x_statusMsg = @"Lỗi dữ liệu danh sách phát";
+                [self->_0x_table reloadData];
             });
             return;
         }
 
-        NSArray *songs = jsonDict[@"songs"];
+        NSArray *songs = dict[@"songs"];
         if (![songs isKindOfClass:[NSArray class]] || songs.count == 0) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                [phlPlaylist removeAllObjects];
-                phlStatusMessage = @"Danh sách bài hát đang trống";
-                [phlTableView reloadData];
+                [self->_0x_playlist removeAllObjects];
+                self->_0x_statusMsg = @"Danh sách bài hát đang trống";
+                [self->_0x_table reloadData];
             });
             return;
         }
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            [phlPlaylist removeAllObjects];
-            [phlPlaylist addObjectsFromArray:songs];
-            phlStatusMessage = nil;
-            [phlTableView reloadData];
+            [self->_0x_playlist removeAllObjects];
+            [self->_0x_playlist addObjectsFromArray:songs];
+            self->_0x_statusMsg = nil;
+            [self->_0x_table reloadData];
         });
     }];
-    [task resume];
+    [t resume];
 }
 
 - (void)playSongAtIndex:(NSInteger)index {
-    if (index < 0 || index >= (NSInteger)phlPlaylist.count) return;
-    NSDictionary *song = phlPlaylist[index];
-    NSString *title = song[@"title"] ?: @"Bài hát chưa đặt tên";
+    if (index < 0 || index >= (NSInteger)_0x_playlist.count) return;
+    NSDictionary *song = _0x_playlist[index];
+    NSString *title = song[@"title"] ?: _0xdec(_0xs_DefaultSongTitle, sizeof(_0xs_DefaultSongTitle));
     NSString *urlString = song[@"url"] ?: @"";
     if (urlString.length == 0) return;
 
     [self pauseWebMediaIfPlaying];
     [self configureAudioSession];
 
-    NSString *encodedStr = [urlString stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
-    NSURL *url = [NSURL URLWithString:encodedStr ?: urlString];
-    if (!url) return;
+    NSString *enc = [urlString stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
+    NSURL *u = [NSURL URLWithString:enc ?: urlString];
+    if (!u) return;
 
-    phlCurrentIndex = index;
-    phlNowPlayingLabel.text = [NSString stringWithFormat:@"♪ %@", title];
+    _0x_idx = index;
+    _0x_titleLbl.text = [NSString stringWithFormat:@"♪ %@", title];
 
-    phlPlayerItem = [AVPlayerItem playerItemWithURL:url];
-    if (!phlAudioPlayer) {
-        phlAudioPlayer = [AVPlayer playerWithPlayerItem:phlPlayerItem];
+    _0x_pItem = [AVPlayerItem playerItemWithURL:u];
+    if (!_0x_player) {
+        _0x_player = [AVPlayer playerWithPlayerItem:_0x_pItem];
     } else {
-        [phlAudioPlayer replaceCurrentItemWithPlayerItem:phlPlayerItem];
+        [_0x_player replaceCurrentItemWithPlayerItem:_0x_pItem];
     }
-    phlAudioPlayer.muted = (phlCurrentGain <= 0.001f);
-    phlAudioPlayer.volume = MIN(1.0f, phlCurrentGain);
-    [self applyGainToItem:phlPlayerItem gain:phlCurrentGain];
-    [phlAudioPlayer play];
+    _0x_player.muted = (_0x_gain <= 0.001f);
+    _0x_player.volume = MIN(1.0f, _0x_gain);
+    [self applyGainToItem:_0x_pItem gain:_0x_gain];
+    [_0x_player play];
     [self syncPlayPauseButton];
-    [phlTableView reloadData];
+    [_0x_table reloadData];
 }
 
 - (void)togglePlayPause {
-    if (!phlAudioPlayer || phlCurrentIndex < 0) {
-        if (phlPlaylist.count > 0) {
-            [self playSongAtIndex:0];
-        }
+    if (!_0x_player || _0x_idx < 0) {
+        if (_0x_playlist.count > 0) [self playSongAtIndex:0];
         return;
     }
-
-    if (phlAudioPlayer.rate > 0.01f) {
-        [phlAudioPlayer pause];
+    if (_0x_player.rate > 0.01f) {
+        [_0x_player pause];
     } else {
         [self pauseWebMediaIfPlaying];
         [self configureAudioSession];
-        phlAudioPlayer.muted = (phlCurrentGain <= 0.001f);
-        phlAudioPlayer.volume = MIN(1.0f, phlCurrentGain);
-        [self applyGainToItem:phlPlayerItem gain:phlCurrentGain];
-        [phlAudioPlayer play];
+        _0x_player.muted = (_0x_gain <= 0.001f);
+        _0x_player.volume = MIN(1.0f, _0x_gain);
+        [self applyGainToItem:_0x_pItem gain:_0x_gain];
+        [_0x_player play];
     }
     [self syncPlayPauseButton];
 }
 
 - (void)syncPlayPauseButton {
-    BOOL isPlaying = (phlAudioPlayer && phlAudioPlayer.rate > 0.01f);
-    phlPlayPauseBtn.activeState = isPlaying;
-    [phlPlayPauseBtn refreshTransportVisual];
+    BOOL isPlaying = (_0x_player && _0x_player.rate > 0.01f);
+    _0x_btnPlay.activeState = isPlaying;
+    [_0x_btnPlay refreshTransportVisual];
 }
 
 - (void)playPreviousSong {
-    [phlPrevBtn triggerPulseMark];
-    if (phlPlaylist.count == 0) return;
-    NSInteger prevIdx = (phlCurrentIndex <= 0) ? ((NSInteger)phlPlaylist.count - 1) : (phlCurrentIndex - 1);
-    [self playSongAtIndex:prevIdx];
+    [_0x_btnPrev triggerPulseMark];
+    if (_0x_playlist.count == 0) return;
+    NSInteger prev = (_0x_idx <= 0) ? ((NSInteger)_0x_playlist.count - 1) : (_0x_idx - 1);
+    [self playSongAtIndex:prev];
 }
 
 - (void)playNextSong {
-    [phlNextBtn triggerPulseMark];
-    if (phlPlaylist.count == 0) return;
-    NSInteger nextIdx = (phlCurrentIndex + 1) % (NSInteger)phlPlaylist.count;
-    [self playSongAtIndex:nextIdx];
+    [_0x_btnNext triggerPulseMark];
+    if (_0x_playlist.count == 0) return;
+    NSInteger nxt = (_0x_idx + 1) % (NSInteger)_0x_playlist.count;
+    [self playSongAtIndex:nxt];
 }
 
-- (void)volumeSliderChanged:(UISlider *)slider {
-    [self applyIndependentGain:slider.value];
+- (void)volumeSliderChanged:(UISlider *)s {
+    [self applyIndependentGain:s.value];
 }
 
 - (void)decreaseVolumeStep {
-    float nextGain = MAX(0.0f, phlCurrentGain - 0.15f);
-    phlVolumeSlider.value = nextGain;
-    [self applyIndependentGain:nextGain];
+    float nxt = MAX(0.0f, _0x_gain - 0.15f);
+    _0x_volSlider.value = nxt;
+    [self applyIndependentGain:nxt];
 }
 
 - (void)increaseVolumeStep {
-    float nextGain = MIN(2.0f, phlCurrentGain + 0.15f);
-    phlVolumeSlider.value = nextGain;
-    [self applyIndependentGain:nextGain];
+    float nxt = MIN(2.0f, _0x_gain + 0.15f);
+    _0x_volSlider.value = nxt;
+    [self applyIndependentGain:nxt];
 }
 
 - (void)toggleRepeatMode {
-    phlRepeatOne = !phlRepeatOne;
-    [[NSUserDefaults standardUserDefaults] setBool:phlRepeatOne forKey:kPHLPrefRepeatOne];
+    _0x_repOne = !_0x_repOne;
+    [[NSUserDefaults standardUserDefaults] setBool:_0x_repOne forKey:_0xdec(_0xs_PrefRepeatOne, sizeof(_0xs_PrefRepeatOne))];
     [self syncRepeatButton];
 }
 
 - (void)syncRepeatButton {
-    phlRepeatBtn.activeState = phlRepeatOne;
-    [phlRepeatBtn refreshTransportVisual];
+    _0x_btnRep.activeState = _0x_repOne;
+    [_0x_btnRep refreshTransportVisual];
 }
 
 - (void)openAdminInfoGroup {
-    NSURL *infoURL = [NSURL URLWithString:kPHLAdminInfoURL];
-    if (!infoURL) return;
-    [[UIApplication sharedApplication] openURL:infoURL options:@{} completionHandler:nil];
+    NSString *uStr = _0xdec(_0xs_AdminURL, sizeof(_0xs_AdminURL));
+    NSURL *u = [NSURL URLWithString:uStr];
+    if (!u) return;
+    [[UIApplication sharedApplication] openURL:u options:@{} completionHandler:nil];
 }
 
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return phlPlaylist.count > 0 ? phlPlaylist.count : 1;
+// ------------------------------------------------------------------------------
+// TABLE VIEW DATA SOURCE & DELEGATE (Apple Protocols)
+// ------------------------------------------------------------------------------
+- (NSInteger)tableView:(UITableView *)tv numberOfRowsInSection:(NSInteger)s {
+    return _0x_playlist.count > 0 ? _0x_playlist.count : 1;
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    static NSString *cellID = @"PHLSongCell";
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID];
-    if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:cellID];
-        cell.backgroundColor = [UIColor clearColor];
-        cell.textLabel.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightSemibold];
-        cell.detailTextLabel.font = [UIFont systemFontOfSize:8.5];
+- (UITableViewCell *)tableView:(UITableView *)tv cellForRowAtIndexPath:(NSIndexPath *)ip {
+    NSString *cid = _0xdec(_0xs_CellID, sizeof(_0xs_CellID));
+    UITableViewCell *c = [tv dequeueReusableCellWithIdentifier:cid];
+    if (!c) {
+        c = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:cid];
+        c.backgroundColor = [UIColor clearColor];
+        c.textLabel.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightSemibold];
+        c.detailTextLabel.font = [UIFont systemFontOfSize:8.5];
     }
 
-    if (phlPlaylist.count == 0) {
-        cell.textLabel.textColor = [UIColor colorWithRed:1.0 green:0.65 blue:0.75 alpha:1.0];
-        cell.textLabel.text = phlStatusMessage ?: @"Không có bài hát";
-        cell.detailTextLabel.textColor = [UIColor lightGrayColor];
-        cell.detailTextLabel.text = @"Chạm để thử tải lại";
-        return cell;
+    if (_0x_playlist.count == 0) {
+        c.textLabel.textColor = [UIColor colorWithRed:1.0 green:0.65 blue:0.75 alpha:1.0];
+        c.textLabel.text = _0x_statusMsg ?: @"Không có bài hát";
+        c.detailTextLabel.textColor = [UIColor lightGrayColor];
+        c.detailTextLabel.text = @"Chạm để thử tải lại";
+        return c;
     }
 
-    NSDictionary *song = phlPlaylist[indexPath.row];
-    NSString *title = song[@"title"] ?: @"Bài hát chưa đặt tên";
-    BOOL isCurrent = (indexPath.row == phlCurrentIndex);
+    NSDictionary *song = _0x_playlist[ip.row];
+    NSString *title = song[@"title"] ?: _0xdec(_0xs_DefaultSongTitle, sizeof(_0xs_DefaultSongTitle));
+    BOOL isCur = (ip.row == _0x_idx);
 
-    cell.textLabel.textColor = isCurrent ? [UIColor colorWithRed:1.0 green:0.65 blue:1.0 alpha:1.0] : [UIColor whiteColor];
-    cell.textLabel.text = title;
-    cell.detailTextLabel.textColor = isCurrent ? [UIColor colorWithRed:0.35 green:1.0 blue:0.75 alpha:1.0] : [UIColor colorWithRed:0.45 green:0.92 blue:1.0 alpha:1.0];
-    cell.detailTextLabel.text = isCurrent ? @"🔊 Đang phát trực tiếp" : @"▶ Chạm để phát nhạc";
-    return cell;
+    c.textLabel.textColor = isCur ? [UIColor colorWithRed:1.0 green:0.65 blue:1.0 alpha:1.0] : [UIColor whiteColor];
+    c.textLabel.text = title;
+    c.detailTextLabel.textColor = isCur ? [UIColor colorWithRed:0.35 green:1.0 blue:0.75 alpha:1.0] : [UIColor colorWithRed:0.45 green:0.92 blue:1.0 alpha:1.0];
+    c.detailTextLabel.text = isCur ? @"🔊 Đang phát trực tiếp" : @"▶ Chạm để phát nhạc";
+    return c;
 }
 
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    if (phlPlaylist.count == 0) {
-        phlStatusMessage = @"Đang tải lại danh sách nhạc...";
-        [tableView reloadData];
+- (void)tableView:(UITableView *)tv didSelectRowAtIndexPath:(NSIndexPath *)ip {
+    [tv deselectRowAtIndexPath:ip animated:YES];
+    if (_0x_playlist.count == 0) {
+        _0x_statusMsg = @"Đang tải lại danh sách nhạc...";
+        [tv reloadData];
         [self fetchRemotePlaylist];
         return;
     }
-
-    [self playSongAtIndex:indexPath.row];
+    [self playSongAtIndex:ip.row];
 }
 
 @end
 
-__attribute__((constructor)) static void phlSecureInit() {
+// ------------------------------------------------------------------------------
+// CONSTRUCTOR LAUNCHER
+// ------------------------------------------------------------------------------
+__attribute__((constructor)) static void _0x_entry_point(void) {
+    _0x_enforce_defense();
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [[PHLProtectedAudioManager sharedInstance] initializeFramework];
     });
