@@ -12,11 +12,11 @@
 #include <mach-o/dyld.h>
 
 // ------------------------------------------------------------------------------
-// [LAYER 1]: SYMBOL MANGLING (Xoá sạch Metadata khỏi Objective-C Runtime)
+// [LAYER 1]: SYMBOL MANGLING (Đã loại trừ hàm hệ thống của Apple)
 // ------------------------------------------------------------------------------
 #define PHLTransportButton              _0x7b1c_cls
 #define PHLProtectedAudioManager        _0x4e2d_mgr
-#define sharedInstance                 _0x9a3e_inst
+// ĐÃ XÓA: #define sharedInstance       (Tránh xung đột với AVAudioSession của Apple)
 #define initializeFramework             _0x1f4a_init
 #define setupKind                       _0x2c5b_stk
 #define refreshTransportVisual          _0x3d6c_rtv
@@ -56,13 +56,6 @@
 #define layoutMenuSubviewsWithWidth     _0xa9f2_lms
 #define applyMenuFrameForExpanded       _0xba03_amf
 #define handleItemDidFinish             _0xcb14_hdf
-
-typedef NS_ENUM(NSInteger, _0x3b1a_kind) {
-    _0x00_prev = 0,
-    _0x01_playpause = 1,
-    _0x02_next = 2,
-    _0x03_repeat = 3
-};
 
 // ------------------------------------------------------------------------------
 // [LAYER 2]: ENCRYPTED STRING DATA VAULT (XOR + Linear Counter Stream)
