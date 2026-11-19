@@ -19,7 +19,6 @@ static void preventDebugging() {
 
 static NSString *const kPHLPrefRepeatOne = @"PHL_RepeatOneSong";
 static NSString *const kPHLPrefVolume = @"PHL_PlayerVolume";
-static NSString *const kPHLDefaultYouTubeURL = @"https://www.youtube.com";
 static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
 
 @interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate> {
@@ -28,13 +27,13 @@ static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
 
     UIButton *phlFloatingBtn;
     UIView *phlMenuContainer;
+    UIView *phlDragHeader;
     UITableView *phlTableView;
 
     // Khu vực điều khiển trình phát
     UILabel *phlNowPlayingLabel;
     UIButton *phlPlayPauseBtn;
     UIButton *phlRepeatBtn;
-    UIButton *phlYouTubeBottomBtn;
     UIButton *phlAdminInfoBtn;
     UILabel *phlCopyrightLabel;
     UISlider *phlVolumeSlider;
@@ -127,6 +126,23 @@ static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
     return [UIApplication sharedApplication].windows.firstObject;
 }
 
+- (UIButton *)makeControlButtonWithTitle:(NSString *)title
+                               fontSize:(CGFloat)fontSize
+                                 bgColor:(UIColor *)bgColor
+                             borderColor:(UIColor *)borderColor
+                                  action:(SEL)action {
+    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    [btn setTitle:title forState:UIControlStateNormal];
+    [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    btn.titleLabel.font = [UIFont systemFontOfSize:fontSize weight:UIFontWeightBold];
+    btn.backgroundColor = bgColor;
+    btn.layer.cornerRadius = 9;
+    btn.layer.borderWidth = 1.0;
+    btn.layer.borderColor = borderColor.CGColor;
+    [btn addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+    return btn;
+}
+
 - (void)initializeFramework {
     preventDebugging();
 
@@ -134,19 +150,24 @@ static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
         UIWindow *keyWindow = [self resolveActiveWindow];
         if (!keyWindow) return;
 
+        CGFloat screenW = keyWindow.bounds.size.width;
+        CGFloat menuW = MIN(312.0f, screenW - 96.0f);
+        if (menuW < 260.0f) menuW = MIN(300.0f, screenW - 24.0f);
+        CGFloat menuH = 432.0f;
+
         if (!phlFloatingBtn) {
-            // 1. Nút nổi (Floating Button) giao diện tròn bo tím Neon
+            // 1. Nút nổi tròn bo tím Neon
             phlFloatingBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-            phlFloatingBtn.frame = CGRectMake(20, 120, 48, 48);
+            phlFloatingBtn.frame = CGRectMake(16, 118, 48, 48);
             phlFloatingBtn.layer.cornerRadius = 24;
             phlFloatingBtn.clipsToBounds = YES;
             phlFloatingBtn.layer.borderWidth = 2.0;
-            phlFloatingBtn.layer.borderColor = [UIColor colorWithRed:0.75 green:0.35 blue:1.0 alpha:1.0].CGColor;
-            phlFloatingBtn.backgroundColor = [UIColor colorWithRed:0.04 green:0.02 blue:0.1 alpha:0.94];
+            phlFloatingBtn.layer.borderColor = [UIColor colorWithRed:0.78 green:0.38 blue:1.0 alpha:1.0].CGColor;
+            phlFloatingBtn.backgroundColor = [UIColor colorWithRed:0.05 green:0.02 blue:0.13 alpha:0.96];
             [phlFloatingBtn setTitle:@"👑" forState:UIControlStateNormal];
             [phlFloatingBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
 
-            UIPanGestureRecognizer *btnPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+            UIPanGestureRecognizer *btnPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleFloatingPan:)];
             [phlFloatingBtn addGestureRecognizer:btnPan];
             [keyWindow addSubview:phlFloatingBtn];
 
@@ -156,152 +177,173 @@ static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
         }
 
         if (!phlMenuContainer) {
-            // 2. Menu chính (kéo tự do toàn khung, chân bản quyền cố định dưới cùng)
-            phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(76, 70, 304, 448)];
-            phlMenuContainer.backgroundColor = [UIColor colorWithRed:0.04 green:0.02 blue:0.12 alpha:0.97];
-            phlMenuContainer.layer.cornerRadius = 14;
+            // 2. Khung menu chính (chỉ kéo qua thanh tiêu đề trên cùng để tránh chạm nhầm)
+            phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(72, 62, menuW, menuH)];
+            phlMenuContainer.backgroundColor = [UIColor colorWithRed:0.045 green:0.022 blue:0.125 alpha:0.98];
+            phlMenuContainer.layer.cornerRadius = 16;
             phlMenuContainer.layer.borderWidth = 1.5;
-            phlMenuContainer.layer.borderColor = [UIColor colorWithRed:0.8 green:0.4 blue:1.0 alpha:1.0].CGColor;
+            phlMenuContainer.layer.borderColor = [UIColor colorWithRed:0.82 green:0.42 blue:1.0 alpha:0.95].CGColor;
+            phlMenuContainer.clipsToBounds = YES;
             phlMenuContainer.hidden = YES;
             phlMenuContainer.alpha = 0.0;
 
-            UIPanGestureRecognizer *menuPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
-            menuPan.cancelsTouchesInView = NO;
-            [phlMenuContainer addGestureRecognizer:menuPan];
+            // Thanh tiêu đề dùng làm tay nắm kéo di chuyển toàn menu
+            phlDragHeader = [[UIView alloc] initWithFrame:CGRectMake(0, 0, menuW, 54)];
+            phlDragHeader.backgroundColor = [UIColor colorWithRed:0.11 green:0.05 blue:0.23 alpha:0.95];
+            [phlMenuContainer addSubview:phlDragHeader];
 
-            // Tiêu đề + nút đóng nhanh
-            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 8, 240, 22)];
-            titleLabel.text = @"👑 PHL PHAM LONG - PRO AUDIO";
-            titleLabel.textColor = [UIColor colorWithRed:0.92 green:0.7 blue:1.0 alpha:1.0];
-            titleLabel.font = [UIFont boldSystemFontOfSize:12];
-            [phlMenuContainer addSubview:titleLabel];
+            UIPanGestureRecognizer *headerPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
+            [phlDragHeader addGestureRecognizer:headerPan];
+
+            UILabel *dragGripLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 6, menuW - 56, 12)];
+            dragGripLabel.text = @"⋮⋮ KÉO THANH NÀY ĐỂ DI CHUYỂN";
+            dragGripLabel.textColor = [UIColor colorWithRed:0.72 green:0.55 blue:0.98 alpha:0.85];
+            dragGripLabel.font = [UIFont systemFontOfSize:8 weight:UIFontWeightBold];
+            [phlDragHeader addSubview:dragGripLabel];
+
+            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 18, menuW - 56, 18)];
+            titleLabel.text = @"👑 PHL PHAM LONG • AUDIO";
+            titleLabel.textColor = [UIColor colorWithRed:0.95 green:0.78 blue:1.0 alpha:1.0];
+            titleLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightHeavy];
+            [phlDragHeader addSubview:titleLabel];
+
+            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 35, menuW - 24, 16)];
+            phlNowPlayingLabel.text = @"♪ Chưa chọn bài hát";
+            phlNowPlayingLabel.textColor = [UIColor colorWithRed:0.35 green:0.95 blue:1.0 alpha:1.0];
+            phlNowPlayingLabel.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightSemibold];
+            [phlDragHeader addSubview:phlNowPlayingLabel];
 
             UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            closeBtn.frame = CGRectMake(260, 6, 34, 24);
+            closeBtn.frame = CGRectMake(menuW - 38, 10, 28, 28);
             [closeBtn setTitle:@"✕" forState:UIControlStateNormal];
-            [closeBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.7 alpha:1.0] forState:UIControlStateNormal];
-            closeBtn.titleLabel.font = [UIFont boldSystemFontOfSize:14];
+            [closeBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.72 alpha:1.0] forState:UIControlStateNormal];
+            closeBtn.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
+            closeBtn.backgroundColor = [UIColor colorWithRed:0.22 green:0.06 blue:0.18 alpha:0.85];
+            closeBtn.layer.cornerRadius = 14;
             [closeBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:closeBtn];
 
-            // Tên bài đang phát
-            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 30, 280, 18)];
-            phlNowPlayingLabel.text = @"♪ Chưa chọn bài hát";
-            phlNowPlayingLabel.textColor = [UIColor cyanColor];
-            phlNowPlayingLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightSemibold];
-            [phlMenuContainer addSubview:phlNowPlayingLabel];
+            // Cụm điều khiển chính: Prev | Play/Pause | Next | Lặp
+            CGFloat padX = 12.0f;
+            CGFloat innerW = menuW - padX * 2.0f;
+            CGFloat gap = 6.0f;
+            CGFloat btnW = (innerW - gap * 3.0f) / 4.0f;
+            CGFloat ctrlY = 62.0f;
 
-            // Hàng điều khiển phát nhạc: Prev | Play/Pause | Next | Lặp
-            NSArray *titles = @[@"⏮", @"▶", @"⏭", @"🔁"];
-            NSArray *selectors = @[
-                NSStringFromSelector(@selector(playPreviousSong)),
-                NSStringFromSelector(@selector(togglePlayPause)),
-                NSStringFromSelector(@selector(playNextSong)),
-                NSStringFromSelector(@selector(toggleRepeatMode))
-            ];
-            CGFloat btnW = 66.0f;
-            CGFloat gap = 5.3f;
-            CGFloat startX = 12.0f;
+            UIColor *ctrlBg = [UIColor colorWithRed:0.15 green:0.08 blue:0.29 alpha:0.95];
+            UIColor *ctrlBorder = [UIColor colorWithRed:0.68 green:0.36 blue:1.0 alpha:0.7];
 
-            for (NSInteger i = 0; i < (NSInteger)titles.count; i++) {
-                UIButton *b = [UIButton buttonWithType:UIButtonTypeSystem];
-                b.frame = CGRectMake(startX + i * (btnW + gap), 53, btnW, 28);
-                [b setTitle:titles[i] forState:UIControlStateNormal];
-                b.titleLabel.font = [UIFont boldSystemFontOfSize:13];
-                b.backgroundColor = [UIColor colorWithRed:0.14 green:0.07 blue:0.26 alpha:0.92];
-                b.layer.cornerRadius = 7;
-                b.layer.borderWidth = 1.0;
-                b.layer.borderColor = [UIColor colorWithRed:0.6 green:0.3 blue:0.95 alpha:0.65].CGColor;
-                [b setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-                [b addTarget:self action:NSSelectorFromString(selectors[i]) forControlEvents:UIControlEventTouchUpInside];
+            UIButton *prevBtn = [self makeControlButtonWithTitle:@"⏮"
+                                                      fontSize:14
+                                                       bgColor:ctrlBg
+                                                   borderColor:ctrlBorder
+                                                        action:@selector(playPreviousSong)];
+            prevBtn.frame = CGRectMake(padX, ctrlY, btnW, 32);
+            [phlMenuContainer addSubview:prevBtn];
 
-                if (i == 1) phlPlayPauseBtn = b;
-                if (i == 3) {
-                    phlRepeatBtn = b;
-                    [self syncRepeatButton];
-                }
-                [phlMenuContainer addSubview:b];
-            }
+            phlPlayPauseBtn = [self makeControlButtonWithTitle:@"▶"
+                                                    fontSize:15
+                                                     bgColor:[UIColor colorWithRed:0.48 green:0.18 blue:0.86 alpha:0.96]
+                                                 borderColor:[UIColor colorWithRed:0.9 green:0.62 blue:1.0 alpha:0.95]
+                                                      action:@selector(togglePlayPause)];
+            phlPlayPauseBtn.frame = CGRectMake(padX + (btnW + gap), ctrlY, btnW, 32);
+            [phlMenuContainer addSubview:phlPlayPauseBtn];
+
+            UIButton *nextBtn = [self makeControlButtonWithTitle:@"⏭"
+                                                      fontSize:14
+                                                       bgColor:ctrlBg
+                                                   borderColor:ctrlBorder
+                                                        action:@selector(playNextSong)];
+            nextBtn.frame = CGRectMake(padX + (btnW + gap) * 2.0f, ctrlY, btnW, 32);
+            [phlMenuContainer addSubview:nextBtn];
+
+            phlRepeatBtn = [self makeControlButtonWithTitle:@"🔁"
+                                                 fontSize:14
+                                                  bgColor:ctrlBg
+                                              borderColor:ctrlBorder
+                                                   action:@selector(toggleRepeatMode)];
+            phlRepeatBtn.frame = CGRectMake(padX + (btnW + gap) * 3.0f, ctrlY, btnW, 32);
+            [self syncRepeatButton];
+            [phlMenuContainer addSubview:phlRepeatBtn];
 
             // Thanh chỉnh / giảm âm lượng
+            CGFloat volY = 102.0f;
             UIButton *muteBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            muteBtn.frame = CGRectMake(12, 87, 36, 24);
+            muteBtn.frame = CGRectMake(padX, volY, 32, 26);
             [muteBtn setTitle:@"🔉" forState:UIControlStateNormal];
-            muteBtn.titleLabel.font = [UIFont systemFontOfSize:13];
+            muteBtn.titleLabel.font = [UIFont systemFontOfSize:14];
             [muteBtn addTarget:self action:@selector(decreaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:muteBtn];
 
-            phlVolumeSlider = [[UISlider alloc] initWithFrame:CGRectMake(52, 89, 200, 20)];
+            phlVolumeSlider = [[UISlider alloc] initWithFrame:CGRectMake(padX + 36, volY, innerW - 72, 26)];
             phlVolumeSlider.minimumValue = 0.0f;
             phlVolumeSlider.maximumValue = 1.0f;
             phlVolumeSlider.value = phlCurrentVolume;
-            phlVolumeSlider.minimumTrackTintColor = [UIColor cyanColor];
-            phlVolumeSlider.maximumTrackTintColor = [UIColor colorWithWhite:0.25 alpha:1.0];
+            phlVolumeSlider.minimumTrackTintColor = [UIColor colorWithRed:0.35 green:0.92 blue:1.0 alpha:1.0];
+            phlVolumeSlider.maximumTrackTintColor = [UIColor colorWithWhite:0.24 alpha:1.0];
+            phlVolumeSlider.thumbTintColor = [UIColor whiteColor];
             [phlVolumeSlider addTarget:self action:@selector(volumeSliderChanged:) forControlEvents:UIControlEventValueChanged];
             [phlMenuContainer addSubview:phlVolumeSlider];
 
             UIButton *volUpBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            volUpBtn.frame = CGRectMake(256, 87, 36, 24);
+            volUpBtn.frame = CGRectMake(menuW - padX - 32, volY, 32, 26);
             [volUpBtn setTitle:@"🔊" forState:UIControlStateNormal];
-            volUpBtn.titleLabel.font = [UIFont systemFontOfSize:13];
+            volUpBtn.titleLabel.font = [UIFont systemFontOfSize:14];
             [volUpBtn addTarget:self action:@selector(increaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:volUpBtn];
 
             // Thanh chuyển ứng dụng nhanh
+            CGFloat appY = 134.0f;
             NSArray *appLabels = @[@"TikTok", @"YouTube", @"Telegram"];
             NSArray *appSchemes = @[@"snssdk1233://", @"youtube://", @"tg://"];
-            CGFloat appBtnW = 89.3f;
-            CGFloat appGap = 6.0f;
+            CGFloat appGap = 5.0f;
+            CGFloat appBtnW = (innerW - appGap * 2.0f) / 3.0f;
+
             for (NSInteger j = 0; j < (NSInteger)appLabels.count; j++) {
                 UIButton *appBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-                appBtn.frame = CGRectMake(12 + j * (appBtnW + appGap), 117, appBtnW, 24);
-                [appBtn setTitle:[NSString stringWithFormat:@"⇄ %@", appLabels[j]] forState:UIControlStateNormal];
+                appBtn.frame = CGRectMake(padX + j * (appBtnW + appGap), appY, appBtnW, 26);
+                [appBtn setTitle:[NSString stringWithFormat:@"↗ %@", appLabels[j]] forState:UIControlStateNormal];
                 appBtn.titleLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightSemibold];
-                [appBtn setTitleColor:[UIColor colorWithRed:0.85 green:0.95 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-                appBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.12 blue:0.24 alpha:0.92];
-                appBtn.layer.cornerRadius = 6;
+                [appBtn setTitleColor:[UIColor colorWithRed:0.88 green:0.96 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+                appBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.13 blue:0.26 alpha:0.94];
+                appBtn.layer.cornerRadius = 7;
+                appBtn.layer.borderWidth = 1.0;
+                appBtn.layer.borderColor = [UIColor colorWithRed:0.35 green:0.65 blue:1.0 alpha:0.35].CGColor;
                 objc_setAssociatedObject(appBtn, "phlSchemeKey", appSchemes[j], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
                 [appBtn addTarget:self action:@selector(openExternalApp:) forControlEvents:UIControlEventTouchUpInside];
                 [phlMenuContainer addSubview:appBtn];
             }
 
-            // Danh sách bài hát (cuộn độc lập, không đẩy chân menu)
-            phlTableView = [[UITableView alloc] initWithFrame:CGRectMake(8, 147, 288, 204) style:UITableViewStylePlain];
+            // Danh sách bài hát (cuộn độc lập, chân bản quyền cố định bên dưới)
+            CGFloat footerHeight = 68.0f;
+            CGFloat tableY = 166.0f;
+            CGFloat tableH = menuH - tableY - footerHeight - 6.0f;
+
+            phlTableView = [[UITableView alloc] initWithFrame:CGRectMake(8, tableY, menuW - 16, tableH) style:UITableViewStylePlain];
             phlTableView.backgroundColor = [UIColor clearColor];
             phlTableView.separatorColor = [UIColor colorWithWhite:0.22 alpha:1.0];
             phlTableView.delegate = self;
             phlTableView.dataSource = self;
             [phlMenuContainer addSubview:phlTableView];
 
-            // --- PHẦN CHÂN CỐ ĐỊNH DƯỚI CÙNG (KHÔNG ĐỔI VỊ TRÍ KHI THÊM BÀI) ---
-            phlYouTubeBottomBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            phlYouTubeBottomBtn.frame = CGRectMake(12, 356, 280, 28);
-            [phlYouTubeBottomBtn setTitle:@"▶ Chuyển sang YouTube nghe nhạc" forState:UIControlStateNormal];
-            [phlYouTubeBottomBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            phlYouTubeBottomBtn.titleLabel.font = [UIFont boldSystemFontOfSize:11];
-            phlYouTubeBottomBtn.backgroundColor = [UIColor colorWithRed:0.72 green:0.12 blue:0.22 alpha:0.95];
-            phlYouTubeBottomBtn.layer.cornerRadius = 7;
-            phlYouTubeBottomBtn.layer.borderWidth = 1.0;
-            phlYouTubeBottomBtn.layer.borderColor = [UIColor colorWithRed:1.0 green:0.45 blue:0.55 alpha:0.85].CGColor;
-            [phlYouTubeBottomBtn addTarget:self action:@selector(openYouTubeRedirect) forControlEvents:UIControlEventTouchUpInside];
-            [phlMenuContainer addSubview:phlYouTubeBottomBtn];
-
+            // --- CHÂN CỐ ĐỊNH DƯỚI CÙNG (INFO BẢN QUYỀN https://phamlong09.store) ---
+            CGFloat infoBtnY = menuH - footerHeight;
             phlAdminInfoBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            phlAdminInfoBtn.frame = CGRectMake(12, 388, 280, 22);
-            [phlAdminInfoBtn setTitle:@"🌐 ADMIN PHẠM LONG • phamlong09.store" forState:UIControlStateNormal];
-            [phlAdminInfoBtn setTitleColor:[UIColor colorWithRed:0.45 green:0.95 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-            phlAdminInfoBtn.titleLabel.font = [UIFont boldSystemFontOfSize:10];
-            phlAdminInfoBtn.backgroundColor = [UIColor colorWithRed:0.11 green:0.05 blue:0.22 alpha:0.92];
-            phlAdminInfoBtn.layer.cornerRadius = 6;
+            phlAdminInfoBtn.frame = CGRectMake(padX, infoBtnY, innerW, 28);
+            [phlAdminInfoBtn setTitle:@"🛡 INFO & BẢN QUYỀN • phamlong09.store" forState:UIControlStateNormal];
+            [phlAdminInfoBtn setTitleColor:[UIColor colorWithRed:0.45 green:0.96 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+            phlAdminInfoBtn.titleLabel.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightBold];
+            phlAdminInfoBtn.backgroundColor = [UIColor colorWithRed:0.14 green:0.06 blue:0.28 alpha:0.96];
+            phlAdminInfoBtn.layer.cornerRadius = 8;
             phlAdminInfoBtn.layer.borderWidth = 1.0;
-            phlAdminInfoBtn.layer.borderColor = [UIColor colorWithRed:0.65 green:0.35 blue:1.0 alpha:0.6].CGColor;
+            phlAdminInfoBtn.layer.borderColor = [UIColor colorWithRed:0.78 green:0.42 blue:1.0 alpha:0.85].CGColor;
             [phlAdminInfoBtn addTarget:self action:@selector(openAdminInfoGroup) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlAdminInfoBtn];
 
-            phlCopyrightLabel = [[UILabel alloc] initWithFrame:CGRectMake(8, 412, 288, 32)];
+            phlCopyrightLabel = [[UILabel alloc] initWithFrame:CGRectMake(8, infoBtnY + 30, menuW - 16, 34)];
             phlCopyrightLabel.text = @"BẢN QUYỀN THUỘC ADMIN TELEGRAM: @PHL0990\nZALO: 0522608620";
-            phlCopyrightLabel.textColor = [UIColor colorWithRed:0.88 green:0.78 blue:1.0 alpha:0.95];
-            phlCopyrightLabel.font = [UIFont boldSystemFontOfSize:9];
+            phlCopyrightLabel.textColor = [UIColor colorWithRed:0.9 green:0.82 blue:1.0 alpha:0.95];
+            phlCopyrightLabel.font = [UIFont systemFontOfSize:9 weight:UIFontWeightBold];
             phlCopyrightLabel.textAlignment = NSTextAlignmentCenter;
             phlCopyrightLabel.numberOfLines = 2;
             [phlMenuContainer addSubview:phlCopyrightLabel];
@@ -341,11 +383,11 @@ static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
         [self fetchGitHubPlaylist];
         [self syncPlayPauseButton];
         phlMenuContainer.hidden = NO;
-        [UIView animateWithDuration:0.2 animations:^{
+        [UIView animateWithDuration:0.18 animations:^{
             phlMenuContainer.alpha = 1.0;
         }];
     } else {
-        [UIView animateWithDuration:0.2 animations:^{
+        [UIView animateWithDuration:0.16 animations:^{
             phlMenuContainer.alpha = 0.0;
         } completion:^(BOOL finished) {
             phlMenuContainer.hidden = YES;
@@ -353,22 +395,40 @@ static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
     }
 }
 
-- (void)handlePan:(UIPanGestureRecognizer *)pan {
+- (void)clampViewToSafeBounds:(UIView *)targetView topMargin:(CGFloat)topMargin bottomMargin:(CGFloat)bottomMargin {
+    if (!targetView || !targetView.superview) return;
+    CGSize superSize = targetView.superview.bounds.size;
+    CGFloat halfW = targetView.bounds.size.width / 2.0f;
+    CGFloat halfH = targetView.bounds.size.height / 2.0f;
+
+    CGFloat minX = halfW + 6.0f;
+    CGFloat maxX = superSize.width - halfW - 6.0f;
+    CGFloat minY = halfH + topMargin;
+    CGFloat maxY = superSize.height - halfH - bottomMargin;
+
+    CGPoint c = targetView.center;
+    if (minX <= maxX) c.x = MAX(minX, MIN(maxX, c.x));
+    if (minY <= maxY) c.y = MAX(minY, MIN(maxY, c.y));
+    targetView.center = c;
+}
+
+- (void)handleFloatingPan:(UIPanGestureRecognizer *)pan {
     UIView *targetView = pan.view;
     if (!targetView || !targetView.superview) return;
 
     CGPoint translation = [pan translationInView:targetView.superview];
-    CGPoint newCenter = CGPointMake(targetView.center.x + translation.x, targetView.center.y + translation.y);
-
-    CGFloat halfW = targetView.bounds.size.width / 2.0;
-    CGFloat halfH = targetView.bounds.size.height / 2.0;
-    CGSize superSize = targetView.superview.bounds.size;
-
-    newCenter.x = MAX(halfW, MIN(superSize.width - halfW, newCenter.x));
-    newCenter.y = MAX(halfH, MIN(superSize.height - halfH, newCenter.y));
-
-    targetView.center = newCenter;
+    targetView.center = CGPointMake(targetView.center.x + translation.x, targetView.center.y + translation.y);
+    [self clampViewToSafeBounds:targetView topMargin:18.0f bottomMargin:18.0f];
     [pan setTranslation:CGPointZero inView:targetView.superview];
+}
+
+- (void)handleMenuHeaderPan:(UIPanGestureRecognizer *)pan {
+    if (!phlMenuContainer || !phlMenuContainer.superview) return;
+
+    CGPoint translation = [pan translationInView:phlMenuContainer.superview];
+    phlMenuContainer.center = CGPointMake(phlMenuContainer.center.x + translation.x, phlMenuContainer.center.y + translation.y);
+    [self clampViewToSafeBounds:phlMenuContainer topMargin:22.0f bottomMargin:16.0f];
+    [pan setTranslation:CGPointZero inView:phlMenuContainer.superview];
 }
 
 - (void)fetchGitHubPlaylist {
@@ -511,36 +571,8 @@ static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
 - (void)syncRepeatButton {
     [phlRepeatBtn setTitle:(phlRepeatOne ? @"🔂" : @"🔁") forState:UIControlStateNormal];
     phlRepeatBtn.backgroundColor = phlRepeatOne
-        ? [UIColor colorWithRed:0.45 green:0.15 blue:0.75 alpha:0.95]
-        : [UIColor colorWithRed:0.14 green:0.07 blue:0.26 alpha:0.92];
-}
-
-- (NSURL *)resolveYouTubeTargetURL {
-    NSString *targetStr = kPHLDefaultYouTubeURL;
-
-    if (phlCurrentIndex >= 0 && phlCurrentIndex < (NSInteger)phlPlaylist.count) {
-        NSDictionary *song = phlPlaylist[phlCurrentIndex];
-        NSString *ytField = song[@"youtube"] ?: (song[@"youtube_url"] ?: song[@"yt"]);
-        if ([ytField isKindOfClass:[NSString class]] && ytField.length > 0) {
-            targetStr = ytField;
-        } else {
-            NSString *title = song[@"title"];
-            if ([title isKindOfClass:[NSString class]] && title.length > 0) {
-                NSCharacterSet *allowed = [NSCharacterSet URLQueryAllowedCharacterSet];
-                NSString *encodedQuery = [title stringByAddingPercentEncodingWithAllowedCharacters:allowed];
-                targetStr = [NSString stringWithFormat:@"https://m.youtube.com/results?search_query=%@", encodedQuery];
-            }
-        }
-    }
-
-    NSString *encodedTarget = [targetStr stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
-    return [NSURL URLWithString:encodedTarget ?: targetStr];
-}
-
-- (void)openYouTubeRedirect {
-    NSURL *ytURL = [self resolveYouTubeTargetURL];
-    if (!ytURL) return;
-    [[UIApplication sharedApplication] openURL:ytURL options:@{} completionHandler:nil];
+        ? [UIColor colorWithRed:0.48 green:0.16 blue:0.82 alpha:0.96]
+        : [UIColor colorWithRed:0.15 green:0.08 blue:0.29 alpha:0.95];
 }
 
 - (void)openAdminInfoGroup {
@@ -583,7 +615,7 @@ static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
     NSString *title = song[@"title"] ?: @"Bài hát chưa đặt tên";
     BOOL isCurrent = (indexPath.row == phlCurrentIndex);
 
-    cell.textLabel.textColor = isCurrent ? [UIColor colorWithRed:0.85 green:0.55 blue:1.0 alpha:1.0] : [UIColor whiteColor];
+    cell.textLabel.textColor = isCurrent ? [UIColor colorWithRed:0.88 green:0.58 blue:1.0 alpha:1.0] : [UIColor whiteColor];
     cell.textLabel.text = title;
     cell.detailTextLabel.textColor = isCurrent ? [UIColor greenColor] : [UIColor cyanColor];
     cell.detailTextLabel.text = isCurrent ? @"🔊 Đang phát trực tiếp" : @"▶ Chạm để phát từ GitHub";
