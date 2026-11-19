@@ -182,7 +182,7 @@ static NSString *const kPHLWebAudioBridgeJS =
     NSInteger phlCurrentIndex;
     BOOL phlIsMenuOpen;
     BOOL phlRepeatOne;
-    float phlCurrentGain; // 0.0 -> 2.0 (1.0 = chuẩn 100%, > 1.0 = tăng vượt mức âm lượng máy)
+    float phlCurrentGain;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
@@ -245,7 +245,6 @@ static NSString *const kPHLWebAudioBridgeJS =
 - (void)configureAudioSession {
     NSError *sessionError = nil;
     AVAudioSession *session = [AVAudioSession sharedInstance];
-    // Dùng Playback độc lập, không ép đè trộn lẫn lung tung
     [session setCategory:AVAudioSessionCategoryPlayback
              withOptions:AVAudioSessionCategoryOptionAllowAirPlay
                    error:&sessionError];
@@ -267,21 +266,22 @@ static NSString *const kPHLWebAudioBridgeJS =
 
 - (void)applyGainToItem:(AVPlayerItem *)item gain:(float)gain {
     if (!item || !item.asset) return;
-    AVAsset *asset = item.asset;
-    [asset loadTracksWithMediaType:AVMediaTypeAudio completionHandler:^(NSArray<AVAssetTrack *> * _Nullable audioTracks, NSError * _Nullable error) {
-        if (error || audioTracks.count == 0) return;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            AVMutableAudioMix *audioMix = [AVMutableAudioMix audioMix];
-            NSMutableArray<AVMutableAudioMixInputParameters *> *params = [NSMutableArray array];
-            for (AVAssetTrack *track in audioTracks) {
-                AVMutableAudioMixInputParameters *p = [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:track];
-                [p setVolume:gain atTime:kCMTimeZero];
-                [params addObject:p];
-            }
-            audioMix.inputParameters = params;
-            item.audioMix = audioMix;
-        });
-    }];
+    if (gain <= 1.001f) {
+        item.audioMix = nil;
+        return;
+    }
+    NSArray<AVAssetTrack *> *audioTracks = [item.asset tracksWithMediaType:AVMediaTypeAudio];
+    if (!audioTracks || audioTracks.count == 0) return;
+
+    AVMutableAudioMix *audioMix = [AVMutableAudioMix audioMix];
+    NSMutableArray<AVMutableAudioMixInputParameters *> *params = [NSMutableArray array];
+    for (AVAssetTrack *track in audioTracks) {
+        AVMutableAudioMixInputParameters *p = [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:track];
+        [p setVolume:gain atTime:kCMTimeZero];
+        [params addObject:p];
+    }
+    audioMix.inputParameters = params;
+    item.audioMix = audioMix;
 }
 
 - (void)applyIndependentGain:(float)gain {
@@ -297,7 +297,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             : [UIColor colorWithRed:0.45 green:0.98 blue:1.0 alpha:1.0];
     }
 
-    // 1. Nhạc GitHub (AVPlayer): chỉnh volume chuẩn tới 1.0 và boost tới 2.0 qua audioMix
     if (phlAudioPlayer) {
         phlAudioPlayer.muted = (clamped <= 0.001f);
         phlAudioPlayer.volume = MIN(1.0f, clamped);
@@ -306,7 +305,6 @@ static NSString *const kPHLWebAudioBridgeJS =
         }
     }
 
-    // 2. Trình duyệt web (WKWebView): chỉnh độc lập tới 2.0x qua GainNode mà không chạm vào nút âm lượng máy
     if (phlWebView) {
         NSString *js = [NSString stringWithFormat:
                         @"%@; if (window.__phlAudioBridge) { window.__phlAudioBridge.setGain(%.3f); }",
@@ -317,7 +315,6 @@ static NSString *const kPHLWebAudioBridgeJS =
 
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
     if ([message.name isEqualToString:@"phlWebMediaPlaying"]) {
-        // Khi người dùng bấm phát nhạc/video trên YouTube trong menu thì tự dừng nhạc GitHub để không xung đột
         dispatch_async(dispatch_get_main_queue(), ^{
             [self pauseGitHubPlayerIfPlaying];
             [self applyIndependentGain:phlCurrentGain];
@@ -532,7 +529,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             phlMenuGradient.endPoint = CGPointMake(1.0f, 1.0f);
             [phlMenuContainer.layer insertSublayer:phlMenuGradient atIndex:0];
 
-            // Thanh tiêu đề kéo di chuyển
             phlDragHeader = [[UIView alloc] initWithFrame:CGRectMake(0, 0, menuW, 42)];
             phlDragHeader.backgroundColor = [UIColor colorWithRed:0.18 green:0.06 blue:0.35 alpha:0.85];
             [phlMenuContainer addSubview:phlDragHeader];
@@ -568,7 +564,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             [phlCloseBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlCloseBtn];
 
-            // Cụm điều khiển nhạc GitHub (tự ẩn khi mở YouTube)
             UIColor *ctrlBg = [UIColor colorWithRed:0.22 green:0.08 blue:0.42 alpha:0.92];
             UIColor *ctrlBorder = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.85];
 
@@ -601,7 +596,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             [self syncRepeatButton];
             [phlMenuContainer addSubview:phlRepeatBtn];
 
-            // Thanh Gain âm thanh độc lập (0% -> 200%, không đụng âm lượng máy)
             phlMuteBtn = [UIButton buttonWithType:UIButtonTypeSystem];
             [phlMuteBtn setTitle:@"🔉" forState:UIControlStateNormal];
             phlMuteBtn.titleLabel.font = [UIFont systemFontOfSize:12];
@@ -629,7 +623,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             phlGainValueLabel.textAlignment = NSTextAlignmentRight;
             [phlMenuContainer addSubview:phlGainValueLabel];
 
-            // Nút chuyển chế độ trình duyệt YouTube / Danh sách GitHub
             phlOpenBrowserBtn = [self makeControlButtonWithTitle:@"🌐 MỞ YOUTUBE (PHÓNG RỘNG)"
                                                         fontSize:9.5
                                                          bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
@@ -638,7 +631,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             [phlOpenBrowserBtn setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
             [phlMenuContainer addSubview:phlOpenBrowserBtn];
 
-            // Danh sách nhạc GitHub
             phlTableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
             phlTableView.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.45];
             phlTableView.layer.cornerRadius = 9;
@@ -648,7 +640,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             phlTableView.dataSource = self;
             [phlMenuContainer addSubview:phlTableView];
 
-            // Khung trình duyệt web nhúng trên menu
             phlWebPanel = [[UIView alloc] initWithFrame:CGRectZero];
             phlWebPanel.backgroundColor = [UIColor colorWithRed:0.07 green:0.03 blue:0.18 alpha:0.98];
             phlWebPanel.layer.cornerRadius = 9;
@@ -742,7 +733,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             phlWebView.scrollView.bounces = YES;
             [phlWebPanel addSubview:phlWebView];
 
-            // Chân bản quyền cố định dưới cùng
             phlAdminInfoBtn = [UIButton buttonWithType:UIButtonTypeSystem];
             [phlAdminInfoBtn setTitle:@"🛡 INFO & BẢN QUYỀN • phamlong09.store" forState:UIControlStateNormal];
             [phlAdminInfoBtn setTitleColor:[UIColor colorWithRed:0.45 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
@@ -996,7 +986,6 @@ static NSString *const kPHLWebAudioBridgeJS =
     NSString *urlString = song[@"url"] ?: @"";
     if (urlString.length == 0) return;
 
-    // Dừng nhạc trên YouTube/Web trước để tránh 2 nguồn phát chồng nhau
     [self pauseWebMediaIfPlaying];
     [self configureAudioSession];
 
