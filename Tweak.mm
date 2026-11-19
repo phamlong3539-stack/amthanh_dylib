@@ -16,7 +16,6 @@
 // ------------------------------------------------------------------------------
 #define PHLTransportButton              _0x7b1c_cls
 #define PHLProtectedAudioManager        _0x4e2d_mgr
-// ĐÃ XÓA: #define sharedInstance       (Tránh xung đột với AVAudioSession của Apple)
 #define initializeFramework             _0x1f4a_init
 #define setupKind                       _0x2c5b_stk
 #define refreshTransportVisual          _0x3d6c_rtv
@@ -56,6 +55,14 @@
 #define layoutMenuSubviewsWithWidth     _0xa9f2_lms
 #define applyMenuFrameForExpanded       _0xba03_amf
 #define handleItemDidFinish             _0xcb14_hdf
+
+// ĐOẠN ĐÃ ĐƯỢC BỔ SUNG LẠI Ở ĐÂY:
+typedef NS_ENUM(NSInteger, _0x3b1a_kind) {
+    _0x00_prev = 0,
+    _0x01_playpause = 1,
+    _0x02_next = 2,
+    _0x03_repeat = 3
+};
 
 // ------------------------------------------------------------------------------
 // [LAYER 2]: ENCRYPTED STRING DATA VAULT (XOR + Linear Counter Stream)
@@ -106,16 +113,14 @@ static inline NSString *__attribute__((always_inline)) _0getAudioBridgeJS(void) 
 // [LAYER 3 & 4]: MILITARY ANTI-DEBUG & DYLD TAMPER ENGINE (ARM64 DIRECT SYSCALL)
 // ------------------------------------------------------------------------------
 static inline __attribute__((always_inline)) void _0x_silent_poison(void) {
-    // Bẫy ngầm: Tự huỷ bộ nhớ không để lại dấu vết call-stack
     volatile int *trap = (volatile int *)0;
     *trap = 0xDEADBEEF;
 }
 
 static inline __attribute__((always_inline)) void _0x_enforce_defense(void) {
-    // 1. Syscall ptrace trực tiếp qua ARM64 Assembly (Bypass toàn bộ libc hooks / Frida)
 #if defined(__arm64__) || defined(__aarch64__)
     __asm__ volatile (
-        "mov x0, #31\n"    // PT_DENY_ATTACH (0x1f)
+        "mov x0, #31\n"    // PT_DENY_ATTACH
         "mov x1, #0\n"
         "mov x2, #0\n"
         "mov x3, #0\n"
@@ -132,7 +137,6 @@ static inline __attribute__((always_inline)) void _0x_enforce_defense(void) {
     }
 #endif
 
-    // 2. Sysctl KERN_PROC kiểm tra cờ P_TRACED (Chống LLDB / IDA Pro Debugger)
     int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid() };
     struct kinfo_proc kp;
     size_t sz = sizeof(kp);
@@ -143,7 +147,6 @@ static inline __attribute__((always_inline)) void _0x_enforce_defense(void) {
         }
     }
 
-    // 3. Quét kiểm tra Dynamic Libraries độc hại (Frida, Substrate, Cycript)
     uint32_t cnt = _dyld_image_count();
     for (uint32_t i = 0; i < cnt; i++) {
         const char *name = _dyld_get_image_name(i);
