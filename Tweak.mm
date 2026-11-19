@@ -321,7 +321,7 @@ static NSString *const kPHLWebAudioBridgeJS =
     UIButton *phlCloseBtn;
     UITableView *phlTableView;
 
-    // Khu vực điều khiển chính (4 nút nét mảnh không dùng emoji)
+    // Khu vực điều khiển chính
     UILabel *phlNowPlayingLabel;
     PHLTransportButton *phlPrevBtn;
     PHLTransportButton *phlPlayPauseBtn;
@@ -430,7 +430,7 @@ static NSString *const kPHLWebAudioBridgeJS =
     [phlWebView evaluateJavaScript:js completionHandler:nil];
 }
 
-- (void)pauseGitHubPlayerIfPlaying {
+- (void)pauseStreamPlayerIfPlaying {
     if (phlAudioPlayer && phlAudioPlayer.rate > 0.01f) {
         [phlAudioPlayer pause];
         [self syncPlayPauseButton];
@@ -489,7 +489,7 @@ static NSString *const kPHLWebAudioBridgeJS =
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
     if ([message.name isEqualToString:@"phlWebMediaPlaying"]) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self pauseGitHubPlayerIfPlaying];
+            [self pauseStreamPlayerIfPlaying];
             [self applyIndependentGain:phlCurrentGain];
         });
     }
@@ -538,8 +538,8 @@ static NSString *const kPHLWebAudioBridgeJS =
     CGFloat innerW = menuW - padX * 2.0f;
 
     phlMenuGradient.frame = CGRectMake(0, 0, menuW, menuH);
-    phlDragHeader.frame = CGRectMake(0, 0, menuW, 42.0f);
-    phlCloseBtn.frame = CGRectMake(menuW - 34.0f, 8.0f, 24.0f, 24.0f);
+    phlDragHeader.frame = CGRectMake(0, 0, menuW, 38.0f);
+    phlCloseBtn.frame = CGRectMake(menuW - 34.0f, 7.0f, 24.0f, 24.0f);
 
     phlPrevBtn.hidden = expanded;
     phlPlayPauseBtn.hidden = expanded;
@@ -551,21 +551,21 @@ static NSString *const kPHLWebAudioBridgeJS =
     CGFloat contentY = 0.0f;
 
     if (expanded) {
-        volY = 44.0f;
-        webToggleY = 68.0f;
-        contentY = 95.0f;
+        volY = 41.0f;
+        webToggleY = 65.0f;
+        contentY = 92.0f;
     } else {
         CGFloat gap = 6.0f;
         CGFloat btnW = (innerW - gap * 3.0f) / 4.0f;
-        CGFloat ctrlY = 46.0f;
+        CGFloat ctrlY = 42.0f;
         phlPrevBtn.frame = CGRectMake(padX, ctrlY, btnW, 24.0f);
         phlPlayPauseBtn.frame = CGRectMake(padX + (btnW + gap), ctrlY, btnW, 24.0f);
         phlNextBtn.frame = CGRectMake(padX + (btnW + gap) * 2.0f, ctrlY, btnW, 24.0f);
         phlRepeatBtn.frame = CGRectMake(padX + (btnW + gap) * 3.0f, ctrlY, btnW, 24.0f);
 
-        volY = 74.0f;
-        webToggleY = 99.0f;
-        contentY = 126.0f;
+        volY = 71.0f;
+        webToggleY = 96.0f;
+        contentY = 123.0f;
     }
 
     CGFloat gainBadgeW = 34.0f;
@@ -702,33 +702,27 @@ static NSString *const kPHLWebAudioBridgeJS =
             phlMenuGradient.endPoint = CGPointMake(1.0f, 1.0f);
             [phlMenuContainer.layer insertSublayer:phlMenuGradient atIndex:0];
 
-            phlDragHeader = [[UIView alloc] initWithFrame:CGRectMake(0, 0, menuW, 42)];
+            phlDragHeader = [[UIView alloc] initWithFrame:CGRectMake(0, 0, menuW, 38)];
             phlDragHeader.backgroundColor = [UIColor colorWithRed:0.18 green:0.06 blue:0.35 alpha:0.85];
             [phlMenuContainer addSubview:phlDragHeader];
 
             UIPanGestureRecognizer *headerPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
             [phlDragHeader addGestureRecognizer:headerPan];
 
-            UILabel *dragGripLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 3, menuW - 48, 9)];
-            dragGripLabel.text = @"⋮⋮ KÉO THANH NÀY ĐỂ DI CHUYỂN";
-            dragGripLabel.textColor = [UIColor colorWithRed:0.45 green:0.96 blue:1.0 alpha:0.9];
-            dragGripLabel.font = [UIFont systemFontOfSize:7.5 weight:UIFontWeightBold];
-            [phlDragHeader addSubview:dragGripLabel];
-
-            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 12, menuW - 48, 15)];
-            titleLabel.text = @"👑 PHL PHAM LONG • AUDIO PRO";
+            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 6, menuW - 48, 16)];
+            titleLabel.text = @"👑 PHẠM LONG • AUDIO PRO";
             titleLabel.textColor = [UIColor colorWithRed:1.0 green:0.82 blue:1.0 alpha:1.0];
             titleLabel.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
             [phlDragHeader addSubview:titleLabel];
 
-            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 27, menuW - 44, 13)];
+            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 22, menuW - 44, 13)];
             phlNowPlayingLabel.text = @"♪ Chưa chọn bài hát";
             phlNowPlayingLabel.textColor = [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0];
             phlNowPlayingLabel.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold];
             [phlDragHeader addSubview:phlNowPlayingLabel];
 
             phlCloseBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            phlCloseBtn.frame = CGRectMake(menuW - 34, 8, 24, 24);
+            phlCloseBtn.frame = CGRectMake(menuW - 34, 7, 24, 24);
             [phlCloseBtn setTitle:@"✕" forState:UIControlStateNormal];
             [phlCloseBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.78 alpha:1.0] forState:UIControlStateNormal];
             phlCloseBtn.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
@@ -737,7 +731,6 @@ static NSString *const kPHLWebAudioBridgeJS =
             [phlCloseBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlCloseBtn];
 
-            // 4 nút điều khiển vẽ nét mảnh (không dùng biểu tượng emoji) + đánh dấu trạng thái
             phlPrevBtn = [PHLTransportButton buttonWithKind:PHLTransportIconPrev
                                                actionTarget:self
                                                      action:@selector(playPreviousSong)];
@@ -917,7 +910,7 @@ static NSString *const kPHLWebAudioBridgeJS =
             [keyWindow addSubview:phlMenuContainer];
         }
 
-        [self fetchGitHubPlaylist];
+        [self fetchRemotePlaylist];
     });
 }
 
@@ -952,7 +945,7 @@ static NSString *const kPHLWebAudioBridgeJS =
     phlWebPanel.hidden = !phlIsWebOpen;
     phlTableView.hidden = phlIsWebOpen;
     [phlOpenBrowserBtn setTitle:(phlIsWebOpen
-        ? @"☰ ĐANG MỞ YOUTUBE • VỀ GITHUB (THU GỌN)"
+        ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)"
         : @"🌐 MỞ YOUTUBE (PHÓNG RỘNG)")
                         forState:UIControlStateNormal];
     [self applyMenuFrameForExpanded:phlIsWebOpen animated:animated];
@@ -1037,7 +1030,7 @@ static NSString *const kPHLWebAudioBridgeJS =
         [self initializeFramework];
         [self applyMenuFrameForExpanded:phlIsWebOpen animated:NO];
         [self applyIndependentGain:phlCurrentGain];
-        [self fetchGitHubPlaylist];
+        [self fetchRemotePlaylist];
         [self syncPlayPauseButton];
         phlMenuContainer.hidden = NO;
         [UIView animateWithDuration:0.18 animations:^{
@@ -1089,7 +1082,7 @@ static NSString *const kPHLWebAudioBridgeJS =
     [pan setTranslation:CGPointZero inView:phlMenuContainer.superview];
 }
 
-- (void)fetchGitHubPlaylist {
+- (void)fetchRemotePlaylist {
     NSString *jsonURLStr = @"https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/playlist.json";
     NSURL *url = [NSURL URLWithString:jsonURLStr];
     if (!url) return;
@@ -1101,7 +1094,7 @@ static NSString *const kPHLWebAudioBridgeJS =
         NSHTTPURLResponse *httpResp = (NSHTTPURLResponse *)response;
         if (error || !data || httpResp.statusCode != 200) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                phlStatusMessage = [NSString stringWithFormat:@"Không tải được playlist (HTTP %ld)", (long)httpResp.statusCode];
+                phlStatusMessage = [NSString stringWithFormat:@"Không tải được danh sách (Mã %ld)", (long)httpResp.statusCode];
                 [phlTableView reloadData];
             });
             return;
@@ -1111,7 +1104,7 @@ static NSString *const kPHLWebAudioBridgeJS =
         NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
         if (jsonError || ![jsonDict isKindOfClass:[NSDictionary class]]) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                phlStatusMessage = @"Lỗi cú pháp JSON trong playlist.json";
+                phlStatusMessage = @"Lỗi dữ liệu danh sách phát";
                 [phlTableView reloadData];
             });
             return;
@@ -1260,7 +1253,7 @@ static NSString *const kPHLWebAudioBridgeJS =
         cell.textLabel.textColor = [UIColor colorWithRed:1.0 green:0.65 blue:0.75 alpha:1.0];
         cell.textLabel.text = phlStatusMessage ?: @"Không có bài hát";
         cell.detailTextLabel.textColor = [UIColor lightGrayColor];
-        cell.detailTextLabel.text = @"Chạm để thử tải lại từ GitHub";
+        cell.detailTextLabel.text = @"Chạm để thử tải lại";
         return cell;
     }
 
@@ -1271,7 +1264,7 @@ static NSString *const kPHLWebAudioBridgeJS =
     cell.textLabel.textColor = isCurrent ? [UIColor colorWithRed:1.0 green:0.65 blue:1.0 alpha:1.0] : [UIColor whiteColor];
     cell.textLabel.text = title;
     cell.detailTextLabel.textColor = isCurrent ? [UIColor colorWithRed:0.35 green:1.0 blue:0.75 alpha:1.0] : [UIColor colorWithRed:0.45 green:0.92 blue:1.0 alpha:1.0];
-    cell.detailTextLabel.text = isCurrent ? @"🔊 Đang phát trực tiếp" : @"▶ Chạm để phát từ GitHub";
+    cell.detailTextLabel.text = isCurrent ? @"🔊 Đang phát trực tiếp" : @"▶ Chạm để phát nhạc";
     return cell;
 }
 
@@ -1280,7 +1273,7 @@ static NSString *const kPHLWebAudioBridgeJS =
     if (phlPlaylist.count == 0) {
         phlStatusMessage = @"Đang tải lại danh sách nhạc...";
         [tableView reloadData];
-        [self fetchGitHubPlaylist];
+        [self fetchRemotePlaylist];
         return;
     }
 
