@@ -1,7 +1,6 @@
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <WebKit/WebKit.h>
-#import <MediaPlayer/MediaPlayer.h>
 #import <QuartzCore/QuartzCore.h>
 #include <dlfcn.h>
 #include <sys/sysctl.h>
@@ -20,7 +19,7 @@ static void preventDebugging() {
 }
 
 static NSString *const kPHLPrefRepeatOne = @"PHL_RepeatOneSong";
-static NSString *const kPHLPrefVolume = @"PHL_PlayerVolume";
+static NSString *const kPHLPrefGain = @"PHL_IndependentAudioGain";
 static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
 static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
 
@@ -69,11 +68,79 @@ static NSString *const kPHLCleanYouTubeJS =
 "  }"
 "})();";
 
-@interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, WKNavigationDelegate> {
+static NSString *const kPHLWebAudioBridgeJS =
+@"(function(){"
+"  if (!window.__phlAudioBridge) {"
+"    window.__phlAudioBridge = {"
+"      gain: 1.0,"
+"      ctx: null,"
+"      nodes: new WeakMap(),"
+"      pauseAll: function(){"
+"        document.querySelectorAll('video,audio').forEach(function(el){ try { el.pause(); } catch(e){} });"
+"      },"
+"      ensureContext: function(){"
+"        if (!this.ctx) {"
+"          var AC = window.AudioContext || window.webkitAudioContext;"
+"          if (AC) { try { this.ctx = new AC(); } catch(e){} }"
+"        }"
+"        if (this.ctx && this.ctx.state === 'suspended') {"
+"          this.ctx.resume().catch(function(){});"
+"        }"
+"      },"
+"      hookElement: function(el){"
+"        var self = this;"
+"        if (!el.__phlPlayHooked) {"
+"          el.__phlPlayHooked = true;"
+"          el.addEventListener('play', function(){"
+"            self.applyToElement(el);"
+"            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.phlWebMediaPlaying) {"
+"              window.webkit.messageHandlers.phlWebMediaPlaying.postMessage('playing');"
+"            }"
+"          }, true);"
+"        }"
+"        self.applyToElement(el);"
+"      },"
+"      applyToElement: function(el){"
+"        var g = Math.max(0.0, Math.min(2.0, this.gain));"
+"        try {"
+"          el.muted = (g <= 0.001);"
+"          el.volume = Math.min(1.0, g);"
+"        } catch(e){}"
+"        if (g > 1.0) {"
+"          this.ensureContext();"
+"          if (this.ctx) {"
+"            try {"
+"              var entry = this.nodes.get(el);"
+"              if (!entry) {"
+"                var src = this.ctx.createMediaElementSource(el);"
+"                var gainNode = this.ctx.createGain();"
+"                src.connect(gainNode);"
+"                gainNode.connect(this.ctx.destination);"
+"                entry = { gainNode: gainNode };"
+"                this.nodes.set(el, entry);"
+"              }"
+"              entry.gainNode.gain.setTargetAtTime(g, this.ctx.currentTime, 0.02);"
+"            } catch(e){}"
+"          }"
+"        } else {"
+"          var existing = this.nodes.get(el);"
+"          if (existing && existing.gainNode && this.ctx) {"
+"            try { existing.gainNode.gain.setTargetAtTime(g, this.ctx.currentTime, 0.02); } catch(e){}"
+"          }"
+"        }"
+"      },"
+"      setGain: function(val){"
+"        this.gain = Math.max(0.0, Math.min(2.0, parseFloat(val) || 0.0));"
+"        var self = this;"
+"        document.querySelectorAll('video,audio').forEach(function(el){ self.hookElement(el); });"
+"      }"
+"    };"
+"  }"
+"})();";
+
+@interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, WKNavigationDelegate, WKScriptMessageHandler> {
     AVPlayer *phlAudioPlayer;
     AVPlayerItem *phlPlayerItem;
-    MPVolumeView *phlSystemVolumeView;
-    UISlider *phlSystemVolumeSlider;
 
     UIButton *phlFloatingBtn;
     UIView *phlMenuContainer;
@@ -91,6 +158,7 @@ static NSString *const kPHLCleanYouTubeJS =
     UIButton *phlMuteBtn;
     UIButton *phlVolUpBtn;
     UISlider *phlVolumeSlider;
+    UILabel *phlGainValueLabel;
 
     // Trình duyệt web nhúng & tìm kiếm YouTube trong menu
     UIButton *phlOpenBrowserBtn;
@@ -114,7 +182,7 @@ static NSString *const kPHLCleanYouTubeJS =
     NSInteger phlCurrentIndex;
     BOOL phlIsMenuOpen;
     BOOL phlRepeatOne;
-    float phlCurrentVolume;
+    float phlCurrentGain; // 0.0 -> 2.0 (1.0 = chuẩn 100%, > 1.0 = tăng vượt mức âm lượng máy)
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
@@ -148,10 +216,10 @@ static NSString *const kPHLCleanYouTubeJS =
             phlRepeatOne = NO;
         }
 
-        if ([defaults objectForKey:kPHLPrefVolume] != nil) {
-            phlCurrentVolume = [defaults floatForKey:kPHLPrefVolume];
+        if ([defaults objectForKey:kPHLPrefGain] != nil) {
+            phlCurrentGain = [defaults floatForKey:kPHLPrefGain];
         } else {
-            phlCurrentVolume = 0.85f;
+            phlCurrentGain = 1.0f;
         }
 
         [self configureAudioSession];
@@ -177,44 +245,83 @@ static NSString *const kPHLCleanYouTubeJS =
 - (void)configureAudioSession {
     NSError *sessionError = nil;
     AVAudioSession *session = [AVAudioSession sharedInstance];
+    // Dùng Playback độc lập, không ép đè trộn lẫn lung tung
     [session setCategory:AVAudioSessionCategoryPlayback
-             withOptions:AVAudioSessionCategoryOptionMixWithOthers
+             withOptions:AVAudioSessionCategoryOptionAllowAirPlay
                    error:&sessionError];
     [session setActive:YES error:&sessionError];
 }
 
-- (void)bindSystemVolumeSlider {
-    if (phlSystemVolumeSlider) return;
-    phlSystemVolumeView = [[MPVolumeView alloc] initWithFrame:CGRectMake(-1000, -1000, 10, 10)];
-    phlSystemVolumeView.hidden = YES;
-    for (UIView *sub in phlSystemVolumeView.subviews) {
-        if ([sub isKindOfClass:[UISlider class]]) {
-            phlSystemVolumeSlider = (UISlider *)sub;
-            break;
-        }
+- (void)pauseWebMediaIfPlaying {
+    if (!phlWebView) return;
+    NSString *js = @"(function(){ if (window.__phlAudioBridge) { window.__phlAudioBridge.pauseAll(); } document.querySelectorAll('video,audio').forEach(function(el){ try { el.pause(); } catch(e){} }); })();";
+    [phlWebView evaluateJavaScript:js completionHandler:nil];
+}
+
+- (void)pauseGitHubPlayerIfPlaying {
+    if (phlAudioPlayer && phlAudioPlayer.rate > 0.01f) {
+        [phlAudioPlayer pause];
+        [self syncPlayPauseButton];
     }
 }
 
-- (void)applyUnifiedVolume:(float)vol {
-    float clamped = MAX(0.0f, MIN(1.0f, vol));
-    phlCurrentVolume = clamped;
-    [[NSUserDefaults standardUserDefaults] setFloat:clamped forKey:kPHLPrefVolume];
+- (void)applyGainToItem:(AVPlayerItem *)item gain:(float)gain {
+    if (!item || !item.asset) return;
+    AVAsset *asset = item.asset;
+    [asset loadTracksWithMediaType:AVMediaTypeAudio completionHandler:^(NSArray<AVAssetTrack *> * _Nullable audioTracks, NSError * _Nullable error) {
+        if (error || audioTracks.count == 0) return;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            AVMutableAudioMix *audioMix = [AVMutableAudioMix audioMix];
+            NSMutableArray<AVMutableAudioMixInputParameters *> *params = [NSMutableArray array];
+            for (AVAssetTrack *track in audioTracks) {
+                AVMutableAudioMixInputParameters *p = [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:track];
+                [p setVolume:gain atTime:kCMTimeZero];
+                [params addObject:p];
+            }
+            audioMix.inputParameters = params;
+            item.audioMix = audioMix;
+        });
+    }];
+}
 
-    if (phlAudioPlayer) {
-        phlAudioPlayer.volume = clamped;
+- (void)applyIndependentGain:(float)gain {
+    float clamped = MAX(0.0f, MIN(2.0f, gain));
+    phlCurrentGain = clamped;
+    [[NSUserDefaults standardUserDefaults] setFloat:clamped forKey:kPHLPrefGain];
+
+    if (phlGainValueLabel) {
+        int pct = (int)roundf(clamped * 100.0f);
+        phlGainValueLabel.text = [NSString stringWithFormat:@"%d%%", pct];
+        phlGainValueLabel.textColor = (clamped > 1.0f)
+            ? [UIColor colorWithRed:1.0 green:0.45 blue:0.65 alpha:1.0]
+            : [UIColor colorWithRed:0.45 green:0.98 blue:1.0 alpha:1.0];
     }
 
+    // 1. Nhạc GitHub (AVPlayer): chỉnh volume chuẩn tới 1.0 và boost tới 2.0 qua audioMix
+    if (phlAudioPlayer) {
+        phlAudioPlayer.muted = (clamped <= 0.001f);
+        phlAudioPlayer.volume = MIN(1.0f, clamped);
+        if (phlPlayerItem) {
+            [self applyGainToItem:phlPlayerItem gain:clamped];
+        }
+    }
+
+    // 2. Trình duyệt web (WKWebView): chỉnh độc lập tới 2.0x qua GainNode mà không chạm vào nút âm lượng máy
     if (phlWebView) {
         NSString *js = [NSString stringWithFormat:
-                        @"(function(){var v=%.3f;var m=(v<=0.001);document.querySelectorAll('video,audio').forEach(function(el){try{el.muted=m;el.volume=v;}catch(e){}});})();",
-                        clamped];
+                        @"%@; if (window.__phlAudioBridge) { window.__phlAudioBridge.setGain(%.3f); }",
+                        kPHLWebAudioBridgeJS, clamped];
         [phlWebView evaluateJavaScript:js completionHandler:nil];
     }
+}
 
-    [self bindSystemVolumeSlider];
-    if (phlSystemVolumeSlider) {
-        phlSystemVolumeSlider.value = clamped;
-        [phlSystemVolumeSlider sendActionsForControlEvents:UIControlEventValueChanged];
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
+    if ([message.name isEqualToString:@"phlWebMediaPlaying"]) {
+        // Khi người dùng bấm phát nhạc/video trên YouTube trong menu thì tự dừng nhạc GitHub để không xung đột
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self pauseGitHubPlayerIfPlaying];
+            [self applyIndependentGain:phlCurrentGain];
+        });
     }
 }
 
@@ -264,7 +371,6 @@ static NSString *const kPHLCleanYouTubeJS =
     phlDragHeader.frame = CGRectMake(0, 0, menuW, 42.0f);
     phlCloseBtn.frame = CGRectMake(menuW - 34.0f, 8.0f, 24.0f, 24.0f);
 
-    // Ẩn dải nút điều khiển nhạc GitHub khi mở YouTube để dồn chỗ cho trình duyệt
     phlPrevBtn.hidden = expanded;
     phlPlayPauseBtn.hidden = expanded;
     phlNextBtn.hidden = expanded;
@@ -275,7 +381,6 @@ static NSString *const kPHLCleanYouTubeJS =
     CGFloat contentY = 0.0f;
 
     if (expanded) {
-        // Dịch thanh âm lượng và nút thu gọn lên sát trên cùng ngay dưới header
         volY = 44.0f;
         webToggleY = 68.0f;
         contentY = 95.0f;
@@ -293,9 +398,11 @@ static NSString *const kPHLCleanYouTubeJS =
         contentY = 126.0f;
     }
 
-    phlMuteBtn.frame = CGRectMake(padX, volY, 26.0f, 22.0f);
-    phlVolumeSlider.frame = CGRectMake(padX + 28.0f, volY, innerW - 56.0f, 22.0f);
-    phlVolUpBtn.frame = CGRectMake(menuW - padX - 26.0f, volY, 26.0f, 22.0f);
+    CGFloat gainBadgeW = 34.0f;
+    phlMuteBtn.frame = CGRectMake(padX, volY, 24.0f, 22.0f);
+    phlVolumeSlider.frame = CGRectMake(padX + 26.0f, volY, MAX(60.0f, innerW - 26.0f - 24.0f - gainBadgeW - 2.0f), 22.0f);
+    phlVolUpBtn.frame = CGRectMake(menuW - padX - gainBadgeW - 26.0f, volY, 24.0f, 22.0f);
+    phlGainValueLabel.frame = CGRectMake(menuW - padX - gainBadgeW, volY, gainBadgeW, 22.0f);
 
     phlOpenBrowserBtn.frame = CGRectMake(padX, webToggleY, innerW, 23.0f);
 
@@ -494,17 +601,17 @@ static NSString *const kPHLCleanYouTubeJS =
             [self syncRepeatButton];
             [phlMenuContainer addSubview:phlRepeatBtn];
 
-            // Thanh âm lượng đồng bộ cả nhạc GitHub & trình duyệt web
+            // Thanh Gain âm thanh độc lập (0% -> 200%, không đụng âm lượng máy)
             phlMuteBtn = [UIButton buttonWithType:UIButtonTypeSystem];
             [phlMuteBtn setTitle:@"🔉" forState:UIControlStateNormal];
-            phlMuteBtn.titleLabel.font = [UIFont systemFontOfSize:12.5];
+            phlMuteBtn.titleLabel.font = [UIFont systemFontOfSize:12];
             [phlMuteBtn addTarget:self action:@selector(decreaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlMuteBtn];
 
             phlVolumeSlider = [[UISlider alloc] initWithFrame:CGRectZero];
             phlVolumeSlider.minimumValue = 0.0f;
-            phlVolumeSlider.maximumValue = 1.0f;
-            phlVolumeSlider.value = phlCurrentVolume;
+            phlVolumeSlider.maximumValue = 2.0f;
+            phlVolumeSlider.value = phlCurrentGain;
             phlVolumeSlider.minimumTrackTintColor = [UIColor colorWithRed:0.35 green:0.98 blue:1.0 alpha:1.0];
             phlVolumeSlider.maximumTrackTintColor = [UIColor colorWithRed:0.95 green:0.35 blue:0.75 alpha:0.35];
             phlVolumeSlider.thumbTintColor = [UIColor colorWithRed:1.0 green:0.88 blue:0.35 alpha:1.0];
@@ -513,9 +620,14 @@ static NSString *const kPHLCleanYouTubeJS =
 
             phlVolUpBtn = [UIButton buttonWithType:UIButtonTypeSystem];
             [phlVolUpBtn setTitle:@"🔊" forState:UIControlStateNormal];
-            phlVolUpBtn.titleLabel.font = [UIFont systemFontOfSize:12.5];
+            phlVolUpBtn.titleLabel.font = [UIFont systemFontOfSize:12];
             [phlVolUpBtn addTarget:self action:@selector(increaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlVolUpBtn];
+
+            phlGainValueLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+            phlGainValueLabel.font = [UIFont monospacedDigitSystemFontOfSize:9 weight:UIFontWeightBold];
+            phlGainValueLabel.textAlignment = NSTextAlignmentRight;
+            [phlMenuContainer addSubview:phlGainValueLabel];
 
             // Nút chuyển chế độ trình duyệt YouTube / Danh sách GitHub
             phlOpenBrowserBtn = [self makeControlButtonWithTitle:@"🌐 MỞ YOUTUBE (PHÓNG RỘNG)"
@@ -610,10 +722,20 @@ static NSString *const kPHLCleanYouTubeJS =
 
             WKWebViewConfiguration *webConfig = [[WKWebViewConfiguration alloc] init];
             webConfig.allowsInlineMediaPlayback = YES;
+            WKUserContentController *ucc = webConfig.userContentController;
+            [ucc addScriptMessageHandler:self name:@"phlWebMediaPlaying"];
+
             WKUserScript *cleanScript = [[WKUserScript alloc] initWithSource:kPHLCleanYouTubeJS
                                                              injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
                                                           forMainFrameOnly:NO];
-            [webConfig.userContentController addUserScript:cleanScript];
+            [ucc addUserScript:cleanScript];
+
+            NSString *initBridge = [NSString stringWithFormat:@"%@; window.__phlAudioBridge.setGain(%.3f);",
+                                    kPHLWebAudioBridgeJS, phlCurrentGain];
+            WKUserScript *bridgeScript = [[WKUserScript alloc] initWithSource:initBridge
+                                                              injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
+                                                           forMainFrameOnly:NO];
+            [ucc addUserScript:bridgeScript];
 
             phlWebView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:webConfig];
             phlWebView.navigationDelegate = self;
@@ -641,6 +763,7 @@ static NSString *const kPHLCleanYouTubeJS =
             [phlMenuContainer addSubview:phlCopyrightLabel];
 
             [self layoutMenuSubviewsWithWidth:menuW height:menuH expanded:NO];
+            [self applyIndependentGain:phlCurrentGain];
             [keyWindow addSubview:phlMenuContainer];
         } else if (phlMenuContainer.superview != keyWindow) {
             [keyWindow addSubview:phlMenuContainer];
@@ -656,7 +779,7 @@ static NSString *const kPHLCleanYouTubeJS =
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
     [self cleanYouTubePageInWebView];
-    [self applyUnifiedVolume:phlCurrentVolume];
+    [self applyIndependentGain:phlCurrentGain];
 }
 
 - (void)toggleEmbeddedBrowser {
@@ -667,6 +790,7 @@ static NSString *const kPHLCleanYouTubeJS =
         [self loadYouTubeURLString:kPHLYouTubeHomeURL];
     } else if (phlIsWebOpen) {
         [self cleanYouTubePageInWebView];
+        [self applyIndependentGain:phlCurrentGain];
     }
 }
 
@@ -764,6 +888,7 @@ static NSString *const kPHLCleanYouTubeJS =
     if (phlIsMenuOpen) {
         [self initializeFramework];
         [self applyMenuFrameForExpanded:phlIsWebOpen animated:NO];
+        [self applyIndependentGain:phlCurrentGain];
         [self fetchGitHubPlaylist];
         [self syncPlayPauseButton];
         phlMenuContainer.hidden = NO;
@@ -871,6 +996,8 @@ static NSString *const kPHLCleanYouTubeJS =
     NSString *urlString = song[@"url"] ?: @"";
     if (urlString.length == 0) return;
 
+    // Dừng nhạc trên YouTube/Web trước để tránh 2 nguồn phát chồng nhau
+    [self pauseWebMediaIfPlaying];
     [self configureAudioSession];
 
     NSString *encodedStr = [urlString stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
@@ -886,7 +1013,9 @@ static NSString *const kPHLCleanYouTubeJS =
     } else {
         [phlAudioPlayer replaceCurrentItemWithPlayerItem:phlPlayerItem];
     }
-    phlAudioPlayer.volume = phlCurrentVolume;
+    phlAudioPlayer.muted = (phlCurrentGain <= 0.001f);
+    phlAudioPlayer.volume = MIN(1.0f, phlCurrentGain);
+    [self applyGainToItem:phlPlayerItem gain:phlCurrentGain];
     [phlAudioPlayer play];
     [self syncPlayPauseButton];
     [phlTableView reloadData];
@@ -903,8 +1032,11 @@ static NSString *const kPHLCleanYouTubeJS =
     if (phlAudioPlayer.rate > 0.01f) {
         [phlAudioPlayer pause];
     } else {
+        [self pauseWebMediaIfPlaying];
         [self configureAudioSession];
-        phlAudioPlayer.volume = phlCurrentVolume;
+        phlAudioPlayer.muted = (phlCurrentGain <= 0.001f);
+        phlAudioPlayer.volume = MIN(1.0f, phlCurrentGain);
+        [self applyGainToItem:phlPlayerItem gain:phlCurrentGain];
         [phlAudioPlayer play];
     }
     [self syncPlayPauseButton];
@@ -928,19 +1060,19 @@ static NSString *const kPHLCleanYouTubeJS =
 }
 
 - (void)volumeSliderChanged:(UISlider *)slider {
-    [self applyUnifiedVolume:slider.value];
+    [self applyIndependentGain:slider.value];
 }
 
 - (void)decreaseVolumeStep {
-    float nextVol = MAX(0.0f, phlCurrentVolume - 0.15f);
-    phlVolumeSlider.value = nextVol;
-    [self applyUnifiedVolume:nextVol];
+    float nextGain = MAX(0.0f, phlCurrentGain - 0.15f);
+    phlVolumeSlider.value = nextGain;
+    [self applyIndependentGain:nextGain];
 }
 
 - (void)increaseVolumeStep {
-    float nextVol = MIN(1.0f, phlCurrentVolume + 0.15f);
-    phlVolumeSlider.value = nextVol;
-    [self applyUnifiedVolume:nextVol];
+    float nextGain = MIN(2.0f, phlCurrentGain + 0.15f);
+    phlVolumeSlider.value = nextGain;
+    [self applyIndependentGain:nextGain];
 }
 
 - (void)toggleRepeatMode {
