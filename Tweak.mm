@@ -5,6 +5,13 @@
 #include <dlfcn.h>
 #include <sys/sysctl.h>
 
+typedef NS_ENUM(NSInteger, PHLTransportIconKind) {
+    PHLTransportIconPrev = 0,
+    PHLTransportIconPlayPause = 1,
+    PHLTransportIconNext = 2,
+    PHLTransportIconRepeat = 3
+};
+
 // Chống Debugging / Anti-Crack cơ bản
 typedef int (*ptrace_ptr)(int _request, pid_t _pid, caddr_t _addr, int _data);
 static void preventDebugging() {
@@ -138,6 +145,169 @@ static NSString *const kPHLWebAudioBridgeJS =
 "  }"
 "})();";
 
+@interface PHLTransportButton : UIButton
+@property (nonatomic, assign) PHLTransportIconKind iconKind;
+@property (nonatomic, assign) BOOL activeState;
+@property (nonatomic, assign) BOOL pulseHighlight;
+@property (nonatomic, strong) CAShapeLayer *glyphLayer;
+@property (nonatomic, strong) CAShapeLayer *markerDotLayer;
+- (void)refreshTransportVisual;
+- (void)triggerPulseMark;
+@end
+
+@implementation PHLTransportButton
+
+- (instancetype)initWithKind:(PHLTransportIconKind)kind actionTarget:(id)target action:(SEL)action {
+    self = [super initWithType:UIButtonTypeCustom];
+    if (self) {
+        _iconKind = kind;
+        _activeState = NO;
+        _pulseHighlight = NO;
+
+        self.layer.cornerRadius = 8.0f;
+        self.layer.borderWidth = 1.15f;
+        self.clipsToBounds = YES;
+        [self addTarget:target action:action forControlEvents:UIControlEventTouchUpInside];
+
+        _glyphLayer = [CAShapeLayer layer];
+        _glyphLayer.fillColor = [UIColor clearColor].CGColor;
+        _glyphLayer.strokeColor = [UIColor whiteColor].CGColor;
+        _glyphLayer.lineWidth = 1.6f;
+        _glyphLayer.lineCap = kCALineCapRound;
+        _glyphLayer.lineJoin = kCALineJoinRound;
+        [self.layer addSublayer:_glyphLayer];
+
+        _markerDotLayer = [CAShapeLayer layer];
+        _markerDotLayer.hidden = YES;
+        [self.layer addSublayer:_markerDotLayer];
+
+        [self refreshTransportVisual];
+    }
+    return self;
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    [self refreshTransportVisual];
+}
+
+- (void)triggerPulseMark {
+    self.pulseHighlight = YES;
+    [self refreshTransportVisual];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.28 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        self.pulseHighlight = NO;
+        [self refreshTransportVisual];
+    });
+}
+
+- (void)refreshTransportVisual {
+    CGFloat w = self.bounds.size.width;
+    CGFloat h = self.bounds.size.height;
+    if (w <= 1.0f || h <= 1.0f) return;
+
+    BOOL marked = self.activeState || self.pulseHighlight;
+    CGFloat cx = w * 0.5f;
+    CGFloat cy = h * 0.5f;
+
+    if (self.iconKind == PHLTransportIconPlayPause) {
+        self.backgroundColor = self.activeState
+            ? [UIColor colorWithRed:0.86 green:0.18 blue:0.82 alpha:0.98]
+            : [UIColor colorWithRed:0.62 green:0.14 blue:0.68 alpha:0.94];
+        self.layer.borderColor = marked
+            ? [UIColor colorWithRed:0.42 green:0.98 blue:1.0 alpha:1.0].CGColor
+            : [UIColor colorWithRed:0.92 green:0.48 blue:1.0 alpha:0.92].CGColor;
+    } else {
+        self.backgroundColor = marked
+            ? [UIColor colorWithRed:0.34 green:0.12 blue:0.58 alpha:0.96]
+            : [UIColor colorWithRed:0.18 green:0.06 blue:0.36 alpha:0.90];
+        self.layer.borderColor = marked
+            ? [UIColor colorWithRed:0.42 green:0.98 blue:1.0 alpha:1.0].CGColor
+            : [UIColor colorWithRed:0.78 green:0.38 blue:1.0 alpha:0.82].CGColor;
+    }
+
+    UIBezierPath *path = [UIBezierPath bezierPath];
+
+    switch (self.iconKind) {
+        case PHLTransportIconPrev: {
+            // Vạch đứng bên trái + tam giác hướng trái
+            CGFloat barX = cx - 5.5f;
+            [path moveToPoint:CGPointMake(barX, cy - 4.5f)];
+            [path addLineToPoint:CGPointMake(barX, cy + 4.5f)];
+
+            [path moveToPoint:CGPointMake(cx + 5.5f, cy - 4.5f)];
+            [path addLineToPoint:CGPointMake(barX + 1.8f, cy)];
+            [path addLineToPoint:CGPointMake(cx + 5.5f, cy + 4.5f)];
+            [path closePath];
+            break;
+        }
+        case PHLTransportIconPlayPause: {
+            if (self.activeState) {
+                // Hai vạch Pause
+                [path moveToPoint:CGPointMake(cx - 3.2f, cy - 4.8f)];
+                [path addLineToPoint:CGPointMake(cx - 3.2f, cy + 4.8f)];
+                [path moveToPoint:CGPointMake(cx + 3.2f, cy - 4.8f)];
+                [path addLineToPoint:CGPointMake(cx + 3.2f, cy + 4.8f)];
+            } else {
+                // Tam giác Play hướng phải (như ảnh mẫu)
+                [path moveToPoint:CGPointMake(cx - 3.6f, cy - 5.2f)];
+                [path addLineToPoint:CGPointMake(cx + 4.8f, cy)];
+                [path addLineToPoint:CGPointMake(cx - 3.6f, cy + 5.2f)];
+                [path closePath];
+            }
+            break;
+        }
+        case PHLTransportIconNext: {
+            // Tam giác hướng phải + vạch đứng bên phải
+            CGFloat barX = cx + 5.5f;
+            [path moveToPoint:CGPointMake(cx - 5.5f, cy - 4.5f)];
+            [path addLineToPoint:CGPointMake(barX - 1.8f, cy)];
+            [path addLineToPoint:CGPointMake(cx - 5.5f, cy + 4.5f)];
+            [path closePath];
+
+            [path moveToPoint:CGPointMake(barX, cy - 4.5f)];
+            [path addLineToPoint:CGPointMake(barX, cy + 4.5f)];
+            break;
+        }
+        case PHLTransportIconRepeat: {
+            // Hai cung mũi tên lặp lại nét mảnh
+            CGFloat rx = 6.2f;
+            CGFloat ry = 3.8f;
+
+            [path moveToPoint:CGPointMake(cx - rx, cy - ry + 1.5f)];
+            [path addQuadCurveToPoint:CGPointMake(cx + rx, cy - ry)
+                       controlPoint:CGPointMake(cx, cy - ry - 2.6f)];
+            [path moveToPoint:CGPointMake(cx + rx - 2.4f, cy - ry - 2.0f)];
+            [path addLineToPoint:CGPointMake(cx + rx, cy - ry)];
+            [path addLineToPoint:CGPointMake(cx + rx - 2.4f, cy - ry + 2.0f)];
+
+            [path moveToPoint:CGPointMake(cx + rx, cy + ry - 1.5f)];
+            [path addQuadCurveToPoint:CGPointMake(cx - rx, cy + ry)
+                       controlPoint:CGPointMake(cx, cy + ry + 2.6f)];
+            [path moveToPoint:CGPointMake(cx - rx + 2.4f, cy + ry - 2.0f)];
+            [path addLineToPoint:CGPointMake(cx - rx, cy + ry)];
+            [path addLineToPoint:CGPointMake(cx - rx + 2.4f, cy + ry + 2.0f)];
+            break;
+        }
+    }
+
+    self.glyphLayer.frame = self.bounds;
+    self.glyphLayer.path = path.CGPath;
+    self.glyphLayer.strokeColor = marked
+        ? [UIColor colorWithRed:1.0 green:0.96 blue:0.65 alpha:1.0].CGColor
+        : [UIColor whiteColor].CGColor;
+
+    // Dấu chấm đánh dấu ở góc phải trên khi nút đang bật/hoạt động
+    self.markerDotLayer.hidden = !marked;
+    if (marked) {
+        UIBezierPath *dotPath = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(w - 7.5f, 3.5f, 4.2f, 4.2f)];
+        self.markerDotLayer.frame = self.bounds;
+        self.markerDotLayer.path = dotPath.CGPath;
+        self.markerDotLayer.fillColor = [UIColor colorWithRed:0.38 green:1.0 blue:0.78 alpha:1.0].CGColor;
+    }
+}
+
+@end
+
 @interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, WKNavigationDelegate, WKScriptMessageHandler> {
     AVPlayer *phlAudioPlayer;
     AVPlayerItem *phlPlayerItem;
@@ -149,12 +319,13 @@ static NSString *const kPHLWebAudioBridgeJS =
     UIButton *phlCloseBtn;
     UITableView *phlTableView;
 
-    // Khu vực điều khiển chính
+    // Khu vực điều khiển chính (4 nút nét mảnh không dùng emoji)
     UILabel *phlNowPlayingLabel;
-    UIButton *phlPrevBtn;
-    UIButton *phlPlayPauseBtn;
-    UIButton *phlNextBtn;
-    UIButton *phlRepeatBtn;
+    PHLTransportButton *phlPrevBtn;
+    PHLTransportButton *phlPlayPauseBtn;
+    PHLTransportButton *phlNextBtn;
+    PHLTransportButton *phlRepeatBtn;
+
     UIButton *phlMuteBtn;
     UIButton *phlVolUpBtn;
     UISlider *phlVolumeSlider;
@@ -343,11 +514,11 @@ static NSString *const kPHLWebAudioBridgeJS =
     return [UIApplication sharedApplication].windows.firstObject;
 }
 
-- (UIButton *)makeControlButtonWithTitle:(NSString *)title
-                               fontSize:(CGFloat)fontSize
-                                bgColor:(UIColor *)bgColor
-                            borderColor:(UIColor *)borderColor
-                                 action:(SEL)action {
+- (UIButton *)makeUtilityButtonWithTitle:(NSString *)title
+                              fontSize:(CGFloat)fontSize
+                               bgColor:(UIColor *)bgColor
+                           borderColor:(UIColor *)borderColor
+                                action:(SEL)action {
     UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
     [btn setTitle:title forState:UIControlStateNormal];
     [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
@@ -564,35 +735,25 @@ static NSString *const kPHLWebAudioBridgeJS =
             [phlCloseBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlCloseBtn];
 
-            UIColor *ctrlBg = [UIColor colorWithRed:0.22 green:0.08 blue:0.42 alpha:0.92];
-            UIColor *ctrlBorder = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.85];
-
-            phlPrevBtn = [self makeControlButtonWithTitle:@"⏮"
-                                                 fontSize:13
-                                                  bgColor:ctrlBg
-                                              borderColor:ctrlBorder
-                                                   action:@selector(playPreviousSong)];
+            // 4 nút điều khiển vẽ nét mảnh (không dùng biểu tượng emoji) + đánh dấu trạng thái
+            phlPrevBtn = [[PHLTransportButton alloc] initWithKind:PHLTransportIconPrev
+                                                     actionTarget:self
+                                                           action:@selector(playPreviousSong)];
             [phlMenuContainer addSubview:phlPrevBtn];
 
-            phlPlayPauseBtn = [self makeControlButtonWithTitle:@"▶"
-                                                    fontSize:14
-                                                     bgColor:[UIColor colorWithRed:0.78 green:0.16 blue:0.76 alpha:0.96]
-                                                 borderColor:[UIColor colorWithRed:0.42 green:0.96 blue:1.0 alpha:0.95]
-                                                      action:@selector(togglePlayPause)];
+            phlPlayPauseBtn = [[PHLTransportButton alloc] initWithKind:PHLTransportIconPlayPause
+                                                         actionTarget:self
+                                                               action:@selector(togglePlayPause)];
             [phlMenuContainer addSubview:phlPlayPauseBtn];
 
-            phlNextBtn = [self makeControlButtonWithTitle:@"⏭"
-                                                 fontSize:13
-                                                  bgColor:ctrlBg
-                                              borderColor:ctrlBorder
-                                                   action:@selector(playNextSong)];
+            phlNextBtn = [[PHLTransportButton alloc] initWithKind:PHLTransportIconNext
+                                                     actionTarget:self
+                                                           action:@selector(playNextSong)];
             [phlMenuContainer addSubview:phlNextBtn];
 
-            phlRepeatBtn = [self makeControlButtonWithTitle:@"🔁"
-                                                   fontSize:13
-                                                    bgColor:ctrlBg
-                                                borderColor:ctrlBorder
-                                                     action:@selector(toggleRepeatMode)];
+            phlRepeatBtn = [[PHLTransportButton alloc] initWithKind:PHLTransportIconRepeat
+                                                       actionTarget:self
+                                                             action:@selector(toggleRepeatMode)];
             [self syncRepeatButton];
             [phlMenuContainer addSubview:phlRepeatBtn];
 
@@ -623,7 +784,7 @@ static NSString *const kPHLWebAudioBridgeJS =
             phlGainValueLabel.textAlignment = NSTextAlignmentRight;
             [phlMenuContainer addSubview:phlGainValueLabel];
 
-            phlOpenBrowserBtn = [self makeControlButtonWithTitle:@"🌐 MỞ YOUTUBE (PHÓNG RỘNG)"
+            phlOpenBrowserBtn = [self makeUtilityButtonWithTitle:@"🌐 MỞ YOUTUBE (PHÓNG RỘNG)"
                                                         fontSize:9.5
                                                          bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
                                                      borderColor:[UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9]
@@ -649,40 +810,38 @@ static NSString *const kPHLWebAudioBridgeJS =
             phlWebPanel.hidden = YES;
             [phlMenuContainer addSubview:phlWebPanel];
 
-            phlBackBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            [phlBackBtn setTitle:@"←" forState:UIControlStateNormal];
-            [phlBackBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            phlBackBtn.titleLabel.font = [UIFont boldSystemFontOfSize:12];
-            phlBackBtn.backgroundColor = [UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95];
+            phlBackBtn = [self makeUtilityButtonWithTitle:@"←"
+                                                 fontSize:12
+                                                  bgColor:[UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95]
+                                              borderColor:[UIColor colorWithRed:0.75 green:0.4 blue:1.0 alpha:0.7]
+                                                   action:@selector(webGoBack)];
             phlBackBtn.layer.cornerRadius = 5;
-            [phlBackBtn addTarget:self action:@selector(webGoBack) forControlEvents:UIControlEventTouchUpInside];
             [phlWebPanel addSubview:phlBackBtn];
 
-            phlFwdBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            [phlFwdBtn setTitle:@"→" forState:UIControlStateNormal];
-            [phlFwdBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            phlFwdBtn.titleLabel.font = [UIFont boldSystemFontOfSize:12];
-            phlFwdBtn.backgroundColor = [UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95];
+            phlFwdBtn = [self makeUtilityButtonWithTitle:@"→"
+                                                fontSize:12
+                                                 bgColor:[UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95]
+                                             borderColor:[UIColor colorWithRed:0.75 green:0.4 blue:1.0 alpha:0.7]
+                                                  action:@selector(webGoForward)];
             phlFwdBtn.layer.cornerRadius = 5;
-            [phlFwdBtn addTarget:self action:@selector(webGoForward) forControlEvents:UIControlEventTouchUpInside];
             [phlWebPanel addSubview:phlFwdBtn];
 
-            phlHomeYtBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            [phlHomeYtBtn setTitle:@"🏠 YT" forState:UIControlStateNormal];
+            phlHomeYtBtn = [self makeUtilityButtonWithTitle:@"🏠 YT"
+                                                   fontSize:9
+                                                    bgColor:[UIColor colorWithRed:0.14 green:0.22 blue:0.42 alpha:0.95]
+                                                borderColor:[UIColor colorWithRed:0.45 green:0.9 blue:1.0 alpha:0.7]
+                                                     action:@selector(webGoHome)];
             [phlHomeYtBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.85 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
-            phlHomeYtBtn.titleLabel.font = [UIFont boldSystemFontOfSize:9];
-            phlHomeYtBtn.backgroundColor = [UIColor colorWithRed:0.14 green:0.22 blue:0.42 alpha:0.95];
             phlHomeYtBtn.layer.cornerRadius = 5;
-            [phlHomeYtBtn addTarget:self action:@selector(webGoHome) forControlEvents:UIControlEventTouchUpInside];
             [phlWebPanel addSubview:phlHomeYtBtn];
 
-            phlCloseWebBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            [phlCloseWebBtn setTitle:@"Thu gọn" forState:UIControlStateNormal];
+            phlCloseWebBtn = [self makeUtilityButtonWithTitle:@"Thu gọn"
+                                                     fontSize:9
+                                                      bgColor:[UIColor colorWithRed:0.45 green:0.08 blue:0.32 alpha:0.95]
+                                                  borderColor:[UIColor colorWithRed:1.0 green:0.45 blue:0.75 alpha:0.7]
+                                                       action:@selector(closeEmbeddedBrowser)];
             [phlCloseWebBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.75 blue:0.95 alpha:1.0] forState:UIControlStateNormal];
-            phlCloseWebBtn.titleLabel.font = [UIFont boldSystemFontOfSize:9];
-            phlCloseWebBtn.backgroundColor = [UIColor colorWithRed:0.45 green:0.08 blue:0.32 alpha:0.95];
             phlCloseWebBtn.layer.cornerRadius = 5;
-            [phlCloseWebBtn addTarget:self action:@selector(closeEmbeddedBrowser) forControlEvents:UIControlEventTouchUpInside];
             [phlWebPanel addSubview:phlCloseWebBtn];
 
             phlYouTubeSearchField = [[UITextField alloc] initWithFrame:CGRectZero];
@@ -702,13 +861,12 @@ static NSString *const kPHLWebAudioBridgeJS =
             phlYouTubeSearchField.leftViewMode = UITextFieldViewModeAlways;
             [phlWebPanel addSubview:phlYouTubeSearchField];
 
-            phlYtSearchBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            [phlYtSearchBtn setTitle:@"🔍 YT" forState:UIControlStateNormal];
-            [phlYtSearchBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            phlYtSearchBtn.titleLabel.font = [UIFont boldSystemFontOfSize:9.5];
-            phlYtSearchBtn.backgroundColor = [UIColor colorWithRed:0.88 green:0.14 blue:0.36 alpha:0.98];
+            phlYtSearchBtn = [self makeUtilityButtonWithTitle:@"🔍 YT"
+                                                     fontSize:9.5
+                                                      bgColor:[UIColor colorWithRed:0.88 green:0.14 blue:0.36 alpha:0.98]
+                                                  borderColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.75 alpha:0.85]
+                                                       action:@selector(triggerYouTubeSearch)];
             phlYtSearchBtn.layer.cornerRadius = 6;
-            [phlYtSearchBtn addTarget:self action:@selector(triggerYouTubeSearch) forControlEvents:UIControlEventTouchUpInside];
             [phlWebPanel addSubview:phlYtSearchBtn];
 
             WKWebViewConfiguration *webConfig = [[WKWebViewConfiguration alloc] init];
@@ -733,15 +891,13 @@ static NSString *const kPHLWebAudioBridgeJS =
             phlWebView.scrollView.bounces = YES;
             [phlWebPanel addSubview:phlWebView];
 
-            phlAdminInfoBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            [phlAdminInfoBtn setTitle:@"🛡 INFO & BẢN QUYỀN • phamlong09.store" forState:UIControlStateNormal];
+            phlAdminInfoBtn = [self makeUtilityButtonWithTitle:@"🛡 INFO & BẢN QUYỀN • phamlong09.store"
+                                                      fontSize:9.5
+                                                       bgColor:[UIColor colorWithRed:0.25 green:0.07 blue:0.44 alpha:0.96]
+                                                   borderColor:[UIColor colorWithRed:0.92 green:0.45 blue:1.0 alpha:0.9]
+                                                        action:@selector(openAdminInfoGroup)];
             [phlAdminInfoBtn setTitleColor:[UIColor colorWithRed:0.45 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-            phlAdminInfoBtn.titleLabel.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightBold];
-            phlAdminInfoBtn.backgroundColor = [UIColor colorWithRed:0.25 green:0.07 blue:0.44 alpha:0.96];
             phlAdminInfoBtn.layer.cornerRadius = 7;
-            phlAdminInfoBtn.layer.borderWidth = 1.0;
-            phlAdminInfoBtn.layer.borderColor = [UIColor colorWithRed:0.92 green:0.45 blue:1.0 alpha:0.9].CGColor;
-            [phlAdminInfoBtn addTarget:self action:@selector(openAdminInfoGroup) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlAdminInfoBtn];
 
             phlCopyrightLabel = [[UILabel alloc] initWithFrame:CGRectZero];
@@ -1033,16 +1189,19 @@ static NSString *const kPHLWebAudioBridgeJS =
 
 - (void)syncPlayPauseButton {
     BOOL isPlaying = (phlAudioPlayer && phlAudioPlayer.rate > 0.01f);
-    [phlPlayPauseBtn setTitle:(isPlaying ? @"⏸" : @"▶") forState:UIControlStateNormal];
+    phlPlayPauseBtn.activeState = isPlaying;
+    [phlPlayPauseBtn refreshTransportVisual];
 }
 
 - (void)playPreviousSong {
+    [phlPrevBtn triggerPulseMark];
     if (phlPlaylist.count == 0) return;
     NSInteger prevIdx = (phlCurrentIndex <= 0) ? ((NSInteger)phlPlaylist.count - 1) : (phlCurrentIndex - 1);
     [self playSongAtIndex:prevIdx];
 }
 
 - (void)playNextSong {
+    [phlNextBtn triggerPulseMark];
     if (phlPlaylist.count == 0) return;
     NSInteger nextIdx = (phlCurrentIndex + 1) % (NSInteger)phlPlaylist.count;
     [self playSongAtIndex:nextIdx];
@@ -1071,10 +1230,8 @@ static NSString *const kPHLWebAudioBridgeJS =
 }
 
 - (void)syncRepeatButton {
-    [phlRepeatBtn setTitle:(phlRepeatOne ? @"🔂" : @"🔁") forState:UIControlStateNormal];
-    phlRepeatBtn.backgroundColor = phlRepeatOne
-        ? [UIColor colorWithRed:0.88 green:0.18 blue:0.68 alpha:0.96]
-        : [UIColor colorWithRed:0.22 green:0.08 blue:0.42 alpha:0.92];
+    phlRepeatBtn.activeState = phlRepeatOne;
+    [phlRepeatBtn refreshTransportVisual];
 }
 
 - (void)openAdminInfoGroup {
