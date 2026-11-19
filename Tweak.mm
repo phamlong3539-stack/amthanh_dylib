@@ -24,6 +24,51 @@ static NSString *const kPHLPrefVolume = @"PHL_PlayerVolume";
 static NSString *const kPHLAdminInfoURL = @"https://phamlong09.store";
 static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
 
+static NSString *const kPHLCleanYouTubeJS =
+@"(function(){"
+"  function cleanYT(){"
+"    var selectors = ["
+"      'ytm-mobile-topbar-renderer',"
+"      'ytm-search-header',"
+"      'header.mobile-topbar-header',"
+"      '[role=\"search\"]',"
+"      'ytm-pivot-bar-renderer',"
+"      'ytm-bottom-nav-bar',"
+"      'nav.pivot-bar',"
+"      '.pivot-bar-container'"
+"    ];"
+"    selectors.forEach(function(sel){"
+"      document.querySelectorAll(sel).forEach(function(el){"
+"        el.style.setProperty('display', 'none', 'important');"
+"        el.style.setProperty('height', '0px', 'important');"
+"        el.style.setProperty('visibility', 'hidden', 'important');"
+"      });"
+"    });"
+"    var pageMgr = document.querySelector('ytm-page-manager, #app, ytm-app');"
+"    if (pageMgr) {"
+"      pageMgr.style.setProperty('padding-top', '0px', 'important');"
+"      pageMgr.style.setProperty('margin-top', '0px', 'important');"
+"      pageMgr.style.setProperty('padding-bottom', '0px', 'important');"
+"    }"
+"    var styleId = 'phl-yt-clean-style';"
+"    if (!document.getElementById(styleId)) {"
+"      var st = document.createElement('style');"
+"      st.id = styleId;"
+"      st.textContent = "
+"        'ytm-mobile-topbar-renderer, ytm-search-header, header, ytm-pivot-bar-renderer, ytm-bottom-nav-bar, nav.pivot-bar { display: none !important; height: 0 !important; }' "
+"        'ytm-browse, ytm-search { padding-top: 0 !important; margin-top: 0 !important; }';"
+"      (document.head || document.documentElement).appendChild(st);"
+"    }"
+"  }"
+"  cleanYT();"
+"  setTimeout(cleanYT, 400);"
+"  setTimeout(cleanYT, 1200);"
+"  if (!window.__phlYTObserver && document.body) {"
+"    window.__phlYTObserver = new MutationObserver(function(){ cleanYT(); });"
+"    window.__phlYTObserver.observe(document.body, { childList: true, subtree: true });"
+"  }"
+"})();";
+
 @interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, WKNavigationDelegate> {
     AVPlayer *phlAudioPlayer;
     AVPlayerItem *phlPlayerItem;
@@ -173,6 +218,11 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     }
 }
 
+- (void)cleanYouTubePageInWebView {
+    if (!phlWebView) return;
+    [phlWebView evaluateJavaScript:kPHLCleanYouTubeJS completionHandler:nil];
+}
+
 - (UIWindow *)resolveActiveWindow {
     for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
         if (scene.activationState == UISceneActivationStateForegroundActive) {
@@ -211,27 +261,27 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     CGFloat innerW = menuW - padX * 2.0f;
 
     phlMenuGradient.frame = CGRectMake(0, 0, menuW, menuH);
-    phlDragHeader.frame = CGRectMake(0, 0, menuW, 44.0f);
+    phlDragHeader.frame = CGRectMake(0, 0, menuW, 42.0f);
     phlCloseBtn.frame = CGRectMake(menuW - 34.0f, 8.0f, 24.0f, 24.0f);
 
-    CGFloat gap = 5.0f;
+    CGFloat gap = 6.0f;
     CGFloat btnW = (innerW - gap * 3.0f) / 4.0f;
-    CGFloat ctrlY = 48.0f;
-    phlPrevBtn.frame = CGRectMake(padX, ctrlY, btnW, 25.0f);
-    phlPlayPauseBtn.frame = CGRectMake(padX + (btnW + gap), ctrlY, btnW, 25.0f);
-    phlNextBtn.frame = CGRectMake(padX + (btnW + gap) * 2.0f, ctrlY, btnW, 25.0f);
-    phlRepeatBtn.frame = CGRectMake(padX + (btnW + gap) * 3.0f, ctrlY, btnW, 25.0f);
+    CGFloat ctrlY = 46.0f;
+    phlPrevBtn.frame = CGRectMake(padX, ctrlY, btnW, 24.0f);
+    phlPlayPauseBtn.frame = CGRectMake(padX + (btnW + gap), ctrlY, btnW, 24.0f);
+    phlNextBtn.frame = CGRectMake(padX + (btnW + gap) * 2.0f, ctrlY, btnW, 24.0f);
+    phlRepeatBtn.frame = CGRectMake(padX + (btnW + gap) * 3.0f, ctrlY, btnW, 24.0f);
 
-    CGFloat volY = 77.0f;
+    CGFloat volY = 74.0f;
     phlMuteBtn.frame = CGRectMake(padX, volY, 26.0f, 22.0f);
     phlVolumeSlider.frame = CGRectMake(padX + 28.0f, volY, innerW - 56.0f, 22.0f);
     phlVolUpBtn.frame = CGRectMake(menuW - padX - 26.0f, volY, 26.0f, 22.0f);
 
-    CGFloat webToggleY = 102.0f;
-    phlOpenBrowserBtn.frame = CGRectMake(padX, webToggleY, innerW, 24.0f);
+    CGFloat webToggleY = 99.0f;
+    phlOpenBrowserBtn.frame = CGRectMake(padX, webToggleY, innerW, 23.0f);
 
-    CGFloat footerHeight = 52.0f;
-    CGFloat contentY = 130.0f;
+    CGFloat footerHeight = 50.0f;
+    CGFloat contentY = 126.0f;
     CGFloat contentH = MAX(110.0f, menuH - contentY - footerHeight - 4.0f);
 
     phlTableView.frame = CGRectMake(8.0f, contentY, menuW - 16.0f, contentH);
@@ -240,22 +290,22 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     CGFloat panelW = phlWebPanel.bounds.size.width;
     CGFloat panelH = phlWebPanel.bounds.size.height;
 
-    phlBackBtn.frame = CGRectMake(4.0f, 4.0f, 23.0f, 21.0f);
-    phlFwdBtn.frame = CGRectMake(30.0f, 4.0f, 23.0f, 21.0f);
-    phlHomeYtBtn.frame = CGRectMake(56.0f, 4.0f, 34.0f, 21.0f);
-    phlCloseWebBtn.frame = CGRectMake(panelW - 56.0f, 4.0f, 52.0f, 21.0f);
+    phlBackBtn.frame = CGRectMake(4.0f, 4.0f, 24.0f, 21.0f);
+    phlFwdBtn.frame = CGRectMake(31.0f, 4.0f, 24.0f, 21.0f);
+    phlHomeYtBtn.frame = CGRectMake(58.0f, 4.0f, 38.0f, 21.0f);
+    phlCloseWebBtn.frame = CGRectMake(panelW - 60.0f, 4.0f, 56.0f, 21.0f);
 
-    CGFloat searchBtnW = 42.0f;
-    CGFloat searchFieldW = MAX(80.0f, panelW - 8.0f - searchBtnW - 4.0f);
+    CGFloat searchBtnW = 46.0f;
+    CGFloat searchFieldW = MAX(90.0f, panelW - 8.0f - searchBtnW - 4.0f);
     phlYouTubeSearchField.frame = CGRectMake(4.0f, 28.0f, searchFieldW, 22.0f);
     phlYtSearchBtn.frame = CGRectMake(4.0f + searchFieldW + 4.0f, 28.0f, searchBtnW, 22.0f);
 
     CGFloat webTop = 53.0f;
-    phlWebView.frame = CGRectMake(0.0f, webTop, panelW, MAX(60.0f, panelH - webTop));
+    phlWebView.frame = CGRectMake(0.0f, webTop, panelW, MAX(70.0f, panelH - webTop));
 
     CGFloat infoBtnY = menuH - footerHeight;
     phlAdminInfoBtn.frame = CGRectMake(padX, infoBtnY, innerW, 20.0f);
-    phlCopyrightLabel.frame = CGRectMake(6.0f, infoBtnY + 21.0f, menuW - 12.0f, 30.0f);
+    phlCopyrightLabel.frame = CGRectMake(6.0f, infoBtnY + 21.0f, menuW - 12.0f, 28.0f);
 }
 
 - (void)applyMenuFrameForExpanded:(BOOL)expanded animated:(BOOL)animated {
@@ -268,20 +318,23 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     CGFloat compactW = MIN(312.0f, screenW - 86.0f);
     if (compactW < 268.0f) compactW = MIN(300.0f, screenW - 20.0f);
 
-    CGFloat expandedW = MIN(348.0f, screenW - 76.0f);
-    if (expandedW < compactW) expandedW = compactW;
+    // Phóng rộng khung khi mở YouTube để nhìn trọn video & danh sách kết quả
+    CGFloat expandedW = MAX(compactW, MIN(560.0f, screenW - 76.0f));
+    if (expandedW < 280.0f) expandedW = MAX(compactW, screenW - 16.0f);
 
-    CGFloat compactH = MIN(322.0f, MAX(250.0f, screenH - 28.0f));
-    CGFloat expandedH = MAX(compactH, MIN(620.0f, screenH - 18.0f));
+    CGFloat compactH = MIN(322.0f, MAX(250.0f, screenH - 24.0f));
+    CGFloat expandedH = MAX(compactH, MIN(680.0f, screenH - 12.0f));
 
     CGFloat targetW = expanded ? expandedW : compactW;
     CGFloat targetH = expanded ? expandedH : compactH;
 
     CGFloat curX = phlMenuContainer.frame.origin.x;
     CGFloat maxX = MAX(8.0f, screenW - targetW - 8.0f);
-    CGFloat targetX = MAX(8.0f, MIN(maxX, curX));
+    CGFloat targetX = expanded ? MIN(maxX, MAX(70.0f, (screenW - targetW) * 0.55f))
+                               : MAX(8.0f, MIN(maxX, curX));
 
-    CGFloat targetY = expanded ? 9.0f : MAX(14.0f, MIN(screenH - targetH - 10.0f, phlMenuContainer.frame.origin.y));
+    CGFloat targetY = expanded ? 6.0f
+                               : MAX(12.0f, MIN(screenH - targetH - 8.0f, phlMenuContainer.frame.origin.y));
 
     CGRect targetFrame = CGRectMake(targetX, targetY, targetW, targetH);
 
@@ -312,7 +365,7 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
         CGFloat screenW = keyWindow.bounds.size.width;
         CGFloat menuW = MIN(312.0f, screenW - 86.0f);
         if (menuW < 268.0f) menuW = MIN(300.0f, screenW - 20.0f);
-        CGFloat menuH = MIN(322.0f, MAX(250.0f, keyWindow.bounds.size.height - 28.0f));
+        CGFloat menuH = MIN(322.0f, MAX(250.0f, keyWindow.bounds.size.height - 24.0f));
 
         if (!phlFloatingBtn) {
             phlFloatingBtn = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -335,7 +388,7 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
         }
 
         if (!phlMenuContainer) {
-            phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(70, 18, menuW, menuH)];
+            phlMenuContainer = [[UIView alloc] initWithFrame:CGRectMake(70, 16, menuW, menuH)];
             phlMenuContainer.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.98];
             phlMenuContainer.layer.cornerRadius = 16;
             phlMenuContainer.layer.borderWidth = 1.6;
@@ -344,7 +397,6 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
             phlMenuContainer.hidden = YES;
             phlMenuContainer.alpha = 0.0;
 
-            // Nền gradient màu mè chuyên nghiệp
             phlMenuGradient = [CAGradientLayer layer];
             phlMenuGradient.frame = CGRectMake(0, 0, menuW, menuH);
             phlMenuGradient.colors = @[
@@ -357,29 +409,29 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
             [phlMenuContainer.layer insertSublayer:phlMenuGradient atIndex:0];
 
             // Thanh tiêu đề kéo di chuyển
-            phlDragHeader = [[UIView alloc] initWithFrame:CGRectMake(0, 0, menuW, 44)];
+            phlDragHeader = [[UIView alloc] initWithFrame:CGRectMake(0, 0, menuW, 42)];
             phlDragHeader.backgroundColor = [UIColor colorWithRed:0.18 green:0.06 blue:0.35 alpha:0.85];
             [phlMenuContainer addSubview:phlDragHeader];
 
             UIPanGestureRecognizer *headerPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
             [phlDragHeader addGestureRecognizer:headerPan];
 
-            UILabel *dragGripLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 3, menuW - 48, 10)];
+            UILabel *dragGripLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 3, menuW - 48, 9)];
             dragGripLabel.text = @"⋮⋮ KÉO THANH NÀY ĐỂ DI CHUYỂN";
             dragGripLabel.textColor = [UIColor colorWithRed:0.45 green:0.96 blue:1.0 alpha:0.9];
             dragGripLabel.font = [UIFont systemFontOfSize:7.5 weight:UIFontWeightBold];
             [phlDragHeader addSubview:dragGripLabel];
 
-            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 13, menuW - 48, 15)];
+            UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 12, menuW - 48, 15)];
             titleLabel.text = @"👑 PHL PHAM LONG • AUDIO PRO";
             titleLabel.textColor = [UIColor colorWithRed:1.0 green:0.82 blue:1.0 alpha:1.0];
             titleLabel.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
             [phlDragHeader addSubview:titleLabel];
 
-            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 28, menuW - 44, 14)];
+            phlNowPlayingLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 27, menuW - 44, 13)];
             phlNowPlayingLabel.text = @"♪ Chưa chọn bài hát";
             phlNowPlayingLabel.textColor = [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0];
-            phlNowPlayingLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightSemibold];
+            phlNowPlayingLabel.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold];
             [phlDragHeader addSubview:phlNowPlayingLabel];
 
             phlCloseBtn = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -448,8 +500,8 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
             [phlVolUpBtn addTarget:self action:@selector(increaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
             [phlMenuContainer addSubview:phlVolUpBtn];
 
-            // Nút chuyển chế độ trình duyệt YouTube (giãn dài menu) / Danh sách GitHub (thu gọn menu)
-            phlOpenBrowserBtn = [self makeControlButtonWithTitle:@"🌐 MỞ YOUTUBE (GIÃN MENU)"
+            // Nút chuyển chế độ trình duyệt YouTube (phóng rộng) / Danh sách GitHub (thu gọn)
+            phlOpenBrowserBtn = [self makeControlButtonWithTitle:@"🌐 MỞ YOUTUBE (PHÓNG RỘNG)"
                                                         fontSize:9.5
                                                          bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
                                                      borderColor:[UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9]
@@ -541,6 +593,11 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
 
             WKWebViewConfiguration *webConfig = [[WKWebViewConfiguration alloc] init];
             webConfig.allowsInlineMediaPlayback = YES;
+            WKUserScript *cleanScript = [[WKUserScript alloc] initWithSource:kPHLCleanYouTubeJS
+                                                             injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
+                                                          forMainFrameOnly:NO];
+            [webConfig.userContentController addUserScript:cleanScript];
+
             phlWebView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:webConfig];
             phlWebView.navigationDelegate = self;
             phlWebView.scrollView.bounces = YES;
@@ -576,7 +633,12 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     });
 }
 
+- (void)webView:(WKWebView *)webView didCommitNavigation:(WKNavigation *)navigation {
+    [self cleanYouTubePageInWebView];
+}
+
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
+    [self cleanYouTubePageInWebView];
     [self applyUnifiedVolume:phlCurrentVolume];
 }
 
@@ -586,6 +648,8 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     if (phlIsWebOpen && !phlHasLoadedInitialWeb) {
         phlHasLoadedInitialWeb = YES;
         [self loadYouTubeURLString:kPHLYouTubeHomeURL];
+    } else if (phlIsWebOpen) {
+        [self cleanYouTubePageInWebView];
     }
 }
 
@@ -600,7 +664,7 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
     phlTableView.hidden = phlIsWebOpen;
     [phlOpenBrowserBtn setTitle:(phlIsWebOpen
         ? @"☰ ĐANG MỞ YOUTUBE • VỀ GITHUB (THU GỌN)"
-        : @"🌐 MỞ YOUTUBE (GIÃN MENU)")
+        : @"🌐 MỞ YOUTUBE (PHÓNG RỘNG)")
                         forState:UIControlStateNormal];
     [self applyMenuFrameForExpanded:phlIsWebOpen animated:animated];
 }
@@ -731,7 +795,7 @@ static NSString *const kPHLYouTubeHomeURL = @"https://m.youtube.com";
 
     CGPoint translation = [pan translationInView:phlMenuContainer.superview];
     phlMenuContainer.center = CGPointMake(phlMenuContainer.center.x + translation.x, phlMenuContainer.center.y + translation.y);
-    [self clampViewToSafeBounds:phlMenuContainer topMargin:10.0f bottomMargin:10.0f];
+    [self clampViewToSafeBounds:phlMenuContainer topMargin:6.0f bottomMargin:6.0f];
     [pan setTranslation:CGPointZero inView:phlMenuContainer.superview];
 }
 
