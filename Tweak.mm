@@ -333,6 +333,8 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     UILabel *_cprLbl;
 
     NSMutableArray *_playlist;
+    NSDictionary *_cachedAnnouncement;
+    BOOL _hasAutoPlayedVip;
     NSDictionary *_featuredVipSong;
     NSString *_statusMsg;
     NSInteger _idx;
@@ -504,6 +506,8 @@ static inline NSString *GetAudioBridgeJS(void) {
     if (self) {
         NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
         _playlist = [[NSMutableArray alloc] init];
+        _hasAutoPlayedVip = NO;
+        _cachedAnnouncement = nil;
         _statusMsg = @"Đang nạp dữ liệu Master VIP...";
         _idx = -1;
         _menuOpen = NO;
@@ -548,7 +552,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 - (void)configureAudioSession {
     NSError *err = nil;
     AVAudioSession *s = [AVAudioSession sharedInstance];
-    [s setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionAllowAirPlay error:&err];
+    [s setCategory:AVAudioSessionCategoryPlayback withOptions:(AVAudioSessionCategoryOptionMixWithOthers | AVAudioSessionCategoryOptionAllowAirPlay) error:&err];
     [s setActive:YES error:&err];
 }
 
@@ -780,7 +784,12 @@ static inline NSString *GetAudioBridgeJS(void) {
 - (void)initializeFramework {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *kw = [self resolveActiveWindow];
-        if (!kw) return;
+        if (!kw) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self initializeFramework];
+            });
+            return;
+        }
 
         CGFloat sW = kw.bounds.size.width;
         CGFloat mW = MIN(312.0f, sW - 86.0f);
@@ -1091,7 +1100,9 @@ static inline NSString *GetAudioBridgeJS(void) {
     NSString *fIcon = dict[@"system_control"][@"floating_icon"];
     if (fIcon && fIcon.length > 0 && _floatBtn) {
         // Giữ nguyên logo tùy biến
-        [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
+        if (!_floatBtn.currentImage) {
+            [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
+        }
     }
     BOOL enablePulse = [dict[@"system_control"][@"floating_pulse_glow"] boolValue];
     if (enablePulse) {
@@ -1167,40 +1178,47 @@ static inline NSString *GetAudioBridgeJS(void) {
     }
 
     // 8. POPUP THÔNG BÁO TỪ ADMIN — CHỈ HIỆN 1 LẦN DUY NHẤT MỖI ID THÔNG BÁO MỚI
+    // 8. LƯU THÔNG BÁO VÀO BỘ NHỚ ĐỆM (CACHE) — HIỆN MỖI LẦN MỞ MENU
     NSDictionary *ann = dict[@"announcement"];
     if (ann && [ann[@"show"] boolValue]) {
-        // Lấy ID thông báo (admin tự đặt, ví dụ: "tb_012_active")
-        NSString *annId = ann[@"id"];
-        if ([annId isKindOfClass:[NSString class]] && annId.length > 0) {
-            NSString *seenKey = [@"PHL_SeenAnnouncement_" stringByAppendingString:annId];
-            BOOL alreadySeen = [[NSUserDefaults standardUserDefaults] boolForKey:seenKey];
-            if (!alreadySeen) {
-                // Đánh dấu đã xem ngay lập tức, trước khi show để tránh race condition
-                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:seenKey];
-                [[NSUserDefaults standardUserDefaults] synchronize];
-
-                UIAlertController *alert = [UIAlertController alertControllerWithTitle:ann[@"title"] ?: @"👑 THÔNG BÁO TỪ ADMIN"
-                                                                               message:ann[@"message"] ?: @""
-                                                                        preferredStyle:UIAlertControllerStyleAlert];
-                [alert addAction:[UIAlertAction actionWithTitle:ann[@"button_title"] ?: @"Đã hiểu" style:UIAlertActionStyleCancel handler:nil]];
-                NSString *link = ann[@"action_url"];
-                if ([link isKindOfClass:[NSString class]] && link.length > 0) {
-                    [alert addAction:[UIAlertAction actionWithTitle:@"Xem ngay" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:link] options:@{} completionHandler:nil];
-                    }]];
-                }
-                UIWindow *w = [self resolveActiveWindow];
-                UIViewController *vc = w.rootViewController;
-                while (vc.presentedViewController) vc = vc.presentedViewController;
-                if (vc && !vc.presentedViewController) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        [vc presentViewController:alert animated:YES completion:nil];
-                    });
-                }
-            }
-            // Nếu alreadySeen == YES -> bỏ qua hoàn toàn, không làm phiền user
+        _cachedAnnouncement = ann;
+        if (_menuOpen) {
+            [self showAnnouncementPopup];
         }
-        // Nếu không có "id" trong config -> bỏ qua hoàn toàn để an toàn
+    } else {
+        _cachedAnnouncement = nil;
+    }
+}
+- (void)showAnnouncementPopup {
+    if (!_cachedAnnouncement) return;
+    if (![_cachedAnnouncement[@"show"] boolValue]) return;
+
+    NSString *title = _cachedAnnouncement[@"title"] ?: @"👑 THÔNG BÁO TỪ ADMIN";
+    NSString *msg = _cachedAnnouncement[@"message"] ?: @"";
+    NSString *btnTitle = _cachedAnnouncement[@"button_title"] ?: @"Đã hiểu";
+    NSString *link = _cachedAnnouncement[@"action_url"];
+
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
+                                                                   message:msg
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:btnTitle style:UIAlertActionStyleCancel handler:nil]];
+    if ([link isKindOfClass:[NSString class]] && link.length > 0) {
+        [alert addAction:[UIAlertAction actionWithTitle:@"Xem ngay" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:link] options:@{} completionHandler:nil];
+        }]];
+    }
+
+    UIWindow *w = [self resolveActiveWindow];
+    if (!w) return;
+    UIViewController *vc = w.rootViewController;
+    while (vc.presentedViewController) {
+        if ([vc.presentedViewController isKindOfClass:[UIAlertController class]]) {
+            return; // Đang có thông báo hiển thị thì không hiện đè
+        }
+        vc = vc.presentedViewController;
+    }
+    if (vc) {
+        [vc presentViewController:alert animated:YES completion:nil];
     }
 }
 
@@ -1210,12 +1228,27 @@ static inline NSString *GetAudioBridgeJS(void) {
     NSString *vUrl = _featuredVipSong[@"url"];
     if (!vUrl || vUrl.length == 0) return;
 
-    if (_playlist.count > 0 && [_playlist.firstObject[@"url"] isEqualToString:vUrl]) return;
-    NSDictionary *item = @{@"title": vTitle ?: @"⭐ [HOT TREND] VIP Song", @"url": vUrl};
-    [_playlist insertObject:item atIndex:0];
-    [_table reloadData];
-}
+    if (_playlist.count > 0 && [_playlist.firstObject[@"url"] isEqualToString:vUrl]) {
+        NSMutableDictionary *first = [_playlist.firstObject mutableCopy];
+        first[@"title"] = vTitle ?: @"⭐ [HOT TREND] VIP Song";
+        _playlist[0] = first;
+        [_table reloadData];
+    } else {
+        NSDictionary *item = @{@"title": vTitle ?: @"⭐ [HOT TREND] VIP Song", @"url": vUrl};
+        [_playlist insertObject:item atIndex:0];
+        [_table reloadData];
+    }
 
+    // TỰ ĐỘNG PHÁT NHẠC VIP KHI VÀO ỨNG DỤNG NẾU ENABLED = TRUE
+    if ([_featuredVipSong[@"enabled"] boolValue]) {
+        if (!_hasAutoPlayedVip && _playlist.count > 0 && (!self->_player || self->_player.rate < 0.01f || self->_idx < 0)) {
+            _hasAutoPlayedVip = YES;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self playSongAtIndex:0];
+            });
+        }
+    }
+}
 - (void)webView:(WKWebView *)webView didCommitNavigation:(WKNavigation *)navigation {
     [self cleanYouTubePageInWebView];
 }
@@ -1320,6 +1353,8 @@ static inline NSString *GetAudioBridgeJS(void) {
     _menuOpen = !_menuOpen;
     if (_menuOpen) {
         _menuBox.hidden = NO;
+        _table.hidden = _webOpen;
+        _webBox.hidden = !_webOpen;
         [self applyMenuFrameForExpanded:_webOpen animated:NO];
         _menuBox.transform = CGAffineTransformMakeScale(0.85, 0.85);
         [UIView animateWithDuration:0.25 delay:0.0 options:UIViewAnimationOptionCurveEaseOut animations:^{
@@ -1330,6 +1365,13 @@ static inline NSString *GetAudioBridgeJS(void) {
         // TỰ ĐỘNG CẬP NHẬT CONFIG & PLAYLIST MỖI KHI MỞ MENU
         [self fetchRemoteAdminConfig];
         [self fetchRemotePlaylist];
+
+        // BẬT POPUP THÔNG BÁO MỖI LẦN MỞ MENU
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (self->_menuOpen) {
+                [self showAnnouncementPopup];
+            }
+        });
     } else {
         [UIView animateWithDuration:0.20 delay:0.0 options:UIViewAnimationOptionCurveEaseIn animations:^{
             self->_menuBox.alpha = 0.0;
@@ -1339,7 +1381,6 @@ static inline NSString *GetAudioBridgeJS(void) {
         }];
     }
 }
-
 - (void)clampViewToSafeBounds:(UIView *)v topMargin:(CGFloat)tm bottomMargin:(CGFloat)bm {
     UIWindow *w = [self resolveActiveWindow];
     if (!w) return;
@@ -1421,6 +1462,13 @@ static inline NSString *GetAudioBridgeJS(void) {
             [self->_playlist removeAllObjects];
             [self->_playlist addObjectsFromArray:songs];
             [self injectFeaturedSongIntoPlaylist];
+            // TỰ ĐỘNG PHÁT NHẠC VIP KHI VÀO ỨNG DỤNG NẾU ENABLED = TRUE
+            if (self->_featuredVipSong && [self->_featuredVipSong[@"enabled"] boolValue]) {
+                if (!self->_hasAutoPlayedVip && self->_playlist.count > 0 && (!self->_player || self->_player.rate < 0.01f || self->_idx < 0)) {
+                    self->_hasAutoPlayedVip = YES;
+                    [self playSongAtIndex:0];
+                }
+            }
             self->_statusMsg = nil;
             [self->_table reloadData];
         });
