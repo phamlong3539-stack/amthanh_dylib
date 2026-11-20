@@ -2,7 +2,7 @@
 // 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE)
 // CÔNG NGHỆ: DIRECT GITHUB CORE API • REAL-TIME ZERO DELAY • NUCLEAR AD-BLOCK
 //
-// 🔧 FIXED by Senior Dev (50yr exp) - v2.3.0 (BUILD FIX: COMPATIBLE VỚI CLANG .MM)
+// 🔧 FIXED by Senior Dev (50yr exp) - v2.4.0 (LOGO CHÍNH THỨC + KIỂM TOÁN LỆNH ADMIN)
 // ==============================================================================
 
 #import <UIKit/UIKit.h>
@@ -278,7 +278,7 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     float            _maxAllowedGain;
     NSTimer         *_autoSyncTimer;
 
-    // QUẢN LÝ POPUP
+    // QUẢN LÝ POPUP & LOGO
     NSDictionary    *_cachedAnnouncement;
     BOOL             _isShowingAnnouncement;
     BOOL             _hasShownPopupOnLaunch;
@@ -485,42 +485,47 @@ static inline NSString *GetAudioBridgeJS(void) {
                 completionHandler:nil];
 }
 
-// ─────────────── Logo Render ───────────────────────────────────────────────
+// ─────────────── TẢI LOGO TRỰC TIẾP TỪ GITHUB (ZERO DELAY CACHE) ──────────
 
-- (UIImage *)renderLogoImageWithSize:(CGFloat)sz {
-    UIGraphicsBeginImageContextWithOptions(CGSizeMake(sz, sz), NO, 0.0);
-    CGContextRef ctx = UIGraphicsGetCurrentContext();
-    if (!ctx) { UIGraphicsEndImageContext(); return nil; }
+- (void)loadRemoteLogo {
+    NSString *cachePath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"phl_official_logo.png"];
 
-    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    CGFloat colors[] = { 0.52f,0.10f,0.88f,1.0f, 0.18f,0.04f,0.42f,1.0f };
-    CGGradientRef grad = CGGradientCreateWithColorComponents(cs, colors, NULL, 2);
-    CGContextAddEllipseInRect(ctx, CGRectMake(1, 1, sz-2, sz-2));
-    CGContextClip(ctx);
-    CGContextDrawRadialGradient(ctx, grad,
-        CGPointMake(sz*0.42f, sz*0.38f), 0,
-        CGPointMake(sz*0.5f,  sz*0.5f),  sz*0.5f, 0);
-    CGGradientRelease(grad);
-    CGColorSpaceRelease(cs);
+    // 1. Kiểm tra cache trên máy: Nạp ngay 0ms không độ trễ
+    if ([[NSFileManager defaultManager] fileExistsAtPath:cachePath]) {
+        UIImage *cached = [UIImage imageWithContentsOfFile:cachePath];
+        if (cached) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self applyLogoImageToButton:cached];
+            });
+        }
+    }
 
-    CGContextSetStrokeColorWithColor(ctx,
-        [UIColor colorWithRed:0.0 green:0.95 blue:1.0 alpha:1.0].CGColor);
-    CGContextSetLineWidth(ctx, 2.0f);
-    CGContextAddEllipseInRect(ctx, CGRectMake(1.5, 1.5, sz-3, sz-3));
-    CGContextStrokePath(ctx);
+    // 2. Tải bản logo mới nhất từ link GitHub của bạn
+    NSURL *logoURL = [NSURL URLWithString:@"https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/logo.png"];
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:logoURL
+                                                       cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
+                                                   timeoutInterval:10.0];
+    [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
+        if (!e && d && d.length > 0) {
+            UIImage *img = [UIImage imageWithData:d];
+            if (img) {
+                [d writeToFile:cachePath atomically:YES];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self applyLogoImageToButton:img];
+                });
+            }
+        }
+    }] resume];
+}
 
-    NSString *note = @"♪";
-    NSDictionary *attrs = @{
-        NSFontAttributeName: [UIFont systemFontOfSize:sz*0.5f weight:UIFontWeightBold],
-        NSForegroundColorAttributeName: [UIColor colorWithRed:1.0 green:0.9 blue:0.3 alpha:1.0]
-    };
-    CGSize ns = [note sizeWithAttributes:attrs];
-    [note drawAtPoint:CGPointMake((sz-ns.width)*0.5f, (sz-ns.height)*0.5f+1.f)
-       withAttributes:attrs];
-
-    UIImage *img = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    return img;
+- (void)applyLogoImageToButton:(UIImage *)img {
+    if (!_floatBtn || !img) return;
+    [_floatBtn setTitle:@"" forState:UIControlStateNormal];
+    [_floatBtn setImage:img forState:UIControlStateNormal];
+    _floatBtn.imageView.contentMode = UIViewContentModeScaleAspectFit;
+    _floatBtn.imageEdgeInsets = UIEdgeInsetsMake(6, 6, 6, 6);
+    _floatBtn.layer.cornerRadius = 24.0f;
+    _floatBtn.clipsToBounds = YES;
 }
 
 // ─────────────── Window & ViewController Helpers ───────────────────────────
@@ -720,15 +725,8 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_floatBtn.backgroundColor =
                 [UIColor colorWithRed:0.08 green:0.03 blue:0.2 alpha:0.96];
 
-            UIImage *logo = [self renderLogoImageWithSize:36.0f];
-            if (logo) {
-                [self->_floatBtn setImage:logo forState:UIControlStateNormal];
-                self->_floatBtn.imageView.contentMode = UIViewContentModeScaleAspectFit;
-                self->_floatBtn.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5);
-            } else {
-                [self->_floatBtn setTitle:@"♪" forState:UIControlStateNormal];
-                self->_floatBtn.titleLabel.font = [UIFont systemFontOfSize:22];
-            }
+            [self->_floatBtn setTitle:@"👑" forState:UIControlStateNormal];
+            self->_floatBtn.titleLabel.font = [UIFont systemFontOfSize:22];
 
             [self->_floatBtn addTarget:self action:@selector(toggleMenu)
               forControlEvents:UIControlEventTouchUpInside];
@@ -737,6 +735,10 @@ static inline NSString *GetAudioBridgeJS(void) {
                                                        action:@selector(handleFloatingPan:)];
             [self->_floatBtn addGestureRecognizer:pg];
             [kw addSubview:self->_floatBtn];
+
+            // TẢI VÀ CACHE LOGO GITHUB CHÍNH THỨC
+            [self loadRemoteLogo];
+
         } else if (self->_floatBtn.superview != kw) {
             [kw addSubview:self->_floatBtn];
         }
@@ -1022,20 +1024,21 @@ static inline NSString *GetAudioBridgeJS(void) {
     return l;
 }
 
-// ─────────────── Remote Data ───────────────────────────────────────────────
+// ─────────────── Remote Data (ZERO DELAY DIRECT GITHUB API) ────────────────
 
 - (void)fetchRemoteAdminConfig {
     if (_lastConfigFetchDate &&
         [[NSDate date] timeIntervalSinceDate:_lastConfigFetchDate] < 60.0) return;
     _lastConfigFetchDate = [NSDate date];
 
-    NSURL *apiUrl = [NSURL URLWithString:
-        @"https://api.github.com/repos/phamlong3539-stack/phl-music-data/contents/config.json"];
+    NSTimeInterval ts = [[NSDate date] timeIntervalSince1970];
+    NSString *apiStr = [NSString stringWithFormat:@"https://api.github.com/repos/phamlong3539-stack/phl-music-data/contents/config.json?v=%.0f", ts];
+    NSURL *apiUrl = [NSURL URLWithString:apiStr];
     NSMutableURLRequest *req =
         [NSMutableURLRequest requestWithURL:apiUrl
                                 cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData
                             timeoutInterval:8.0];
-    [req setValue:@"PHL-Engine/2.3" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"PHL-Engine/2.4" forHTTPHeaderField:@"User-Agent"];
     [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
 
     [[[NSURLSession sharedSession] dataTaskWithRequest:req
@@ -1088,8 +1091,10 @@ static inline NSString *GetAudioBridgeJS(void) {
         }] resume];
 }
 
+// ─────────────── THỰC THI LỆNH ADMIN TỨC THÌ (ZERO DELAY) ──────────────────
+
 - (void)applyRemoteAdminConfig:(NSDictionary *)dict {
-    // 1. Kill switch
+    // 1. LỆNH KILL-SWITCH
     if ([dict[@"system_control"][@"kill_switch"] boolValue]) {
         [self pauseStreamPlayerIfPlaying];
         [self pauseWebMediaIfPlaying];
@@ -1100,13 +1105,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         _floatBtn.hidden = NO;
     }
 
-    // 2. Floating icon & pulse
-    NSString *fIcon = dict[@"system_control"][@"floating_icon"];
-    if ([fIcon isKindOfClass:[NSString class]] && fIcon.length > 0 && _floatBtn) {
-        if (!_floatBtn.currentImage) {
-            [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
-        }
-    }
+    // 2. LỆNH HIỆU ỨNG THỞ NÚT NỔI
     BOOL enablePulse = [dict[@"system_control"][@"floating_pulse_glow"] boolValue];
     if (enablePulse) {
         if (![_floatBtn.layer animationForKey:@"phl_pulse"]) {
@@ -1121,7 +1120,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         [_floatBtn.layer removeAnimationForKey:@"phl_pulse"];
     }
 
-    // 3. Theme
+    // 3. LỆNH ĐỔI MÀU GIAO DIỆN NEON THEME
     NSDictionary *th = dict[@"theme_customizer"];
     if (th && [th isKindOfClass:[NSDictionary class]]) {
         UIColor *neon = ColorFromHex(th[@"neon_border_color"],
@@ -1137,7 +1136,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         _gradient.colors = @[(id)cS.CGColor, (id)cM.CGColor, (id)cE.CGColor];
     }
 
-    // 4. Branding
+    // 4. LỆNH THƯƠNG HIỆU & LIÊN HỆ ADMIN
     NSDictionary *brand = dict[@"branding"];
     if (brand && [brand isKindOfClass:[NSDictionary class]]) {
         if ([brand[@"header_title"] isKindOfClass:[NSString class]])     _headerTitleLbl.text = brand[@"header_title"];
@@ -1148,21 +1147,21 @@ static inline NSString *GetAudioBridgeJS(void) {
         if ([brand[@"footer_copyright"] isKindOfClass:[NSString class]]) _cprLbl.text    = brand[@"footer_copyright"];
     }
 
-    // 5. Audio max gain
+    // 5. LỆNH CÔNG SUẤT ÂM LƯỢNG (MAX GAIN BOOSTER)
     NSDictionary *audioCfg = dict[@"audio_engine"];
     if (audioCfg && [audioCfg isKindOfClass:[NSDictionary class]] && audioCfg[@"max_gain"]) {
         _maxAllowedGain = MAX(1.0f, [audioCfg[@"max_gain"] floatValue]);
         _volSlider.maximumValue = _maxAllowedGain;
     }
 
-    // 6. Featured song
+    // 6. LỆNH GHIM BÀI HÁT VIP HOT TREND
     NSDictionary *feat = dict[@"vip_featured_song"];
     if (feat && [feat isKindOfClass:[NSDictionary class]] && [feat[@"enabled"] boolValue]) {
         _featuredVipSong = feat;
         [self injectFeaturedSongIntoPlaylist];
     }
 
-    // 7. YouTube (FIX LỖI .length)
+    // 7. LỆNH KHÓA/MỞ YOUTUBE TỨC THÌ
     NSDictionary *ytCfg = dict[@"youtube_module"];
     if (ytCfg && [ytCfg isKindOfClass:[NSDictionary class]]) {
         if (ytCfg[@"enabled"] != nil) {
@@ -1180,7 +1179,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         if (!_isYouTubeEnabled && _webOpen) [self closeEmbeddedBrowser];
     }
 
-    // 8. BẮN POPUP NGAY LẬP TỨC KHI VÀO APP
+    // 8. LỆNH BẮN POPUP THÔNG BÁO TỨC THÌ
     NSDictionary *ann = dict[@"announcement"];
     if (ann && [ann isKindOfClass:[NSDictionary class]] && [ann[@"show"] boolValue]) {
         _cachedAnnouncement = ann;
@@ -1202,7 +1201,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         [NSMutableURLRequest requestWithURL:apiUrl
                                 cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData
                             timeoutInterval:8.0];
-    [req setValue:@"PHL-Engine/2.3" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"PHL-Engine/2.4" forHTTPHeaderField:@"User-Agent"];
     [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
 
     [[[NSURLSession sharedSession] dataTaskWithRequest:req
@@ -1658,7 +1657,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 @end
 
-// ─────────────── Điểm Khởi Chạy Thuần Objective-C++ (Không Dùng Logos) ─────
+// ─────────────── Điểm Khởi Chạy Thuần Objective-C++ ───────────────────────
 
 __attribute__((constructor)) static void InitializeAMThanhDylib(void) {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.5 * NSEC_PER_SEC)),
