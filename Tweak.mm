@@ -26,13 +26,14 @@ typedef NS_ENUM(NSInteger, TransportButtonKind) {
 #pragma mark - 🛡️ TẦNG 1: MÃ HÓA CHUỖI TỰ ĐỘNG (XOR ROLLING CIPHER - CHỐNG DUMP STRINGS)
 
 static inline NSString *PHL_DecryptString(const uint8_t *enc, size_t len) {
-    char buf[len + 1];
+    if (!enc || len == 0) return @"";
+    NSMutableData *d = [NSMutableData dataWithLength:len];
+    uint8_t *bytes = (uint8_t *)d.mutableBytes;
     uint8_t baseKey = 0x5A;
     for (size_t i = 0; i < len; i++) {
-        buf[i] = (char)(enc[i] ^ ((baseKey + (uint8_t)i) & 0xFF));
+        bytes[i] = (uint8_t)(enc[i] ^ ((baseKey + (uint8_t)i) & 0xFF));
     }
-    buf[len] = '\0';
-    return [NSString stringWithUTF8String:buf];
+    return [[NSString alloc] initWithData:d encoding:NSUTF8StringEncoding] ?: @"";
 }
 
 // https://m.youtube.com/feed/music
