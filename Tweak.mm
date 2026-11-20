@@ -291,7 +291,7 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
 
 #pragma mark - PHLProtectedAudioManager Interface
 
-@interface PHLProtectedAudioManager : NSObject <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, WKNavigationDelegate> {
+@interface PHLProtectedAudioManager : NSObject <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, WKNavigationDelegate, WKScriptMessageHandler> {
     UIButton *_floatBtn;
     UIView *_menuBox;
     CAGradientLayer *_gradient;
