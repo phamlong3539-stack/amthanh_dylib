@@ -657,13 +657,21 @@ static inline NSString *GetAudioBridgeJS(void) {
 // ─────────────── Window & ViewController Helpers ───────────────────────────
 
 - (UIWindow *)resolveActiveWindow {
-    for (UIWindowScene *s in [UIApplication sharedApplication].connectedScenes) {
-        if (s.activationState == UISceneActivationStateForegroundActive) {
-            for (UIWindow *w in s.windows) { if (w.isKeyWindow) return w; }
-            if (s.windows.firstObject) return s.windows.firstObject;
+    if (@available(iOS 13.0, *)) {
+        for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
+                UIWindowScene *s = (UIWindowScene *)scene;
+                if (s.activationState == UISceneActivationStateForegroundActive) {
+                    for (UIWindow *w in s.windows) { if (w.isKeyWindow) return w; }
+                    if (s.windows.firstObject) return s.windows.firstObject;
+                }
+            }
         }
     }
-    return [UIApplication sharedApplication].windows.firstObject;
+    for (UIWindow *w in [UIApplication sharedApplication].windows) {
+        if (w.isKeyWindow) return w;
+    }
+    return [UIApplication sharedApplication].windows.firstObject ?: [UIApplication sharedApplication].keyWindow;
 }
 
 - (UIViewController *)resolveTopViewController {
