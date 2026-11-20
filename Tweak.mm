@@ -2,13 +2,14 @@
 // 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE)
 // CÔNG NGHỆ: DIRECT GITHUB CORE API • REAL-TIME ZERO DELAY • NUCLEAR AD-BLOCK
 //
-// 🔧 FIXED by Senior Dev (50yr exp) - v2.2.0 (POPUP LUÔN HIỆN KHI MỞ APP/MENU)
+// 🔧 FIXED by Senior Dev (50yr exp) - v2.3.0 (BUILD FIX: COMPATIBLE VỚI CLANG .MM)
 // ==============================================================================
 
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <WebKit/WebKit.h>
 #import <QuartzCore/QuartzCore.h>
+#import <CoreGraphics/CoreGraphics.h>
 #include <dlfcn.h>
 #include <sys/sysctl.h>
 #include <mach-o/dyld.h>
@@ -201,7 +202,7 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
             [path addLineToPoint:CGPointMake(cx + rx - 2.4f, cy - ry + 2.0f)];
             [path moveToPoint:CGPointMake(cx + rx, cy + ry - 1.5f)];
             [path addQuadCurveToPoint:CGPointMake(cx - rx, cy + ry) controlPoint:CGPointMake(cx, cy + ry + 2.6f)];
-            [path moveToPoint:CGPointMake(cx - rx + 2.4f, cy - ry - 2.0f)];
+            [path moveToPoint:CGPointMake(cx - rx + 2.4f, cy + ry - 2.0f)];
             [path addLineToPoint:CGPointMake(cx - rx, cy + ry)];
             [path addLineToPoint:CGPointMake(cx - rx + 2.4f, cy + ry + 2.0f)];
             break;
@@ -570,7 +571,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         self->_isShowingAnnouncement = NO;
     }]];
 
-    if (link.length > 0) {
+    if ([link isKindOfClass:[NSString class]] && link.length > 0) {
         [alert addAction:[UIAlertAction actionWithTitle:@"Xem ngay"
                                                  style:UIAlertActionStyleDefault
                                                handler:^(UIAlertAction *a) {
@@ -1034,7 +1035,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         [NSMutableURLRequest requestWithURL:apiUrl
                                 cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData
                             timeoutInterval:8.0];
-    [req setValue:@"PHL-Engine/2.2" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"PHL-Engine/2.3" forHTTPHeaderField:@"User-Agent"];
     [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
 
     [[[NSURLSession sharedSession] dataTaskWithRequest:req
@@ -1044,7 +1045,7 @@ static inline NSString *GetAudioBridgeJS(void) {
                 NSDictionary *api = [NSJSONSerialization JSONObjectWithData:data
                     options:0 error:nil];
                 NSString *b64 = api[@"content"];
-                if (b64.length > 0) {
+                if ([b64 isKindOfClass:[NSString class]] && b64.length > 0) {
                     b64 = [b64 stringByReplacingOccurrencesOfString:@"\n" withString:@""];
                     b64 = [b64 stringByReplacingOccurrencesOfString:@"\r" withString:@""];
                     NSData *dec = [[NSData alloc] initWithBase64EncodedString:b64 options:0];
@@ -1101,7 +1102,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
     // 2. Floating icon & pulse
     NSString *fIcon = dict[@"system_control"][@"floating_icon"];
-    if (fIcon.length > 0 && _floatBtn) {
+    if ([fIcon isKindOfClass:[NSString class]] && fIcon.length > 0 && _floatBtn) {
         if (!_floatBtn.currentImage) {
             [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
         }
@@ -1122,7 +1123,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
     // 3. Theme
     NSDictionary *th = dict[@"theme_customizer"];
-    if (th) {
+    if (th && [th isKindOfClass:[NSDictionary class]]) {
         UIColor *neon = ColorFromHex(th[@"neon_border_color"],
             [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95]);
         _menuBox.layer.borderColor  = neon.CGColor;
@@ -1138,42 +1139,50 @@ static inline NSString *GetAudioBridgeJS(void) {
 
     // 4. Branding
     NSDictionary *brand = dict[@"branding"];
-    if (brand) {
-        if (brand[@"header_title"])     _headerTitleLbl.text = brand[@"header_title"];
-        if (brand[@"ticker_announcement"]) _tickerLbl.text   = brand[@"ticker_announcement"];
-        if (brand[@"admin_button_text"])
+    if (brand && [brand isKindOfClass:[NSDictionary class]]) {
+        if ([brand[@"header_title"] isKindOfClass:[NSString class]])     _headerTitleLbl.text = brand[@"header_title"];
+        if ([brand[@"ticker_announcement"] isKindOfClass:[NSString class]]) _tickerLbl.text   = brand[@"ticker_announcement"];
+        if ([brand[@"admin_button_text"] isKindOfClass:[NSString class]])
             [_adminBtn setTitle:brand[@"admin_button_text"] forState:UIControlStateNormal];
-        if (brand[@"admin_button_url"]) _adminTargetURL = brand[@"admin_button_url"];
-        if (brand[@"footer_copyright"]) _cprLbl.text    = brand[@"footer_copyright"];
+        if ([brand[@"admin_button_url"] isKindOfClass:[NSString class]]) _adminTargetURL = brand[@"admin_button_url"];
+        if ([brand[@"footer_copyright"] isKindOfClass:[NSString class]]) _cprLbl.text    = brand[@"footer_copyright"];
     }
 
     // 5. Audio max gain
     NSDictionary *audioCfg = dict[@"audio_engine"];
-    if (audioCfg[@"max_gain"]) {
+    if (audioCfg && [audioCfg isKindOfClass:[NSDictionary class]] && audioCfg[@"max_gain"]) {
         _maxAllowedGain = MAX(1.0f, [audioCfg[@"max_gain"] floatValue]);
         _volSlider.maximumValue = _maxAllowedGain;
     }
 
     // 6. Featured song
     NSDictionary *feat = dict[@"vip_featured_song"];
-    if (feat && [feat[@"enabled"] boolValue]) {
+    if (feat && [feat isKindOfClass:[NSDictionary class]] && [feat[@"enabled"] boolValue]) {
         _featuredVipSong = feat;
         [self injectFeaturedSongIntoPlaylist];
     }
 
-    // 7. YouTube
+    // 7. YouTube (FIX LỖI .length)
     NSDictionary *ytCfg = dict[@"youtube_module"];
-    if (ytCfg) {
-        if (ytCfg[@"enabled"] != nil)   _isYouTubeEnabled = [ytCfg[@"enabled"] boolValue];
-        if (ytCfg[@"home_url"].length)   _youtubeHomeURL   = ytCfg[@"home_url"];
-        if (ytCfg[@"locked_reason"].length) _youtubeLockedMsg = ytCfg[@"locked_reason"];
+    if (ytCfg && [ytCfg isKindOfClass:[NSDictionary class]]) {
+        if (ytCfg[@"enabled"] != nil) {
+            _isYouTubeEnabled = [ytCfg[@"enabled"] boolValue];
+        }
+        NSString *hUrl = ytCfg[@"home_url"];
+        if ([hUrl isKindOfClass:[NSString class]] && hUrl.length > 0) {
+            _youtubeHomeURL = hUrl;
+        }
+        NSString *lReason = ytCfg[@"locked_reason"];
+        if ([lReason isKindOfClass:[NSString class]] && lReason.length > 0) {
+            _youtubeLockedMsg = lReason;
+        }
         [self syncBrowserButtonTitle];
         if (!_isYouTubeEnabled && _webOpen) [self closeEmbeddedBrowser];
     }
 
     // 8. BẮN POPUP NGAY LẬP TỨC KHI VÀO APP
     NSDictionary *ann = dict[@"announcement"];
-    if (ann && [ann[@"show"] boolValue]) {
+    if (ann && [ann isKindOfClass:[NSDictionary class]] && [ann[@"show"] boolValue]) {
         _cachedAnnouncement = ann;
 
         if (!_hasShownPopupOnLaunch && !_isShowingAnnouncement) {
@@ -1193,7 +1202,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         [NSMutableURLRequest requestWithURL:apiUrl
                                 cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData
                             timeoutInterval:8.0];
-    [req setValue:@"PHL-Engine/2.2" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"PHL-Engine/2.3" forHTTPHeaderField:@"User-Agent"];
     [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
 
     [[[NSURLSession sharedSession] dataTaskWithRequest:req
@@ -1203,7 +1212,7 @@ static inline NSString *GetAudioBridgeJS(void) {
                 NSDictionary *api = [NSJSONSerialization JSONObjectWithData:data
                     options:0 error:nil];
                 NSString *b64 = api[@"content"];
-                if (b64.length > 0) {
+                if ([b64 isKindOfClass:[NSString class]] && b64.length > 0) {
                     b64 = [b64 stringByReplacingOccurrencesOfString:@"\n" withString:@""];
                     b64 = [b64 stringByReplacingOccurrencesOfString:@"\r" withString:@""];
                     NSData *dec = [[NSData alloc] initWithBase64EncodedString:b64 options:0];
@@ -1263,7 +1272,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 - (void)injectFeaturedSongIntoPlaylist {
     if (!_featuredVipSong) return;
     NSString *vUrl = _featuredVipSong[@"url"];
-    if (!vUrl.length) return;
+    if (![vUrl isKindOfClass:[NSString class]] || vUrl.length == 0) return;
     if (_playlist.count > 0 &&
         [_playlist.firstObject[@"url"] isEqualToString:vUrl]) return;
     NSString *vTitle = _featuredVipSong[@"title"] ?: @"Featured VIP";
@@ -1279,7 +1288,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     NSDictionary *song = _playlist[idx];
     NSString *urlStr   = song[@"url"];
     NSString *name     = song[@"title"] ?: song[@"name"] ?: @"Không tên";
-    if (!urlStr.length) return;
+    if (![urlStr isKindOfClass:[NSString class]] || urlStr.length == 0) return;
 
     NSURL *url = [NSURL URLWithString:urlStr];
     if (!url) {
@@ -1469,7 +1478,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)loadYouTubeURL:(NSString *)urlStr {
-    if (!_web || !urlStr.length) return;
+    if (!_web || ![urlStr isKindOfClass:[NSString class]] || urlStr.length == 0) return;
     NSURL *u = [NSURL URLWithString:urlStr];
     if (!u) return;
     [_web loadRequest:[NSURLRequest requestWithURL:u
@@ -1489,7 +1498,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         _webLoaded = YES;
         [self syncBrowserVisibilityAnimated:YES];
     }
-    if (!raw.length) {
+    if (raw.length == 0) {
         [self loadYouTubeURL:_youtubeHomeURL];
         return;
     }
@@ -1505,7 +1514,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)openAdminInfoGroup {
-    if (!_adminTargetURL.length) return;
+    if (!_adminTargetURL || _adminTargetURL.length == 0) return;
     NSURL *u = [NSURL URLWithString:_adminTargetURL];
     if (u) [[UIApplication sharedApplication] openURL:u options:@{} completionHandler:nil];
 }
@@ -1649,14 +1658,11 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 @end
 
-// ─────────────── Theos Hook ────────────────────────────────────────────────
+// ─────────────── Điểm Khởi Chạy Thuần Objective-C++ (Không Dùng Logos) ─────
 
-%hook SpringBoard
-- (void)applicationDidFinishLaunching:(UIApplication *)application {
-    %orig;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)),
+__attribute__((constructor)) static void InitializeAMThanhDylib(void) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.5 * NSEC_PER_SEC)),
                    dispatch_get_main_queue(), ^{
         [[PHLProtectedAudioManager sharedInstance] initializeFramework];
     });
 }
-%end
