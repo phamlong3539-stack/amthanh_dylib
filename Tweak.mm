@@ -41,8 +41,8 @@ static const uint8_t kEnc_GITHUB_API_CFG[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x6
 static const size_t kLen_GITHUB_API_CFG = 83;
 
 // https://t.me/PHL0990
-static const uint8_t kEnc_DEFAULT_ADMIN_URL[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x65, 0x4F, 0x4E, 0x16, 0x4D, 0x09, 0x00, 0x49, 0x37, 0x20, 0x25, 0x5A, 0x52, 0x55, 0x5D };
-static const size_t kLen_DEFAULT_ADMIN_URL = 20;
+static const uint8_t __attribute__((unused)) kEnc_DEFAULT_ADMIN_URL[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x65, 0x4F, 0x4E, 0x16, 0x4D, 0x09, 0x00, 0x49, 0x37, 0x20, 0x25, 0x5A, 0x52, 0x55, 0x5D };
+static const size_t __attribute__((unused)) kLen_DEFAULT_ADMIN_URL = 20;
 
 #pragma mark - 🛡️ TẦNG 2: BẢO MẬT CHỐNG DEBUG & HOOK (ANTI-LLDB, ANTI-FRIDA, ANTI-ATTACH)
 
@@ -292,7 +292,7 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
 
 #pragma mark - PHLProtectedAudioManager Interface
 
-@interface PHLProtectedAudioManager : NSObject <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, WKNavigationDelegate> {
+@interface PHLProtectedAudioManager : NSObject <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, WKNavigationDelegate, WKScriptMessageHandler> {
     UIButton *_floatBtn;
     UIView *_menuBox;
     CAGradientLayer *_gradient;
@@ -972,7 +972,7 @@ static inline NSString *GetAudioBridgeJS(void) {
             wcfg.allowsInlineMediaPlayback = YES;
             WKUserContentController *ucc = wcfg.userContentController;
 
-            PHLWeakScriptMessageProxy *proxy = [[PHLWeakScriptMessageProxy alloc] initWithDelegate:self];
+            PHLWeakScriptMessageProxy *proxy = [[PHLWeakScriptMessageProxy alloc] initWithDelegate:(id<WKScriptMessageHandler>)self];
             [ucc addScriptMessageHandler:proxy name:@"phlWebMediaPlaying"];
 
             WKUserScript *cleanScr = [[WKUserScript alloc] initWithSource:GetNuclearCleanAndAdBlockJS() injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
