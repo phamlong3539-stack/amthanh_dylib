@@ -1,20 +1,16 @@
-// ==============================================================================
-// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE)
-// CÔNG NGHỆ: DIRECT GITHUB CORE API • REAL-TIME ZERO DELAY • NUCLEAR AD-BLOCK
-// ==============================================================================
-
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <WebKit/WebKit.h>
 #import <QuartzCore/QuartzCore.h>
-#include <dlfcn.h>
-#include <sys/sysctl.h>
-#include <mach-o/dyld.h>
-#include <unistd.h>
+#import <dlfcn.h>
+#import <sys/types.h>
+#import <sys/sysctl.h>
+#import <mach-o/dyld.h>
 
+#define PHL_OBFUSCATED __attribute__((always_inline))
 #define PHL_HIDDEN __attribute__((visibility("hidden")))
 
-#pragma mark - 🛡️ TẦNG 1: MÃ HÓA CHUỖI TỰ ĐỘNG (XOR ROLLING CIPHER)
+#pragma mark - 🛡️ TẦNG 1: GIẢI MÃ CHUỖI ĐỘC QUYỀN (DYNAMIC ROLLING XOR CIPHER)
 
 static inline NSString *PHL_DecryptString(const uint8_t *enc, size_t len) {
     if (!enc || len == 0) return @"";
@@ -97,8 +93,6 @@ typedef NS_ENUM(NSInteger, TransportButtonKind) {
     TransportButtonKindRepeat = 3
 };
 
-#pragma mark - Bộ Chuyển Đổi Màu HEX
-
 static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     if (!hexString || hexString.length == 0) return fallback;
     NSString *clean = [hexString stringByReplacingOccurrencesOfString:@"#" withString:@""];
@@ -153,32 +147,43 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
 }
 
 - (void)setupKind:(TransportButtonKind)kind actionTarget:(id)target action:(SEL)action {
-    _iconKind = kind;
-    _activeState = NO;
-    _pulseHighlight = NO;
-
-    self.layer.cornerRadius = 8.0f;
-    self.layer.borderWidth = 1.15f;
+    self.iconKind = kind;
+    self.backgroundColor = [UIColor colorWithRed:0.20 green:0.04 blue:0.32 alpha:0.85];
+    self.layer.cornerRadius = 6.0f;
+    self.layer.borderWidth = 1.0f;
+    self.layer.borderColor = [UIColor colorWithRed:0.75 green:0.35 blue:0.95 alpha:0.85].CGColor;
     self.clipsToBounds = YES;
+    self.adjustsImageWhenHighlighted = NO;
+
+    self.glyphLayer = [CAShapeLayer layer];
+    self.glyphLayer.fillColor = [UIColor whiteColor].CGColor;
+    self.glyphLayer.strokeColor = nil;
+    self.glyphLayer.lineWidth = 0.0f;
+    [self.layer addSublayer:self.glyphLayer];
+
+    self.markerDotLayer = [CAShapeLayer layer];
+    self.markerDotLayer.hidden = YES;
+    [self.layer addSublayer:self.markerDotLayer];
+
     [self addTarget:target action:action forControlEvents:UIControlEventTouchUpInside];
+    [self addTarget:self action:@selector(touchBeganAnimation) forControlEvents:UIControlEventTouchDown];
+    [self addTarget:self action:@selector(touchEndedAnimation) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel];
+}
 
-    if (!_glyphLayer) {
-        _glyphLayer = [CAShapeLayer layer];
-        _glyphLayer.fillColor = [UIColor clearColor].CGColor;
-        _glyphLayer.strokeColor = [UIColor whiteColor].CGColor;
-        _glyphLayer.lineWidth = 1.6f;
-        _glyphLayer.lineCap = kCALineCapRound;
-        _glyphLayer.lineJoin = kCALineJoinRound;
-        [self.layer addSublayer:_glyphLayer];
-    }
+- (void)touchBeganAnimation {
+    [UIView animateWithDuration:0.08 animations:^{ self.transform = CGAffineTransformMakeScale(0.92, 0.92); }];
+}
 
-    if (!_markerDotLayer) {
-        _markerDotLayer = [CAShapeLayer layer];
-        _markerDotLayer.hidden = YES;
-        [self.layer addSublayer:_markerDotLayer];
-    }
+- (void)touchEndedAnimation {
+    [UIView animateWithDuration:0.12 animations:^{ self.transform = CGAffineTransformIdentity; }];
+}
 
-    [self refreshTransportVisual];
+- (void)triggerPulseMark {
+    CABasicAnimation *f = [CABasicAnimation animationWithKeyPath:@"borderColor"];
+    f.fromValue = (id)[UIColor colorWithRed:0.35 green:1.0 blue:0.75 alpha:1.0].CGColor;
+    f.toValue = (id)[UIColor colorWithRed:0.75 green:0.35 blue:0.95 alpha:0.85].CGColor;
+    f.duration = 0.35;
+    [self.layer addAnimation:f forKey:@"pulseBorder"];
 }
 
 - (void)layoutSubviews {
@@ -186,98 +191,86 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     [self refreshTransportVisual];
 }
 
-- (void)triggerPulseMark {
-    self.pulseHighlight = YES;
-    [self refreshTransportVisual];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.28 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        self.pulseHighlight = NO;
-        [self refreshTransportVisual];
-    });
-}
-
 - (void)refreshTransportVisual {
-    CGFloat w = self.bounds.size.width;
-    CGFloat h = self.bounds.size.height;
-    if (w <= 1.0f || h <= 1.0f) return;
+    CGRect b = self.bounds;
+    CGFloat w = b.size.width;
+    CGFloat h = b.size.height;
+    if (w <= 2.0f || h <= 2.0f) return;
 
-    BOOL marked = self.activeState || self.pulseHighlight;
     CGFloat cx = w * 0.5f;
     CGFloat cy = h * 0.5f;
+    UIBezierPath *p = [UIBezierPath bezierPath];
 
     if (self.iconKind == TransportButtonKindPlayPause) {
-        self.backgroundColor = self.activeState
-            ? [UIColor colorWithRed:0.86 green:0.18 blue:0.82 alpha:0.98]
-            : [UIColor colorWithRed:0.62 green:0.14 blue:0.68 alpha:0.94];
-        self.layer.borderColor = marked
-            ? [UIColor colorWithRed:0.42 green:0.98 blue:1.0 alpha:1.0].CGColor
-            : [UIColor colorWithRed:0.92 green:0.48 blue:1.0 alpha:0.92].CGColor;
-    } else {
-        self.backgroundColor = marked
-            ? [UIColor colorWithRed:0.34 green:0.12 blue:0.58 alpha:0.96]
-            : [UIColor colorWithRed:0.18 green:0.06 blue:0.36 alpha:0.90];
-        self.layer.borderColor = marked
-            ? [UIColor colorWithRed:0.42 green:0.98 blue:1.0 alpha:1.0].CGColor
-            : [UIColor colorWithRed:0.78 green:0.38 blue:1.0 alpha:0.82].CGColor;
-    }
-
-    UIBezierPath *path = [UIBezierPath bezierPath];
-    switch (self.iconKind) {
-        case TransportButtonKindPrevious: {
-            CGFloat barX = cx - 5.5f;
-            [path moveToPoint:CGPointMake(barX, cy - 4.5f)];
-            [path addLineToPoint:CGPointMake(barX, cy + 4.5f)];
-            [path moveToPoint:CGPointMake(cx + 5.5f, cy - 4.5f)];
-            [path addLineToPoint:CGPointMake(barX + 1.8f, cy)];
-            [path addLineToPoint:CGPointMake(cx + 5.5f, cy + 4.5f)];
-            [path closePath];
-            break;
+        if (self.activeState) {
+            CGFloat bw = 2.8f;
+            CGFloat bh = 11.0f;
+            CGFloat sp = 3.6f;
+            UIBezierPath *b1 = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(cx - sp - bw, cy - (bh * 0.5f), bw, bh) cornerRadius:1.0];
+            UIBezierPath *b2 = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(cx + sp, cy - (bh * 0.5f), bw, bh) cornerRadius:1.0];
+            [p appendPath:b1];
+            [p appendPath:b2];
+            self.glyphLayer.fillColor = [UIColor colorWithRed:0.35 green:1.0 blue:0.75 alpha:1.0].CGColor;
+            self.layer.borderColor = [UIColor colorWithRed:0.35 green:1.0 blue:0.75 alpha:0.95].CGColor;
+        } else {
+            CGFloat sz = 11.5f;
+            [p moveToPoint:CGPointMake(cx - (sz * 0.38f), cy - (sz * 0.52f))];
+            [p addLineToPoint:CGPointMake(cx + (sz * 0.55f), cy)];
+            [p addLineToPoint:CGPointMake(cx - (sz * 0.38f), cy + (sz * 0.52f))];
+            [p closePath];
+            self.glyphLayer.fillColor = [UIColor whiteColor].CGColor;
+            self.layer.borderColor = [UIColor colorWithRed:0.75 green:0.35 blue:0.95 alpha:0.85].CGColor;
         }
-        case TransportButtonKindPlayPause: {
-            if (self.activeState) {
-                [path moveToPoint:CGPointMake(cx - 3.2f, cy - 4.8f)];
-                [path addLineToPoint:CGPointMake(cx - 3.2f, cy + 4.8f)];
-                [path moveToPoint:CGPointMake(cx + 3.2f, cy - 4.8f)];
-                [path addLineToPoint:CGPointMake(cx + 3.2f, cy + 4.8f)];
-            } else {
-                [path moveToPoint:CGPointMake(cx - 3.6f, cy - 5.2f)];
-                [path addLineToPoint:CGPointMake(cx + 4.8f, cy)];
-                [path addLineToPoint:CGPointMake(cx - 3.6f, cy + 5.2f)];
-                [path closePath];
-            }
-            break;
-        }
-        case TransportButtonKindNext: {
-            CGFloat barX = cx + 5.5f;
-            [path moveToPoint:CGPointMake(cx - 5.5f, cy - 4.5f)];
-            [path addLineToPoint:CGPointMake(barX - 1.8f, cy)];
-            [path addLineToPoint:CGPointMake(cx - 5.5f, cy + 4.5f)];
-            [path closePath];
-            [path moveToPoint:CGPointMake(barX, cy - 4.5f)];
-            [path addLineToPoint:CGPointMake(barX, cy + 4.5f)];
-            break;
-        }
-        case TransportButtonKindRepeat: {
-            CGFloat rx = 6.2f, ry = 3.8f;
-            [path moveToPoint:CGPointMake(cx - rx, cy - ry + 1.5f)];
-            [path addQuadCurveToPoint:CGPointMake(cx + rx, cy - ry) controlPoint:CGPointMake(cx, cy - ry - 2.6f)];
-            [path moveToPoint:CGPointMake(cx + rx - 2.4f, cy - ry - 2.0f)];
-            [path addLineToPoint:CGPointMake(cx + rx, cy - ry)];
-            [path addLineToPoint:CGPointMake(cx + rx - 2.4f, cy - ry + 2.0f)];
+    } else if (self.iconKind == TransportButtonKindNext) {
+        CGFloat tw = 6.2f;
+        CGFloat th = 9.5f;
+        [p moveToPoint:CGPointMake(cx - tw, cy - (th * 0.5f))];
+        [p addLineToPoint:CGPointMake(cx, cy)];
+        [p addLineToPoint:CGPointMake(cx - tw, cy + (th * 0.5f))];
+        [p closePath];
 
-            [path moveToPoint:CGPointMake(cx + rx, cy + ry - 1.5f)];
-            [path addQuadCurveToPoint:CGPointMake(cx - rx, cy + ry) controlPoint:CGPointMake(cx, cy + ry + 2.6f)];
-            [path moveToPoint:CGPointMake(cx - rx + 2.4f, cy + ry - 2.0f)];
-            [path addLineToPoint:CGPointMake(cx - rx, cy + ry)];
-            [path addLineToPoint:CGPointMake(cx - rx + 2.4f, cy + ry + 2.0f)];
-            break;
-        }
-    }
+        [p moveToPoint:CGPointMake(cx, cy - (th * 0.5f))];
+        [p addLineToPoint:CGPointMake(cx + tw, cy)];
+        [p addLineToPoint:CGPointMake(cx, cy + (th * 0.5f))];
+        [p closePath];
 
-    self.glyphLayer.frame = self.bounds;
-    self.glyphLayer.path = path.CGPath;
-    self.glyphLayer.strokeColor = marked ? [UIColor colorWithRed:1.0 green:0.96 blue:0.65 alpha:1.0].CGColor : [UIColor whiteColor].CGColor;
+        UIBezierPath *bar = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(cx + tw + 0.5f, cy - (th * 0.5f), 1.8f, th) cornerRadius:0.6f];
+        [p appendPath:bar];
+        self.glyphLayer.fillColor = [UIColor whiteColor].CGColor;
+    } else if (self.iconKind == TransportButtonKindPrevious) {
+        CGFloat tw = 6.2f;
+        CGFloat th = 9.5f;
+        [p moveToPoint:CGPointMake(cx + tw, cy - (th * 0.5f))];
+        [p addLineToPoint:CGPointMake(cx, cy)];
+        [p addLineToPoint:CGPointMake(cx + tw, cy + (th * 0.5f))];
+        [p closePath];
 
-    if (self.iconKind == TransportButtonKindRepeat) {
+        [p moveToPoint:CGPointMake(cx, cy - (th * 0.5f))];
+        [p addLineToPoint:CGPointMake(cx - tw, cy)];
+        [p addLineToPoint:CGPointMake(cx, cy + (th * 0.5f))];
+        [p closePath];
+
+        UIBezierPath *bar = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(cx - tw - 2.3f, cy - (th * 0.5f), 1.8f, th) cornerRadius:0.6f];
+        [p appendPath:bar];
+        self.glyphLayer.fillColor = [UIColor whiteColor].CGColor;
+    } else if (self.iconKind == TransportButtonKindRepeat) {
+        CGFloat r = 4.8f;
+        UIBezierPath *arc = [UIBezierPath bezierPathWithArcCenter:CGPointMake(cx, cy) radius:r startAngle:-M_PI_4 endAngle:M_PI + M_PI_4 clockwise:YES];
+        arc.lineWidth = 1.8f;
+
+        UIBezierPath *arr = [UIBezierPath bezierPath];
+        CGFloat ax = cx + (r * cos(-M_PI_4));
+        CGFloat ay = cy + (r * sin(-M_PI_4));
+        [arr moveToPoint:CGPointMake(ax - 2.0f, ay - 3.0f)];
+        [arr addLineToPoint:CGPointMake(ax + 2.5f, ay)];
+        [arr addLineToPoint:CGPointMake(ax - 2.0f, ay + 3.0f)];
+        [arr closePath];
+
+        self.glyphLayer.path = arc.CGPath;
+        self.glyphLayer.fillColor = nil;
+        self.glyphLayer.strokeColor = self.activeState ? [UIColor colorWithRed:0.42 green:0.98 blue:1.0 alpha:1.0].CGColor : [UIColor whiteColor].CGColor;
+        self.glyphLayer.lineWidth = 1.8f;
+
         self.markerDotLayer.hidden = !self.activeState;
         if (self.activeState) {
             self.markerDotLayer.frame = CGRectMake(cx - 1.5f, h - 4.5f, 3.0f, 3.0f);
@@ -285,13 +278,19 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
             self.markerDotLayer.cornerRadius = 1.5f;
         }
     }
+
+    if (self.iconKind != TransportButtonKindRepeat) {
+        self.glyphLayer.path = p.CGPath;
+        self.glyphLayer.strokeColor = nil;
+        self.markerDotLayer.hidden = YES;
+    }
 }
 
 @end
 
 #pragma mark - PHLProtectedAudioManager Interface
 
-@interface PHLProtectedAudioManager : NSObject <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, WKNavigationDelegate> {
+@interface PHLProtectedAudioManager : NSObject <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, WKNavigationDelegate, WKScriptMessageHandler> {
     UIButton *_floatBtn;
     UIView *_menuBox;
     CAGradientLayer *_gradient;
@@ -301,10 +300,6 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     UILabel *_tickerLbl;
     UILabel *_titleLbl;
     UIButton *_closeBtn;
-    UITableView *_table;
-
-    AVPlayer *_player;
-    AVPlayerItem *_playerItem;
 
     PHLTransportButton *_btnPrev;
     PHLTransportButton *_btnPlay;
@@ -312,11 +307,14 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     PHLTransportButton *_btnRep;
 
     UIButton *_btnMute;
-    UIButton *_btnVolUp;
     UISlider *_volSlider;
+    UIButton *_btnVolUp;
     UILabel *_gainLbl;
 
     UIButton *_btnWebToggle;
+
+    UITableView *_table;
+
     UIView *_webBox;
     UIButton *_btnBack;
     UIButton *_btnFwd;
@@ -325,19 +323,23 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     UITextField *_searchBar;
     UIButton *_btnSearch;
     WKWebView *_web;
-    BOOL _webOpen;
-    BOOL _webLoaded;
 
     UIButton *_adminBtn;
     UILabel *_cprLbl;
 
+    AVPlayer *_player;
+    AVPlayerItem *_playerItem;
     NSMutableArray *_playlist;
-    NSDictionary *_featuredVipSong;
-    NSString *_statusMsg;
     NSInteger _idx;
-    BOOL _menuOpen;
-    BOOL _repOne;
     float _gain;
+    BOOL _repOne;
+    BOOL _menuOpen;
+    BOOL _webOpen;
+    BOOL _webLoaded;
+    NSString *_statusMsg;
+
+    NSDictionary *_featuredVipSong;
+    BOOL _featuredInjected;
 
     BOOL _isYouTubeEnabled;
     NSString *_youtubeHomeURL;
@@ -383,19 +385,28 @@ static inline NSString *GetNuclearCleanAndAdBlockJS(void) {
             "  function executePurge(){\n"
             // TỰ ĐỘNG CHUYỂN SANG MỤC ÂM NHẠC TRÊN TRANG CHỦ (BÊN CẠNH TẤT CẢ)
             "    if(!musicFilterTriggered && (window.location.pathname === '/' || window.location.pathname === '')){\n"
-            "      var chips = document.querySelectorAll('ytm-chip-cloud-chip-renderer, ytm-feed-filter-chip-bar-renderer button, [role=\"tab\"], .chip-container button');\n"
+            "      var chips = document.querySelectorAll('ytm-chip-cloud-chip-renderer, ytm-feed-filter-chip-bar-renderer button, [role=\"tab\"], .chip-container button, button');\n"
             "      for(var i=0; i<chips.length; i++){\n"
-            "        var t = (chips[i].textContent || '').trim().toLowerCase();\n"
-            "        if(t === 'âm nhạc' || t === 'music'){\n"
-            "          chips[i].click();\n"
+            "        var raw = (chips[i].textContent || chips[i].getAttribute('aria-label') || '').trim().toLowerCase();\n"
+            "        var isMus = (raw.indexOf('music') !== -1 || raw.indexOf('\\u00e2m nh\\u1ea1c') !== -1 || raw.indexOf('âm nhạc') !== -1);\n"
+            "        if(!isMus){\n"
+            "          try { var norm = raw.normalize('NFD').replace(/[\\u0300-\\u036f]/g, ''); if(norm.indexOf('am nhac') !== -1) isMus = true; }catch(x){}\n"
+            "        }\n"
+            "        if(isMus){\n"
+            "          var btn = (chips[i].tagName && chips[i].tagName.toLowerCase() === 'button') ? chips[i] : (chips[i].querySelector('button') || chips[i]);\n"
+            "          btn.click();\n"
             "          musicFilterTriggered = true;\n"
-            // Khi đã bấm chuyển Âm nhạc, ẩn toàn bộ thanh Tất cả/Âm nhạc/Trò chơi đi để màn hình sạch bóng
-            "          setTimeout(function(){\n"
-            "            var cBar = document.querySelector('ytm-feed-filter-chip-bar-renderer, ytm-chip-cloud-renderer, #chips');\n"
-            "            if(cBar){ cBar.style.display = 'none'; cBar.style.height = '0px'; }\n"
-            "          }, 450);\n"
             "          break;\n"
             "        }\n"
+            "      }\n"
+            "    }\n"
+            // Khi đã bấm lọc Âm nhạc, triệt tiêu toàn bộ thanh Tất cả/Âm nhạc/Trò chơi để giao diện siêu sạch
+            "    if(musicFilterTriggered){\n"
+            "      var cBars = document.querySelectorAll('ytm-feed-filter-chip-bar-renderer, ytm-chip-cloud-renderer, #chips, ytm-chip-cloud-chip-renderer-container');\n"
+            "      for(var k=0; k<cBars.length; k++){\n"
+            "        cBars[k].style.setProperty('display', 'none', 'important');\n"
+            "        cBars[k].style.setProperty('height', '0px', 'important');\n"
+            "        cBars[k].style.setProperty('visibility', 'hidden', 'important');\n"
             "      }\n"
             "    }\n"
             "    document.querySelectorAll('ytm-mobile-topbar-renderer, ytm-search-header, [role=\"search\"], .ad-container, ytm-pivot-bar-renderer').forEach(function(el){\n"
@@ -533,28 +544,34 @@ static inline NSString *GetAudioBridgeJS(void) {
     return self;
 }
 
-- (void)handleItemDidFinish:(NSNotification *)note {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (self->_repOne && self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count) {
-            [self playSongAtIndex:self->_idx];
-        } else if (self->_playlist.count > 0) {
-            NSInteger nxt = (self->_idx + 1) % (NSInteger)self->_playlist.count;
-            [self playSongAtIndex:nxt];
-        }
-    });
-}
-
 - (void)configureAudioSession {
-    NSError *err = nil;
     AVAudioSession *s = [AVAudioSession sharedInstance];
-    [s setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionAllowAirPlay error:&err];
-    [s setActive:YES error:&err];
+    NSError *e = nil;
+    [s setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionMixWithOthers error:&e];
+    [s setActive:YES error:&e];
 }
 
-- (void)pauseWebMediaIfPlaying {
-    if (!_web) return;
-    NSString *js = @"(function(){if(window.__phlAudioBridge){window.__phlAudioBridge.pauseAll();}document.querySelectorAll('video,audio').forEach(function(e){try{e.pause();}catch(x){}});})();";
-    [_web evaluateJavaScript:js completionHandler:nil];
+- (void)applyIndependentGain:(float)gain {
+    _gain = MAX(0.0f, MIN(_maxAllowedGain, gain));
+    [[NSUserDefaults standardUserDefaults] setFloat:_gain forKey:@"PHL_IndependentAudioGain"];
+
+    if (_player) {
+        _player.volume = MIN(1.0f, _gain);
+    }
+    if (_playerItem && [_playerItem respondsToSelector:@selector(audioMix)]) {
+        AVMutableAudioMix *mix = [AVMutableAudioMix audioMix];
+        AVMutableAudioMixInputParameters *params = [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:_playerItem.asset.tracks.firstObject];
+        [params setVolume:_gain atTime:kCMTimeZero];
+        mix.inputParameters = @[params];
+        _playerItem.audioMix = mix;
+    }
+
+    if (_web) {
+        NSString *js = [NSString stringWithFormat:@"if(window.__phlAudioBridge){window.__phlAudioBridge.setGain(%.3f);}", _gain];
+        [_web evaluateJavaScript:js completionHandler:nil];
+    }
+
+    _gainLbl.text = [NSString stringWithFormat:@"%.0f%%", _gain * 100.0f];
 }
 
 - (void)pauseStreamPlayerIfPlaying {
@@ -564,44 +581,9 @@ static inline NSString *GetAudioBridgeJS(void) {
     }
 }
 
-- (void)applyGainToItem:(AVPlayerItem *)item gain:(float)gain {
-    if (!item || !item.asset) return;
-    if (gain <= 1.001f) {
-        item.audioMix = nil;
-        return;
-    }
-    NSArray<AVAssetTrack *> *tracks = [item.asset tracksWithMediaType:AVMediaTypeAudio];
-    if (!tracks || tracks.count == 0) return;
-
-    AVMutableAudioMix *mix = [AVMutableAudioMix audioMix];
-    NSMutableArray *arr = [NSMutableArray array];
-    for (AVAssetTrack *t in tracks) {
-        AVMutableAudioMixInputParameters *p = [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:t];
-        [p setVolume:gain atTime:kCMTimeZero];
-        [arr addObject:p];
-    }
-    mix.inputParameters = arr;
-    item.audioMix = mix;
-}
-
-- (void)applyIndependentGain:(float)val {
-    _gain = MAX(0.0f, MIN(_maxAllowedGain, val));
-    [[NSUserDefaults standardUserDefaults] setFloat:_gain forKey:@"PHL_IndependentAudioGain"];
-
-    if (_gainLbl) {
-        _gainLbl.text = [NSString stringWithFormat:@"%.0f%%", _gain * 100.0f];
-    }
-
-    if (_player) {
-        _player.volume = MIN(1.0f, _gain);
-        if (_player.currentItem) {
-            [self applyGainToItem:_player.currentItem gain:_gain];
-        }
-    }
-
+- (void)pauseWebMediaIfPlaying {
     if (_web) {
-        NSString *js = [NSString stringWithFormat:@"if(window.__phlAudioBridge){window.__phlAudioBridge.setGain(%.3f);}", _gain];
-        [_web evaluateJavaScript:js completionHandler:nil];
+        [_web evaluateJavaScript:@"if(window.__phlAudioBridge){window.__phlAudioBridge.pauseAll();}" completionHandler:nil];
     }
 }
 
@@ -622,27 +604,26 @@ static inline NSString *GetAudioBridgeJS(void) {
             }
         }
     }
-    for (UIWindow *w in [UIApplication sharedApplication].windows) {
-        if (w.isKeyWindow) return w;
-    }
-    return [UIApplication sharedApplication].windows.firstObject ?: [UIApplication sharedApplication].keyWindow;
+    UIWindow *kw = [UIApplication sharedApplication].keyWindow;
+    if (kw) return kw;
+    return [UIApplication sharedApplication].windows.firstObject;
 }
 
-- (void)loadRemoteLogo {
-    NSString *cachePath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"phl_official_logo.png"];
+- (void)loadCachedOrRemoteLogo {
+    NSString *cacheDir = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
+    NSString *cachePath = [cacheDir stringByAppendingPathComponent:@"phl_logo_v1.png"];
     if ([[NSFileManager defaultManager] fileExistsAtPath:cachePath]) {
-        UIImage *cached = [UIImage imageWithContentsOfFile:cachePath];
-        if (cached && self->_floatBtn) {
-            [self applyLogoImageToButton:cached];
+        UIImage *img = [UIImage imageWithContentsOfFile:cachePath];
+        if (img) {
+            [self applyLogoImageToButton:img];
             return;
         }
     }
-    NSString *rawLogo = PHL_DecryptString(kEnc_GITHUB_RAW_LOGO, kLen_GITHUB_RAW_LOGO);
-    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:rawLogo]
-                                                       cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
-                                                   timeoutInterval:8.0];
-    [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
-    [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
+
+    NSURL *u = [NSURL URLWithString:PHL_DecryptString(kEnc_GITHUB_RAW_LOGO, kLen_GITHUB_RAW_LOGO)];
+    if (!u) return;
+
+    [[[NSURLSession sharedSession] dataTaskWithURL:u completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
         if (!e && d && d.length > 0) {
             UIImage *img = [UIImage imageWithData:d];
             if (img) {
@@ -779,236 +760,219 @@ static inline NSString *GetAudioBridgeJS(void) {
 - (void)initializeFramework {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *kw = [self resolveActiveWindow];
-        if (!kw) return;
-
-        CGFloat sW = kw.bounds.size.width;
-        CGFloat mW = MIN(312.0f, sW - 86.0f);
-        if (mW < 268.0f) mW = MIN(300.0f, sW - 20.0f);
-        CGFloat mH = MIN(332.0f, MAX(250.0f, kw.bounds.size.height - 24.0f));
-
-        if (!self->_floatBtn) {
-            self->_floatBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-            self->_floatBtn.frame = CGRectMake(16, 118, 48, 48);
-            self->_floatBtn.layer.cornerRadius = 24;
-            self->_floatBtn.clipsToBounds = YES;
-            self->_floatBtn.layer.borderWidth = 2.2;
-            self->_floatBtn.layer.borderColor = [UIColor colorWithRed:0.88 green:0.35 blue:1.0 alpha:1.0].CGColor;
-            self->_floatBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.03 blue:0.2 alpha:0.96];
-            [self->_floatBtn setTitle:@"👑" forState:UIControlStateNormal];
-            self->_floatBtn.titleLabel.font = [UIFont systemFontOfSize:22];
-            [self->_floatBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
-
-            UIPanGestureRecognizer *p = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleFloatingPan:)];
-            [self->_floatBtn addGestureRecognizer:p];
-            [kw addSubview:self->_floatBtn];
-            [self loadRemoteLogo];
-        } else if (self->_floatBtn.superview != kw) {
-            [kw addSubview:self->_floatBtn];
+        if (!kw) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self initializeFramework];
+            });
+            return;
         }
 
-        if (!self->_menuBox) {
-            self->_menuBox = [[UIView alloc] initWithFrame:CGRectMake(70, 16, mW, mH)];
-            self->_menuBox.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.98];
-            self->_menuBox.layer.cornerRadius = 16;
-            self->_menuBox.layer.borderWidth = 1.6;
-            self->_menuBox.layer.borderColor = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95].CGColor;
-            self->_menuBox.clipsToBounds = YES;
-            self->_menuBox.hidden = YES;
-            self->_menuBox.alpha = 0.0;
+        if (self->_floatBtn) return;
 
-            self->_gradient = [CAGradientLayer layer];
-            self->_gradient.frame = CGRectMake(0, 0, mW, mH);
-            self->_gradient.colors = @[
-                (id)[UIColor colorWithRed:0.13 green:0.03 blue:0.28 alpha:1.0].CGColor,
-                (id)[UIColor colorWithRed:0.23 green:0.05 blue:0.36 alpha:1.0].CGColor,
-                (id)[UIColor colorWithRed:0.05 green:0.11 blue:0.27 alpha:1.0].CGColor
-            ];
-            self->_gradient.startPoint = CGPointMake(0.0f, 0.0f);
-            self->_gradient.endPoint = CGPointMake(1.0f, 1.0f);
-            [self->_menuBox.layer insertSublayer:self->_gradient atIndex:0];
+        self->_floatBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        self->_floatBtn.frame = CGRectMake(20, 150, 48, 48);
+        self->_floatBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.03 blue:0.18 alpha:0.92];
+        self->_floatBtn.layer.cornerRadius = 24;
+        self->_floatBtn.layer.borderWidth = 1.8;
+        self->_floatBtn.layer.borderColor = [UIColor colorWithRed:0.0 green:0.96 blue:1.0 alpha:0.95].CGColor;
+        self->_floatBtn.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.96 blue:1.0 alpha:1.0].CGColor;
+        self->_floatBtn.layer.shadowRadius = 8;
+        self->_floatBtn.layer.shadowOpacity = 0.85;
+        self->_floatBtn.layer.shadowOffset = CGSizeZero;
+        [self->_floatBtn setTitle:@"👑" forState:UIControlStateNormal];
+        self->_floatBtn.titleLabel.font = [UIFont systemFontOfSize:22];
 
-            self->_dragHdr = [[UIView alloc] initWithFrame:CGRectMake(0, 0, mW, 48)];
-            self->_dragHdr.backgroundColor = [UIColor colorWithRed:0.18 green:0.06 blue:0.35 alpha:0.85];
-            [self->_menuBox addSubview:self->_dragHdr];
+        [self->_floatBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
+        UIPanGestureRecognizer *panBtn = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleFloatingPan:)];
+        [self->_floatBtn addGestureRecognizer:panBtn];
+        [kw addSubview:self->_floatBtn];
 
-            UIPanGestureRecognizer *hp = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
-            [self->_dragHdr addGestureRecognizer:hp];
+        [self loadCachedOrRemoteLogo];
 
-            self->_headerTitleLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 4, mW - 48, 15)];
-            self->_headerTitleLbl.text = @"👑 PHẠM LONG • SUPREME MASTER AUDIO";
-            self->_headerTitleLbl.textColor = [UIColor colorWithRed:1.0 green:0.82 blue:1.0 alpha:1.0];
-            self->_headerTitleLbl.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
-            [self->_dragHdr addSubview:self->_headerTitleLbl];
+        self->_menuBox = [[UIView alloc] initWithFrame:CGRectMake(80, 100, 312, 332)];
+        self->_menuBox.backgroundColor = [UIColor colorWithRed:0.07 green:0.02 blue:0.15 alpha:0.96];
+        self->_menuBox.layer.cornerRadius = 14;
+        self->_menuBox.layer.borderWidth = 1.5;
+        self->_menuBox.layer.borderColor = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95].CGColor;
+        self->_menuBox.layer.shadowColor = [UIColor colorWithRed:0.75 green:0.25 blue:1.0 alpha:1.0].CGColor;
+        self->_menuBox.layer.shadowRadius = 14;
+        self->_menuBox.layer.shadowOpacity = 0.75;
+        self->_menuBox.layer.shadowOffset = CGSizeZero;
+        self->_menuBox.clipsToBounds = YES;
+        self->_menuBox.hidden = YES;
 
-            self->_tickerLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 19, mW - 48, 12)];
-            self->_tickerLbl.text = @"⚡ NUCLEAR AD-BLOCK • CHẤT LƯỢNG MASTER HI-RES ⚡";
-            self->_tickerLbl.textColor = [UIColor colorWithRed:1.0 green:0.85 blue:0.4 alpha:1.0];
-            self->_tickerLbl.font = [UIFont systemFontOfSize:8.5 weight:UIFontWeightBold];
-            [self->_dragHdr addSubview:self->_tickerLbl];
+        self->_gradient = [CAGradientLayer layer];
+        self->_gradient.colors = @[
+            (id)[UIColor colorWithRed:0.13 green:0.03 blue:0.28 alpha:1.0].CGColor,
+            (id)[UIColor colorWithRed:0.23 green:0.05 blue:0.36 alpha:1.0].CGColor,
+            (id)[UIColor colorWithRed:0.05 green:0.11 blue:0.27 alpha:1.0].CGColor
+        ];
+        self->_gradient.startPoint = CGPointMake(0, 0);
+        self->_gradient.endPoint = CGPointMake(1, 1);
+        [self->_menuBox.layer insertSublayer:self->_gradient atIndex:0];
 
-            self->_titleLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 32, mW - 44, 13)];
-            self->_titleLbl.text = @"♪ Đang sẵn sàng nạp nhạc VIP...";
-            self->_titleLbl.textColor = [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0];
-            self->_titleLbl.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold];
-            [self->_dragHdr addSubview:self->_titleLbl];
+        self->_dragHdr = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 312, 48)];
+        self->_dragHdr.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.04];
+        UIPanGestureRecognizer *panHdr = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
+        [self->_dragHdr addGestureRecognizer:panHdr];
+        [self->_menuBox addSubview:self->_dragHdr];
 
-            self->_closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-            self->_closeBtn.frame = CGRectMake(mW - 34, 7, 24, 24);
-            [self->_closeBtn setTitle:@"✕" forState:UIControlStateNormal];
-            [self->_closeBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.78 alpha:1.0] forState:UIControlStateNormal];
-            self->_closeBtn.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
-            self->_closeBtn.backgroundColor = [UIColor colorWithRed:0.35 green:0.06 blue:0.25 alpha:0.9];
-            self->_closeBtn.layer.cornerRadius = 12;
-            [self->_closeBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
-            [self->_menuBox addSubview:self->_closeBtn];
+        self->_headerTitleLbl = [[UILabel alloc] init];
+        self->_headerTitleLbl.text = @"👑 PHẠM LONG • AUDIO PRO";
+        self->_headerTitleLbl.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightBlack];
+        self->_headerTitleLbl.textColor = [UIColor colorWithRed:1.0 green:0.85 blue:0.4 alpha:1.0];
+        [self->_dragHdr addSubview:self->_headerTitleLbl];
 
-            self->_btnPrev = [PHLTransportButton buttonWithKind:TransportButtonKindPrevious actionTarget:self action:@selector(playPreviousSong)];
-            [self->_menuBox addSubview:self->_btnPrev];
+        self->_tickerLbl = [[UILabel alloc] init];
+        self->_tickerLbl.text = @"⚡ MASTER HI-RES AUDIO • ZERO LATENCY ⚡";
+        self->_tickerLbl.font = [UIFont systemFontOfSize:8.5 weight:UIFontWeightBold];
+        self->_tickerLbl.textColor = [UIColor colorWithRed:0.4 green:0.95 blue:1.0 alpha:1.0];
+        [self->_dragHdr addSubview:self->_tickerLbl];
 
-            self->_btnPlay = [PHLTransportButton buttonWithKind:TransportButtonKindPlayPause actionTarget:self action:@selector(togglePlayPause)];
-            [self->_menuBox addSubview:self->_btnPlay];
+        self->_titleLbl = [[UILabel alloc] init];
+        self->_titleLbl.text = @"♪ Đang sẵn sàng nạp nhạc VIP...";
+        self->_titleLbl.font = [UIFont systemFontOfSize:9.0 weight:UIFontWeightMedium];
+        self->_titleLbl.textColor = [UIColor colorWithRed:0.9 green:0.8 blue:1.0 alpha:0.95];
+        [self->_dragHdr addSubview:self->_titleLbl];
 
-            self->_btnNext = [PHLTransportButton buttonWithKind:TransportButtonKindNext actionTarget:self action:@selector(playNextSong)];
-            [self->_menuBox addSubview:self->_btnNext];
+        self->_closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+        [self->_closeBtn setTitle:@"✕" forState:UIControlStateNormal];
+        [self->_closeBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.5 alpha:1.0] forState:UIControlStateNormal];
+        self->_closeBtn.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
+        self->_closeBtn.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.08];
+        self->_closeBtn.layer.cornerRadius = 12;
+        [self->_closeBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
+        [self->_dragHdr addSubview:self->_closeBtn];
 
-            self->_btnRep = [PHLTransportButton buttonWithKind:TransportButtonKindRepeat actionTarget:self action:@selector(toggleRepeatMode)];
-            [self syncRepeatButton];
-            [self->_menuBox addSubview:self->_btnRep];
+        self->_btnPrev = [PHLTransportButton buttonWithKind:TransportButtonKindPrevious actionTarget:self action:@selector(playPreviousSong)];
+        self->_btnPlay = [PHLTransportButton buttonWithKind:TransportButtonKindPlayPause actionTarget:self action:@selector(togglePlayPause)];
+        self->_btnNext = [PHLTransportButton buttonWithKind:TransportButtonKindNext actionTarget:self action:@selector(playNextSong)];
+        self->_btnRep = [PHLTransportButton buttonWithKind:TransportButtonKindRepeat actionTarget:self action:@selector(toggleRepeatMode)];
 
-            self->_btnMute = [UIButton buttonWithType:UIButtonTypeSystem];
-            [self->_btnMute setTitle:@"🔉" forState:UIControlStateNormal];
-            self->_btnMute.titleLabel.font = [UIFont systemFontOfSize:12];
-            [self->_btnMute addTarget:self action:@selector(decreaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
-            [self->_menuBox addSubview:self->_btnMute];
+        [self->_menuBox addSubview:self->_btnPrev];
+        [self->_menuBox addSubview:self->_btnPlay];
+        [self->_menuBox addSubview:self->_btnNext];
+        [self->_menuBox addSubview:self->_btnRep];
+        [self syncRepeatButton];
 
-            self->_volSlider = [[UISlider alloc] initWithFrame:CGRectZero];
-            self->_volSlider.minimumValue = 0.0f;
-            self->_volSlider.maximumValue = self->_maxAllowedGain;
-            self->_volSlider.value = self->_gain;
-            self->_volSlider.minimumTrackTintColor = [UIColor colorWithRed:0.35 green:0.98 blue:1.0 alpha:1.0];
-            self->_volSlider.maximumTrackTintColor = [UIColor colorWithRed:0.95 green:0.35 blue:0.75 alpha:0.35];
-            self->_volSlider.thumbTintColor = [UIColor colorWithRed:1.0 green:0.88 blue:0.35 alpha:1.0];
-            [self->_volSlider addTarget:self action:@selector(volumeSliderChanged:) forControlEvents:UIControlEventValueChanged];
-            [self->_menuBox addSubview:self->_volSlider];
+        self->_btnMute = [self makeUtilityButtonWithTitle:@"🔇" fontSize:11 bgColor:[UIColor colorWithRed:0.18 green:0.05 blue:0.28 alpha:0.85] borderColor:[UIColor colorWithRed:0.65 green:0.3 blue:0.85 alpha:0.8] action:@selector(muteAudioAction)];
+        self->_btnMute.layer.cornerRadius = 5;
+        [self->_menuBox addSubview:self->_btnMute];
 
-            self->_btnVolUp = [UIButton buttonWithType:UIButtonTypeSystem];
-            [self->_btnVolUp setTitle:@"🔊" forState:UIControlStateNormal];
-            self->_btnVolUp.titleLabel.font = [UIFont systemFontOfSize:12];
-            [self->_btnVolUp addTarget:self action:@selector(increaseVolumeStep) forControlEvents:UIControlEventTouchUpInside];
-            [self->_menuBox addSubview:self->_btnVolUp];
+        self->_volSlider = [[UISlider alloc] init];
+        self->_volSlider.minimumValue = 0.0f;
+        self->_volSlider.maximumValue = self->_maxAllowedGain;
+        self->_volSlider.value = self->_gain;
+        self->_volSlider.minimumTrackTintColor = [UIColor colorWithRed:0.95 green:0.35 blue:0.85 alpha:1.0];
+        self->_volSlider.maximumTrackTintColor = [UIColor colorWithWhite:1.0 alpha:0.2];
+        self->_volSlider.thumbTintColor = [UIColor colorWithRed:1.0 green:0.88 blue:0.4 alpha:1.0];
+        [self->_volSlider addTarget:self action:@selector(volumeSliderChanged:) forControlEvents:UIControlEventValueChanged];
+        [self->_menuBox addSubview:self->_volSlider];
 
-            self->_gainLbl = [[UILabel alloc] initWithFrame:CGRectZero];
-            self->_gainLbl.font = [UIFont monospacedDigitSystemFontOfSize:9 weight:UIFontWeightBold];
-            self->_gainLbl.textAlignment = NSTextAlignmentRight;
-            [self->_menuBox addSubview:self->_gainLbl];
+        self->_btnVolUp = [self makeUtilityButtonWithTitle:@"🔊" fontSize:11 bgColor:[UIColor colorWithRed:0.18 green:0.05 blue:0.28 alpha:0.85] borderColor:[UIColor colorWithRed:0.65 green:0.3 blue:0.85 alpha:0.8] action:@selector(maxAudioAction)];
+        self->_btnVolUp.layer.cornerRadius = 5;
+        [self->_menuBox addSubview:self->_btnVolUp];
 
-            self->_btnWebToggle = [self makeUtilityButtonWithTitle:@"🌐 MỞ YOUTUBE VIP (ZERO ADS)"
-                                                             fontSize:9.0
-                                                              bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
-                                                          borderColor:[UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9]
-                                                               action:@selector(toggleEmbeddedBrowser)];
-            [self->_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-            [self->_menuBox addSubview:self->_btnWebToggle];
+        self->_gainLbl = [[UILabel alloc] init];
+        self->_gainLbl.text = [NSString stringWithFormat:@"%.0f%%", self->_gain * 100.0f];
+        self->_gainLbl.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightBold];
+        self->_gainLbl.textColor = [UIColor colorWithRed:1.0 green:0.9 blue:0.5 alpha:1.0];
+        self->_gainLbl.textAlignment = NSTextAlignmentRight;
+        [self->_menuBox addSubview:self->_gainLbl];
 
-            self->_table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
-            self->_table.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.45];
-            self->_table.layer.cornerRadius = 9;
-            self->_table.separatorColor = [UIColor colorWithRed:0.75 green:0.35 blue:1.0 alpha:0.25];
-            self->_table.rowHeight = 38.0f;
-            self->_table.delegate = self;
-            self->_table.dataSource = self;
-            [self->_menuBox addSubview:self->_table];
+        self->_btnWebToggle = [self makeUtilityButtonWithTitle:@"🌐 MỞ YOUTUBE VIP (ZERO ADS)" fontSize:9.5 bgColor:[UIColor colorWithRed:0.10 green:0.04 blue:0.26 alpha:0.9] borderColor:[UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9] action:@selector(toggleEmbeddedBrowser)];
+        self->_btnWebToggle.layer.cornerRadius = 6;
+        [self->_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+        [self->_menuBox addSubview:self->_btnWebToggle];
 
-            self->_webBox = [[UIView alloc] initWithFrame:CGRectZero];
-            self->_webBox.backgroundColor = [UIColor colorWithRed:0.07 green:0.03 blue:0.18 alpha:0.98];
-            self->_webBox.layer.cornerRadius = 9;
-            self->_webBox.layer.borderWidth = 1.1;
-            self->_webBox.layer.borderColor = [UIColor colorWithRed:0.45 green:0.92 blue:1.0 alpha:0.8].CGColor;
-            self->_webBox.clipsToBounds = YES;
-            self->_webBox.hidden = YES;
-            [self->_menuBox addSubview:self->_webBox];
+        self->_table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
+        self->_table.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.45];
+        self->_table.layer.cornerRadius = 9;
+        self->_table.separatorColor = [UIColor colorWithRed:0.75 green:0.35 blue:1.0 alpha:0.25];
+        self->_table.rowHeight = 38.0f;
+        self->_table.delegate = self;
+        self->_table.dataSource = self;
+        [self->_menuBox addSubview:self->_table];
 
-            self->_btnBack = [self makeUtilityButtonWithTitle:@"←" fontSize:12 bgColor:[UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95] borderColor:[UIColor colorWithRed:0.75 green:0.4 blue:1.0 alpha:0.7] action:@selector(webGoBack)];
-            self->_btnBack.layer.cornerRadius = 5;
-            [self->_webBox addSubview:self->_btnBack];
+        self->_webBox = [[UIView alloc] initWithFrame:CGRectZero];
+        self->_webBox.backgroundColor = [UIColor colorWithRed:0.05 green:0.01 blue:0.12 alpha:0.96];
+        self->_webBox.layer.cornerRadius = 9;
+        self->_webBox.layer.borderWidth = 1.0;
+        self->_webBox.layer.borderColor = [UIColor colorWithRed:0.75 green:0.35 blue:1.0 alpha:0.8].CGColor;
+        self->_webBox.clipsToBounds = YES;
+        self->_webBox.hidden = YES;
+        [self->_menuBox addSubview:self->_webBox];
 
-            self->_btnFwd = [self makeUtilityButtonWithTitle:@"→" fontSize:12 bgColor:[UIColor colorWithRed:0.25 green:0.1 blue:0.45 alpha:0.95] borderColor:[UIColor colorWithRed:0.75 green:0.4 blue:1.0 alpha:0.7] action:@selector(webGoForward)];
-            self->_btnFwd.layer.cornerRadius = 5;
-            [self->_webBox addSubview:self->_btnFwd];
+        self->_btnBack = [self makeUtilityButtonWithTitle:@"◀" fontSize:10 bgColor:[UIColor colorWithWhite:1.0 alpha:0.08] borderColor:[UIColor colorWithWhite:1.0 alpha:0.25] action:@selector(webGoBack)];
+        self->_btnBack.layer.cornerRadius = 5;
+        [self->_webBox addSubview:self->_btnBack];
 
-            self->_btnHome = [self makeUtilityButtonWithTitle:@"🏠 YT" fontSize:9 bgColor:[UIColor colorWithRed:0.14 green:0.22 blue:0.42 alpha:0.95] borderColor:[UIColor colorWithRed:0.45 green:0.9 blue:1.0 alpha:0.7] action:@selector(webGoHome)];
-            [self->_btnHome setTitleColor:[UIColor colorWithRed:1.0 green:0.85 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
-            self->_btnHome.layer.cornerRadius = 5;
-            [self->_webBox addSubview:self->_btnHome];
+        self->_btnFwd = [self makeUtilityButtonWithTitle:@"▶" fontSize:10 bgColor:[UIColor colorWithWhite:1.0 alpha:0.08] borderColor:[UIColor colorWithWhite:1.0 alpha:0.25] action:@selector(webGoForward)];
+        self->_btnFwd.layer.cornerRadius = 5;
+        [self->_webBox addSubview:self->_btnFwd];
 
-            self->_btnCloseW = [self makeUtilityButtonWithTitle:@"Thu gọn" fontSize:9 bgColor:[UIColor colorWithRed:0.45 green:0.08 blue:0.32 alpha:0.95] borderColor:[UIColor colorWithRed:1.0 green:0.45 blue:0.75 alpha:0.7] action:@selector(closeEmbeddedBrowser)];
-            [self->_btnCloseW setTitleColor:[UIColor colorWithRed:1.0 green:0.75 blue:0.95 alpha:1.0] forState:UIControlStateNormal];
-            self->_btnCloseW.layer.cornerRadius = 5;
-            [self->_webBox addSubview:self->_btnCloseW];
+        self->_btnHome = [self makeUtilityButtonWithTitle:@"🏠 YT" fontSize:9.5 bgColor:[UIColor colorWithRed:0.18 green:0.06 blue:0.32 alpha:0.9] borderColor:[UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.8] action:@selector(webGoHome)];
+        self->_btnHome.layer.cornerRadius = 5;
+        [self->_webBox addSubview:self->_btnHome];
 
-            self->_searchBar = [[UITextField alloc] initWithFrame:CGRectZero];
-            self->_searchBar.placeholder = @"🔍 Nhập tên bài hát / ca sĩ để tìm...";
-            self->_searchBar.textColor = [UIColor whiteColor];
-            self->_searchBar.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightMedium];
-            self->_searchBar.backgroundColor = [UIColor colorWithRed:0.15 green:0.07 blue:0.28 alpha:0.96];
-            self->_searchBar.layer.cornerRadius = 6;
-            self->_searchBar.layer.borderWidth = 1.0;
-            self->_searchBar.layer.borderColor = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.75].CGColor;
-            self->_searchBar.returnKeyType = UIReturnKeySearch;
-            self->_searchBar.clearButtonMode = UITextFieldViewModeWhileEditing;
-            self->_searchBar.delegate = self;
+        self->_btnCloseW = [self makeUtilityButtonWithTitle:@"Thu gọn" fontSize:9 bgColor:[UIColor colorWithWhite:1.0 alpha:0.1] borderColor:[UIColor colorWithWhite:1.0 alpha:0.3] action:@selector(closeEmbeddedBrowser)];
+        self->_btnCloseW.layer.cornerRadius = 5;
+        [self->_webBox addSubview:self->_btnCloseW];
 
-            UIView *pad = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 6, 22)];
-            self->_searchBar.leftView = pad;
-            self->_searchBar.leftViewMode = UITextFieldViewModeAlways;
-            [self->_webBox addSubview:self->_searchBar];
+        self->_searchBar = [[UITextField alloc] init];
+        self->_searchBar.font = [UIFont systemFontOfSize:10];
+        self->_searchBar.textColor = [UIColor whiteColor];
+        self->_searchBar.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.08];
+        self->_searchBar.attributedPlaceholder = [[NSAttributedString alloc] initWithString:@"Nhập tên bài hát / ca sĩ..." attributes:@{NSForegroundColorAttributeName: [UIColor colorWithWhite:1.0 alpha:0.5]}];
+        self->_searchBar.layer.cornerRadius = 6;
+        self->_searchBar.layer.borderWidth = 1.0;
+        self->_searchBar.layer.borderColor = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.75].CGColor;
+        self->_searchBar.returnKeyType = UIReturnKeySearch;
+        self->_searchBar.clearButtonMode = UITextFieldViewModeWhileEditing;
+        self->_searchBar.delegate = self;
 
-            self->_btnSearch = [self makeUtilityButtonWithTitle:@"Tìm" fontSize:9.5 bgColor:[UIColor colorWithRed:0.88 green:0.14 blue:0.36 alpha:0.98] borderColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.75 alpha:0.85] action:@selector(triggerYouTubeSearch)];
-            self->_btnSearch.layer.cornerRadius = 6;
-            [self->_webBox addSubview:self->_btnSearch];
+        UIView *pad = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 6, 22)];
+        self->_searchBar.leftView = pad;
+        self->_searchBar.leftViewMode = UITextFieldViewModeAlways;
+        [self->_webBox addSubview:self->_searchBar];
 
-            WKWebViewConfiguration *wcfg = [[WKWebViewConfiguration alloc] init];
-            wcfg.allowsInlineMediaPlayback = YES;
-            WKUserContentController *ucc = wcfg.userContentController;
+        self->_btnSearch = [self makeUtilityButtonWithTitle:@"Tìm" fontSize:9.5 bgColor:[UIColor colorWithRed:0.88 green:0.14 blue:0.36 alpha:0.98] borderColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.75 alpha:0.85] action:@selector(triggerYouTubeSearch)];
+        self->_btnSearch.layer.cornerRadius = 6;
+        [self->_webBox addSubview:self->_btnSearch];
 
-            PHLWeakScriptMessageProxy *proxy = [[PHLWeakScriptMessageProxy alloc] initWithDelegate:self];
-            [ucc addScriptMessageHandler:proxy name:@"phlWebMediaPlaying"];
+        WKWebViewConfiguration *wcfg = [[WKWebViewConfiguration alloc] init];
+        wcfg.allowsInlineMediaPlayback = YES;
+        WKUserContentController *ucc = wcfg.userContentController;
 
-            WKUserScript *cleanScr = [[WKUserScript alloc] initWithSource:GetNuclearCleanAndAdBlockJS() injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
-            [ucc addUserScript:cleanScr];
+        PHLWeakScriptMessageProxy *proxy = [[PHLWeakScriptMessageProxy alloc] initWithDelegate:(id<WKScriptMessageHandler>)self];
+        [ucc addScriptMessageHandler:proxy name:@"phlWebMediaPlaying"];
 
-            NSString *bridgeSrc = [NSString stringWithFormat:@"%@;window.__phlAudioBridge.setGain(%.3f);", GetAudioBridgeJS(), self->_gain];
-            WKUserScript *bScr = [[WKUserScript alloc] initWithSource:bridgeSrc injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
-            [ucc addUserScript:bScr];
+        WKUserScript *cleanScr = [[WKUserScript alloc] initWithSource:GetNuclearCleanAndAdBlockJS() injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
+        [ucc addUserScript:cleanScr];
 
-            self->_web = [[WKWebView alloc] initWithFrame:CGRectZero configuration:wcfg];
-            self->_web.navigationDelegate = self;
-            self->_web.scrollView.bounces = YES;
-            [self->_webBox addSubview:self->_web];
+        NSString *bridgeSrc = [NSString stringWithFormat:@"%@;window.__phlAudioBridge.setGain(%.3f);", GetAudioBridgeJS(), self->_gain];
+        WKUserScript *bScr = [[WKUserScript alloc] initWithSource:bridgeSrc injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
+        [ucc addUserScript:bScr];
 
-            self->_adminBtn = [self makeUtilityButtonWithTitle:@"💬 LIÊN HỆ TELEGRAM ADMIN"
-                                                         fontSize:9.5
-                                                          bgColor:[UIColor colorWithRed:0.25 green:0.07 blue:0.44 alpha:0.96]
-                                                      borderColor:[UIColor colorWithRed:0.92 green:0.45 blue:1.0 alpha:0.9]
-                                                           action:@selector(openAdminInfoGroup)];
-            [self->_adminBtn setTitleColor:[UIColor colorWithRed:0.45 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-            self->_adminBtn.layer.cornerRadius = 7;
-            [self->_menuBox addSubview:self->_adminBtn];
+        self->_web = [[WKWebView alloc] initWithFrame:CGRectZero configuration:wcfg];
+        self->_web.navigationDelegate = self;
+        self->_web.scrollView.bounces = YES;
+        self->_web.backgroundColor = [UIColor colorWithRed:0.04 green:0.01 blue:0.10 alpha:1.0];
+        [self->_webBox addSubview:self->_web];
 
-            self->_cprLbl = [[UILabel alloc] initWithFrame:CGRectZero];
-            self->_cprLbl.text = @"BẢN QUYỀN THUỘC ADMIN TELEGRAM: @PHL0990\nZALO: 0522608620";
-            self->_cprLbl.textColor = [UIColor colorWithRed:1.0 green:0.86 blue:0.55 alpha:0.98];
-            self->_cprLbl.font = [UIFont systemFontOfSize:8 weight:UIFontWeightBold];
-            self->_cprLbl.textAlignment = NSTextAlignmentCenter;
-            self->_cprLbl.numberOfLines = 2;
-            [self->_menuBox addSubview:self->_cprLbl];
+        self->_adminBtn = [self makeUtilityButtonWithTitle:@"💬 LIÊN HỆ TELEGRAM ADMIN" fontSize:9.5 bgColor:[UIColor colorWithRed:0.25 green:0.03 blue:0.45 alpha:0.95] borderColor:[UIColor colorWithRed:0.85 green:0.35 blue:1.0 alpha:0.9] action:@selector(openAdminInfoGroup)];
+        self->_adminBtn.layer.cornerRadius = 7;
+        [self->_menuBox addSubview:self->_adminBtn];
 
-            [self layoutMenuSubviewsWithWidth:mW height:mH expanded:NO];
-            [self applyIndependentGain:self->_gain];
-            [kw addSubview:self->_menuBox];
-        } else if (self->_menuBox.superview != kw) {
-            [kw addSubview:self->_menuBox];
-        }
+        self->_cprLbl = [[UILabel alloc] init];
+        self->_cprLbl.text = @"BẢN QUYỀN ĐỘC QUYỀN PHẠM LONG\nZALO: 0522608620 • TELEGRAM: @PHL0990";
+        self->_cprLbl.font = [UIFont systemFontOfSize:7.2 weight:UIFontWeightBold];
+        self->_cprLbl.textColor = [UIColor colorWithRed:1.0 green:0.85 blue:0.4 alpha:0.95];
+        self->_cprLbl.textAlignment = NSTextAlignmentCenter;
+        self->_cprLbl.numberOfLines = 2;
+        [self->_menuBox addSubview:self->_cprLbl];
+
+        [kw addSubview:self->_menuBox];
 
         [self fetchRemotePlaylist];
         [self fetchRemoteAdminConfig];
@@ -1082,15 +1046,16 @@ static inline NSString *GetAudioBridgeJS(void) {
         _floatBtn.hidden = YES;
         _menuBox.hidden = YES;
         return;
-    } else if (_floatBtn) {
+    } else {
         _floatBtn.hidden = NO;
     }
 
     // 2. TÙY BIẾN NÚT NỔI & HIỆU ỨNG THỞ PHÁT SÁNG
     NSString *fIcon = dict[@"system_control"][@"floating_icon"];
     if (fIcon && fIcon.length > 0 && _floatBtn) {
-        // Giữ nguyên logo tùy biến
-        [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
+        if (![_floatBtn imageForState:UIControlStateNormal]) {
+            [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
+        }
     }
     BOOL enablePulse = [dict[@"system_control"][@"floating_pulse_glow"] boolValue];
     if (enablePulse) {
@@ -1160,7 +1125,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         } else {
             [_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
             _btnWebToggle.layer.borderColor = [UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9].CGColor;
-            NSString *t = _webOpen ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE VIP (ZERO ADS)";
+            NSString *t = _webOpen ? @"☱ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE VIP (ZERO ADS)";
             [_btnWebToggle setTitle:t forState:UIControlStateNormal];
         }
     }
@@ -1190,15 +1155,29 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)injectFeaturedSongIntoPlaylist {
-    if (!_featuredVipSong || !_playlist) return;
-    NSString *vTitle = _featuredVipSong[@"title"];
-    NSString *vUrl = _featuredVipSong[@"url"];
-    if (!vUrl || vUrl.length == 0) return;
+    if (!_featuredVipSong || !_playlist || _featuredInjected) return;
+    NSString *u = _featuredVipSong[@"url"];
+    if (!u || u.length == 0) return;
 
-    if (_playlist.count > 0 && [_playlist.firstObject[@"url"] isEqualToString:vUrl]) return;
-    NSDictionary *item = @{@"title": vTitle ?: @"⭐ [HOT TREND] VIP Song", @"url": vUrl};
-    [_playlist insertObject:item atIndex:0];
+    for (NSDictionary *s in _playlist) {
+        if ([s[@"url"] isEqualToString:u]) return;
+    }
+    NSMutableDictionary *s = [NSMutableDictionary dictionaryWithDictionary:_featuredVipSong];
+    s[@"is_featured"] = @(YES);
+    [_playlist insertObject:s atIndex:0];
+    _featuredInjected = YES;
     [_table reloadData];
+}
+
+- (void)userContentController:(WKUserContentController *)ucc didReceiveScriptMessage:(WKScriptMessage *)msg {
+    if ([msg.name isEqualToString:@"phlWebMediaPlaying"]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (self->_player && self->_player.rate > 0.01f) {
+                [self->_player pause];
+                [self syncPlayPauseButton];
+            }
+        });
+    }
 }
 
 - (void)webView:(WKWebView *)webView didCommitNavigation:(WKNavigation *)navigation {
@@ -1245,11 +1224,9 @@ static inline NSString *GetAudioBridgeJS(void) {
     
     if (!_isYouTubeEnabled) {
         [_btnWebToggle setTitle:@"🚫 YOUTUBE (TẠM KHÓA)" forState:UIControlStateNormal];
-        [_btnWebToggle setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
     } else {
-        NSString *t = _webOpen ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE VIP (ZERO ADS)";
+        NSString *t = _webOpen ? @"☱ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE VIP (ZERO ADS)";
         [_btnWebToggle setTitle:t forState:UIControlStateNormal];
-        [_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
     }
 }
 
@@ -1257,58 +1234,46 @@ static inline NSString *GetAudioBridgeJS(void) {
     if (!_web || !urlStr || urlStr.length == 0) return;
     NSURL *u = [NSURL URLWithString:urlStr];
     if (!u) return;
+
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:u cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:15.0];
-    [req setValue:@"PHL-Engine/1.0" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1" forHTTPHeaderField:@"User-Agent"];
     [_web loadRequest:req];
 }
 
 - (void)webGoBack { if (_web && _web.canGoBack) [_web goBack]; }
 - (void)webGoForward { if (_web && _web.canGoForward) [_web goForward]; }
-- (void)webGoHome {
-    _webLoaded = YES;
-    [self loadYouTubeURLString:_youtubeHomeURL];
-}
+- (void)webGoHome { [self loadYouTubeURLString:_youtubeHomeURL]; }
 
 - (void)triggerYouTubeSearch {
+    NSString *kw = [_searchBar.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (!kw || kw.length == 0) return;
     [_searchBar resignFirstResponder];
-    NSString *raw = _searchBar.text;
-    if (!raw || raw.length == 0) {
-        _webLoaded = YES;
-        [self loadYouTubeURLString:_youtubeHomeURL];
-        return;
-    }
-    NSString *enc = [raw stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
-    _webLoaded = YES;
+
+    NSString *enc = [kw stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
     [self loadYouTubeURLString:[NSString stringWithFormat:@"https://m.youtube.com/results?search_query=%@", enc ?: @""]];
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)tf {
-    if (tf == _searchBar) {
-        [self triggerYouTubeSearch];
-        return NO;
-    }
+    [self triggerYouTubeSearch];
     return YES;
 }
 
 - (void)toggleMenu {
     _menuOpen = !_menuOpen;
     if (_menuOpen) {
-        _menuBox.hidden = NO;
         [self applyMenuFrameForExpanded:_webOpen animated:NO];
-        _menuBox.transform = CGAffineTransformMakeScale(0.85, 0.85);
-        [UIView animateWithDuration:0.25 delay:0.0 options:UIViewAnimationOptionCurveEaseOut animations:^{
-            self->_menuBox.alpha = 1.0;
-            self->_menuBox.transform = CGAffineTransformIdentity;
-        } completion:nil];
-
-        // TỰ ĐỘNG CẬP NHẬT CONFIG & PLAYLIST MỖI KHI MỞ MENU
+        _menuBox.alpha = 0.0f;
+        _menuBox.hidden = NO;
+        [UIView animateWithDuration:0.25 animations:^{
+            self->_menuBox.alpha = 1.0f;
+        }];
         [self fetchRemoteAdminConfig];
-        [self fetchRemotePlaylist];
+        [self syncPlayPauseButton];
+        [self syncRepeatButton];
     } else {
-        [UIView animateWithDuration:0.20 delay:0.0 options:UIViewAnimationOptionCurveEaseIn animations:^{
-            self->_menuBox.alpha = 0.0;
-            self->_menuBox.transform = CGAffineTransformMakeScale(0.85, 0.85);
-        } completion:^(BOOL fin){
+        [UIView animateWithDuration:0.2 animations:^{
+            self->_menuBox.alpha = 0.0f;
+        } completion:^(BOOL fin) {
             self->_menuBox.hidden = YES;
         }];
     }
@@ -1316,28 +1281,24 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)clampViewToSafeBounds:(UIView *)v topMargin:(CGFloat)tm bottomMargin:(CGFloat)bm {
     UIWindow *w = [self resolveActiveWindow];
-    if (!w) return;
-    CGSize sz = w.bounds.size;
-    CGFloat hw = v.bounds.size.width * 0.5f;
-    CGFloat hh = v.bounds.size.height * 0.5f;
+    if (!w || !v) return;
 
-    CGFloat minX = hw + 4.0f;
-    CGFloat maxX = sz.width - hw - 4.0f;
-    CGFloat minY = hh + tm;
-    CGFloat maxY = sz.height - hh - bm;
+    CGRect b = w.bounds;
+    CGRect f = v.frame;
+    CGFloat maxX = b.size.width - f.size.width;
+    CGFloat maxY = b.size.height - f.size.height - bm;
 
-    CGPoint c = v.center;
-    if (minX <= maxX) c.x = MAX(minX, MIN(maxX, c.x));
-    if (minY <= maxY) c.y = MAX(minY, MIN(maxY, c.y));
-    v.center = c;
+    f.origin.x = MAX(0.0f, MIN(maxX, f.origin.x));
+    f.origin.y = MAX(tm, MIN(maxY, f.origin.y));
+    v.frame = f;
 }
 
 - (void)handleFloatingPan:(UIPanGestureRecognizer *)p {
-    UIView *v = p.view;
+    UIView *v = _floatBtn;
     if (!v || !v.superview) return;
     CGPoint tr = [p translationInView:v.superview];
     v.center = CGPointMake(v.center.x + tr.x, v.center.y + tr.y);
-    [self clampViewToSafeBounds:v topMargin:14.0f bottomMargin:14.0f];
+    [self clampViewToSafeBounds:v topMargin:15.0f bottomMargin:15.0f];
     [p setTranslation:CGPointZero inView:v.superview];
 }
 
@@ -1480,14 +1441,13 @@ static inline NSString *GetAudioBridgeJS(void) {
     [self applyIndependentGain:s.value];
 }
 
-- (void)decreaseVolumeStep {
-    float nxt = MAX(0.0f, _gain - 0.15f);
-    _volSlider.value = nxt;
-    [self applyIndependentGain:nxt];
+- (void)muteAudioAction {
+    _volSlider.value = 0.0f;
+    [self applyIndependentGain:0.0f];
 }
 
-- (void)increaseVolumeStep {
-    float nxt = MIN(_maxAllowedGain, _gain + 0.15f);
+- (void)maxAudioAction {
+    float nxt = MIN(_maxAllowedGain, _gain + 0.5f);
     _volSlider.value = nxt;
     [self applyIndependentGain:nxt];
 }
@@ -1549,11 +1509,21 @@ static inline NSString *GetAudioBridgeJS(void) {
     [tv deselectRowAtIndexPath:ip animated:YES];
     if (_playlist.count == 0) {
         _statusMsg = @"Đang tải lại danh sách nhạc...";
-        [tv reloadData];
+        [_table reloadData];
         [self fetchRemotePlaylist];
         return;
     }
     [self playSongAtIndex:ip.row];
+}
+
+- (void)handleItemDidFinish:(NSNotification *)n {
+    if (_repOne) {
+        [_player seekToTime:kCMTimeZero];
+        [_player play];
+        [self syncPlayPauseButton];
+        return;
+    }
+    [self playNextSong];
 }
 
 @end
