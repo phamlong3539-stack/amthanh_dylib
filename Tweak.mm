@@ -1,7 +1,6 @@
 // ==============================================================================
-// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 MASTER ENGINE - 50 YR EDITION)
-// ARCHITECTURE: NUCLEAR AD-BLOCK • ZERO-SEARCH WEBUI • HI-RES GAIN & BASS BOOST
-// COMPATIBILITY: THEOS • GITHUB ACTIONS CI • ESIGN READY
+// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE)
+// CÔNG NGHỆ: DIRECT GITHUB CORE API • REAL-TIME ZERO DELAY • NUCLEAR AD-BLOCK
 // ==============================================================================
 
 #import <UIKit/UIKit.h>
@@ -19,7 +18,7 @@ typedef NS_ENUM(NSInteger, TransportButtonKind) {
     TransportButtonKindRepeat = 3
 };
 
-#pragma mark - Bộ Chuyển Đổi Màu HEX Siêu Tốc
+#pragma mark - Bộ Chuyển Đổi Màu HEX
 
 static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     if (!hexString || hexString.length == 0) return fallback;
@@ -210,7 +209,7 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
 
 @end
 
-#pragma mark - Bộ Não Trung Tâm
+#pragma mark - Bộ Não Trung Tâm Âm Thanh & Quản Trị Tối Cao
 
 @interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, WKNavigationDelegate, WKScriptMessageHandler> {
     AVPlayer *_player;
@@ -264,6 +263,7 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     NSString *_youtubeLockedMsg;
     NSString *_adminTargetURL;
     float _maxAllowedGain;
+    NSTimer *_autoSyncTimer;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
@@ -318,7 +318,76 @@ static inline NSString *GetNuclearCleanAndAdBlockJS(void) {
 }
 
 static inline NSString *GetAudioBridgeJS(void) {
-    return @"(function(){if(!window.__phlAudioBridge){window.__phlAudioBridge={gain:1.0,ctx:null,nodes:new WeakMap(),pauseAll:function(){document.querySelectorAll('video,audio').forEach(function(e){try{e.pause();}catch(x){}});},ensureContext:function(){if(!this.ctx){var A=window.AudioContext||window.webkitAudioContext;if(A){try{this.ctx=new A();}catch(x){}}}if(this.ctx&&this.ctx.state==='suspended'){this.ctx.resume().catch(function(){});}},hookElement:function(e){var s=this;if(!e.__phlPlayHooked){e.__phlPlayHooked=true;e.addEventListener('play',function(){s.applyToElement(e);if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.phlWebMediaPlaying){window.webkit.messageHandlers.phlWebMediaPlaying.postMessage('playing');}},true);}s.applyToElement(e);},applyToElement:function(e){var g=Math.max(0.0,Math.min(3.0,this.gain));try{e.muted=(g<=0.001);e.volume=Math.min(1.0,g);}catch(x){}if(g>1.0){this.ensureContext();if(this.ctx){try{var n=this.nodes.get(e);if(!n){var src=this.ctx.createMediaElementSource(e);var gn=this.ctx.createGain();var bass=this.ctx.createBiquadFilter();bass.type='lowshelf';bass.frequency.value=250;bass.gain.value=4.0;src.connect(bass);bass.connect(gn);gn.connect(this.ctx.destination);n={gainNode:gn};this.nodes.set(e,n);}n.gainNode.gain.setTargetAtTime(g,this.ctx.currentTime,0.02);}catch(x){}}}else{var ex=this.nodes.get(e);if(ex&&ex.gainNode&&this.ctx){try{ex.gainNode.gain.setTargetAtTime(g,this.ctx.currentTime,0.02);}catch(x){}}}},setGain:function(v){this.gain=Math.max(0.0,Math.min(3.0,parseFloat(v)||0.0));var s=this;document.querySelectorAll('video,audio').forEach(function(e){s.hookElement(e);});}};}})();";
+    return @"(function(){\n"
+            "  if(!window.__phlAudioBridge){\n"
+            "    window.__phlAudioBridge = {\n"
+            "      gain: 1.0,\n"
+            "      ctx: null,\n"
+            "      nodes: new WeakMap(),\n"
+            "      pauseAll: function(){\n"
+            "        document.querySelectorAll('video,audio').forEach(function(e){ try{e.pause();}catch(x){} });\n"
+            "      },\n"
+            "      ensureContext: function(){\n"
+            "        if(!this.ctx){\n"
+            "          var AC = window.AudioContext || window.webkitAudioContext;\n"
+            "          if(AC){ try{ this.ctx = new AC(); }catch(x){} }\n"
+            "        }\n"
+            "        if(this.ctx && this.ctx.state === 'suspended'){\n"
+            "          this.ctx.resume().catch(function(){});\n"
+            "        }\n"
+            "      },\n"
+            "      hookElement: function(e){\n"
+            "        var self = this;\n"
+            "        if(!e.__phlPlayHooked){\n"
+            "          e.__phlPlayHooked = true;\n"
+            "          e.addEventListener('play', function(){\n"
+            "            self.applyToElement(e);\n"
+            "            if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.phlWebMediaPlaying){\n"
+            "              window.webkit.messageHandlers.phlWebMediaPlaying.postMessage('playing');\n"
+            "            }\n"
+            "          }, true);\n"
+            "        }\n"
+            "        self.applyToElement(e);\n"
+            "      },\n"
+            "      applyToElement: function(e){\n"
+            "        var g = Math.max(0.0, Math.min(3.0, this.gain));\n"
+            "        try { e.muted = (g <= 0.001); e.volume = Math.min(1.0, g); } catch(x){}\n"
+            "        if(g > 1.0){\n"
+            "          this.ensureContext();\n"
+            "          if(this.ctx){\n"
+            "            try {\n"
+            "              var nodeInfo = this.nodes.get(e);\n"
+            "              if(!nodeInfo){\n"
+            "                var src = this.ctx.createMediaElementSource(e);\n"
+            "                var gn = this.ctx.createGain();\n"
+            "                var bass = this.ctx.createBiquadFilter();\n"
+            "                bass.type = 'lowshelf';\n"
+            "                bass.frequency.value = 250;\n"
+            "                bass.gain.value = 4.0;\n"
+            "                src.connect(bass);\n"
+            "                bass.connect(gn);\n"
+            "                gn.connect(this.ctx.destination);\n"
+            "                nodeInfo = {gainNode: gn};\n"
+            "                this.nodes.set(e, nodeInfo);\n"
+            "              }\n"
+            "              nodeInfo.gainNode.gain.setTargetAtTime(g, this.ctx.currentTime, 0.02);\n"
+            "            } catch(x){}\n"
+            "          }\n"
+            "        } else {\n"
+            "          var existing = this.nodes.get(e);\n"
+            "          if(existing && existing.gainNode && this.ctx){\n"
+            "            try { existing.gainNode.gain.setTargetAtTime(g, this.ctx.currentTime, 0.02); } catch(x){}\n"
+            "          }\n"
+            "        }\n"
+            "      },\n"
+            "      setGain: function(v){\n"
+            "        this.gain = Math.max(0.0, Math.min(3.0, parseFloat(v) || 0.0));\n"
+            "        var self = this;\n"
+            "        document.querySelectorAll('video,audio').forEach(function(e){ self.hookElement(e); });\n"
+            "      }\n"
+            "    };\n"
+            "  }\n"
+            "})();";
 }
 
 + (instancetype)sharedInstance {
@@ -354,6 +423,12 @@ static inline NSString *GetAudioBridgeJS(void) {
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(handleItemDidFinish:)
                                                      name:AVPlayerItemDidPlayToEndTimeNotification
+                                                   object:nil];
+
+        // LẮNG NGHE KHI APP MỞ LẠI -> NẠP LỆNH TỨC THÌ
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(fetchRemoteAdminConfig)
+                                                     name:UIApplicationDidBecomeActiveNotification
                                                    object:nil];
     }
     return self;
@@ -599,8 +674,6 @@ static inline NSString *GetAudioBridgeJS(void) {
             UIPanGestureRecognizer *p = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleFloatingPan:)];
             [self->_floatBtn addGestureRecognizer:p];
             [kw addSubview:self->_floatBtn];
-
-            [self loadRemoteLogo];
         } else if (self->_floatBtn.superview != kw) {
             [kw addSubview:self->_floatBtn];
         }
@@ -811,37 +884,71 @@ static inline NSString *GetAudioBridgeJS(void) {
 
         [self fetchRemotePlaylist];
         [self fetchRemoteAdminConfig];
+
+        // TỰ ĐỘNG ĐỒNG BỘ CONFIG MỖI 10 GIÂY (CHỐNG TRỄ HOÀN TOÀN)
+        if (!self->_autoSyncTimer) {
+            self->_autoSyncTimer = [NSTimer scheduledTimerWithTimeInterval:10.0 target:self selector:@selector(fetchRemoteAdminConfig) userInfo:nil repeats:YES];
+        }
     });
 }
 
-#pragma mark - Nạp Cấu Hình Tối Cao
+#pragma mark - BỘ ĐỒNG BỘ ZERO-LATENCY (ĐỘ TRỄ 0 GIÂY QUA GITHUB API)
 
 - (void)fetchRemoteAdminConfig {
-    NSTimeInterval ts = [[NSDate date] timeIntervalSince1970];
-    NSString *uStr = [NSString stringWithFormat:@"https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/config.json?t=%.0f", ts];
-    NSURL *u = [NSURL URLWithString:uStr];
-    if (!u) return;
-
-    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:u cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData timeoutInterval:8.0];
+    // ⚡ SỬ DỤNG TRỰC TIẾP GITHUB API ĐỂ BỎ QUA HOÀN TOÀN 100% FASTLY CDN CACHE
+    NSURL *apiUrl = [NSURL URLWithString:@"https://api.github.com/repos/phamlong3539-stack/phl-music-data/contents/config.json"];
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:apiUrl cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData timeoutInterval:5.0];
+    [req setValue:@"PHL-Engine/1.0" forHTTPHeaderField:@"User-Agent"];
     [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
 
-    NSURLSessionDataTask *t = [[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
-        NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
-        if (e || !d || hr.statusCode != 200) return;
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        NSHTTPURLResponse *httpResp = (NSHTTPURLResponse *)response;
+        if (!error && data && httpResp.statusCode == 200) {
+            NSDictionary *apiJson = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+            NSString *base64Str = apiJson[@"content"];
+            if (base64Str && base64Str.length > 0) {
+                NSString *cleanBase64 = [base64Str stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+                cleanBase64 = [cleanBase64 stringByReplacingOccurrencesOfString:@"\r" withString:@""];
+                NSData *decodedData = [[NSData alloc] initWithBase64EncodedString:cleanBase64 options:0];
+                if (decodedData) {
+                    NSDictionary *config = [NSJSONSerialization JSONObjectWithData:decodedData options:0 error:nil];
+                    if (config && [config isKindOfClass:[NSDictionary class]]) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [self applyRemoteAdminConfig:config];
+                        });
+                        return; // NẠP THÀNH CÔNG VỚI ĐỘ TRỄ 0 GIÂY
+                    }
+                }
+            }
+        }
 
-        NSError *je = nil;
-        NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:d options:0 error:&je];
-        if (je || ![dict isKindOfClass:[NSDictionary class]]) return;
-
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self applyRemoteAdminConfig:dict];
-        });
+        // DỰ PHÒNG NẾU GITHUB API HẾT HẠN MỨC (FALLBACK)
+        [self fallbackFetchRawConfig];
     }];
-    [t resume];
+    [task resume];
+}
+
+- (void)fallbackFetchRawConfig {
+    NSTimeInterval ts = [[NSDate date] timeIntervalSince1970];
+    NSString *uStr = [NSString stringWithFormat:@"https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/config.json?v=%.0f", ts];
+    NSURL *u = [NSURL URLWithString:uStr];
+    if (!u) return;
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:u cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData timeoutInterval:5.0];
+    [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
+    [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
+        if (!e && d) {
+            NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:d options:0 error:nil];
+            if (dict && [dict isKindOfClass:[NSDictionary class]]) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self applyRemoteAdminConfig:dict];
+                });
+            }
+        }
+    }] resume];
 }
 
 - (void)applyRemoteAdminConfig:(NSDictionary *)dict {
-    // 1. KILL-SWITCH
+    // 1. MASTER KILL-SWITCH
     if ([dict[@"system_control"][@"kill_switch"] boolValue]) {
         [self pauseStreamPlayerIfPlaying];
         [self pauseWebMediaIfPlaying];
@@ -852,9 +959,10 @@ static inline NSString *GetAudioBridgeJS(void) {
         _floatBtn.hidden = NO;
     }
 
-    // 2. ICON & HIỆU ỨNG THỞ NÚT NỔI
+    // 2. TÙY BIẾN NÚT NỔI & HIỆU ỨNG THỞ PHÁT SÁNG
     NSString *fIcon = dict[@"system_control"][@"floating_icon"];
     if (fIcon && fIcon.length > 0 && _floatBtn) {
+        [_floatBtn setImage:nil forState:UIControlStateNormal]; // XÓA ẢNH ĐỂ HIỆN EMOJI
         [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
     }
     BOOL enablePulse = [dict[@"system_control"][@"floating_pulse_glow"] boolValue];
@@ -886,7 +994,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         _gradient.colors = @[(id)cStart.CGColor, (id)cMid.CGColor, (id)cEnd.CGColor];
     }
 
-    // 4. TIÊU ĐỀ & NÚT ADMIN
+    // 4. TIÊU ĐỀ, MARQUEE TICKER & NÚT ADMIN
     NSDictionary *brand = dict[@"branding"];
     if (brand) {
         if (brand[@"header_title"]) _headerTitleLbl.text = brand[@"header_title"];
@@ -896,7 +1004,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         if (brand[@"footer_copyright"]) _cprLbl.text = brand[@"footer_copyright"];
     }
 
-    // 5. CÔNG SUẤT ÂM LƯỢNG
+    // 5. CÔNG SUẤT ÂM LƯỢNG (TỐI ĐA 300%)
     NSDictionary *audioCfg = dict[@"audio_engine"];
     if (audioCfg && audioCfg[@"max_gain"]) {
         _maxAllowedGain = [audioCfg[@"max_gain"] floatValue];
@@ -910,7 +1018,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         [self injectFeaturedSongIntoPlaylist];
     }
 
-    // 7. QUẢN LÝ YOUTUBE
+    // 7. QUẢN LÝ KHÓA / MỞ YOUTUBE TỨC THÌ
     NSDictionary *ytCfg = dict[@"youtube_module"];
     if (ytCfg) {
         if (ytCfg[@"enabled"] != nil) _isYouTubeEnabled = [ytCfg[@"enabled"] boolValue];
@@ -1010,8 +1118,15 @@ static inline NSString *GetAudioBridgeJS(void) {
 - (void)syncBrowserVisibilityAnimated:(BOOL)animated {
     _webBox.hidden = !_webOpen;
     _table.hidden = _webOpen;
-    NSString *t = _webOpen ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE VIP (ZERO ADS)";
-    [_btnWebToggle setTitle:t forState:UIControlStateNormal];
+    
+    if (!_isYouTubeEnabled) {
+        [_btnWebToggle setTitle:@"🚫 YOUTUBE (TẠM KHÓA)" forState:UIControlStateNormal];
+        [_btnWebToggle setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
+    } else {
+        NSString *t = _webOpen ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE VIP (ZERO ADS)";
+        [_btnWebToggle setTitle:t forState:UIControlStateNormal];
+        [_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+    }
     [self applyMenuFrameForExpanded:_webOpen animated:animated];
 }
 
@@ -1061,24 +1176,6 @@ static inline NSString *GetAudioBridgeJS(void) {
     if (_web.canGoForward) [_web goForward];
 }
 
-- (void)loadRemoteLogo {
-    NSURL *lu = [NSURL URLWithString:@"https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/logo.png"];
-    if (!lu) return;
-
-    NSURLSessionDataTask *t = [[NSURLSession sharedSession] dataTaskWithURL:lu completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
-        NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
-        if (e || !d || hr.statusCode != 200) return;
-        UIImage *img = [UIImage imageWithData:d];
-        if (!img) return;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self->_floatBtn setImage:img forState:UIControlStateNormal];
-            self->_floatBtn.imageView.contentMode = UIViewContentModeScaleAspectFill;
-            [self->_floatBtn setTitle:@"" forState:UIControlStateNormal];
-        });
-    }];
-    [t resume];
-}
-
 - (void)toggleMenu {
     _menuOpen = !_menuOpen;
     if (_menuOpen) {
@@ -1086,7 +1183,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         [self applyMenuFrameForExpanded:_webOpen animated:NO];
         [self applyIndependentGain:_gain];
         [self fetchRemotePlaylist];
-        [self fetchRemoteAdminConfig];
+        [self fetchRemoteAdminConfig]; // ĐỒNG BỘ NGAY LẬP TỨC KHI MỞ
         [self syncPlayPauseButton];
         _menuBox.hidden = NO;
         [UIView animateWithDuration:0.18 animations:^{
