@@ -1220,6 +1220,17 @@ static inline NSString *GetAudioBridgeJS(void) {
     [self cleanYouTubePageInWebView];
 }
 
+- (void)userContentController:(WKUserContentController *)ucc didReceiveScriptMessage:(WKScriptMessage *)msg {
+    if ([msg.name isEqualToString:@"phlWebMediaPlaying"]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (self->_player && self->_player.rate > 0.01f) {
+                [self->_player pause];
+                [self syncPlayPauseButton];
+            }
+        });
+    }
+}
+
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
     [self cleanYouTubePageInWebView];
     [self applyIndependentGain:_gain];
