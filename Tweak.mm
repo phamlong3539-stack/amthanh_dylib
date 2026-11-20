@@ -335,6 +335,7 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     NSMutableArray *_playlist;
     NSDictionary *_cachedAnnouncement;
     BOOL _hasAutoPlayedVip;
+    BOOL _hasShownLaunchAnnouncement;
     NSDictionary *_featuredVipSong;
     NSString *_statusMsg;
     NSInteger _idx;
@@ -507,6 +508,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
         _playlist = [[NSMutableArray alloc] init];
         _hasAutoPlayedVip = NO;
+        _hasShownLaunchAnnouncement = NO;
         _cachedAnnouncement = nil;
         _statusMsg = @"Đang nạp dữ liệu Master VIP...";
         _idx = -1;
@@ -747,25 +749,27 @@ static inline NSString *GetAudioBridgeJS(void) {
     UIWindow *w = [self resolveActiveWindow];
     if (!w || !_menuBox) return;
 
+    _menuBox.transform = CGAffineTransformIdentity;
+
     CGFloat sW = w.bounds.size.width;
     CGFloat sH = w.bounds.size.height;
 
-    CGFloat cW = MIN(312.0f, sW - 86.0f);
-    if (cW < 268.0f) cW = MIN(300.0f, sW - 20.0f);
+    CGFloat cW = MIN(312.0f, sW - 30.0f);
+    if (cW < 260.0f) cW = MAX(240.0f, sW - 16.0f);
 
-    CGFloat eW = MAX(cW, MIN(580.0f, sW - 74.0f));
-    if (eW < 280.0f) eW = MAX(cW, sW - 14.0f);
+    CGFloat eW = MIN(580.0f, MAX(cW, sW - 60.0f));
 
-    CGFloat cH = MIN(332.0f, MAX(250.0f, sH - 24.0f));
-    CGFloat eH = MAX(cH, MIN(700.0f, sH - 10.0f));
+    CGFloat maxH = MAX(240.0f, sH - 24.0f);
+    CGFloat cH = MIN(320.0f, maxH);
+    CGFloat eH = MIN(330.0f, maxH);
 
     CGFloat tW = exp ? eW : cW;
     CGFloat tH = exp ? eH : cH;
 
     CGFloat curX = _menuBox.frame.origin.x;
     CGFloat maxX = MAX(8.0f, sW - tW - 8.0f);
-    CGFloat tX = exp ? MIN(maxX, MAX(70.0f, (sW - tW) * 0.56f)) : MAX(8.0f, MIN(maxX, curX));
-    CGFloat tY = exp ? 5.0f : MAX(12.0f, MIN(sH - tH - 8.0f, _menuBox.frame.origin.y));
+    CGFloat tX = exp ? MIN(maxX, MAX(16.0f, (sW - tW) * 0.5f)) : MAX(8.0f, MIN(maxX, curX));
+    CGFloat tY = exp ? 12.0f : MAX(12.0f, MIN(sH - tH - 12.0f, _menuBox.frame.origin.y));
 
     CGRect tf = CGRectMake(tX, tY, tW, tH);
     void (^blk)(void) = ^{
@@ -780,7 +784,6 @@ static inline NSString *GetAudioBridgeJS(void) {
         blk();
     }
 }
-
 - (void)initializeFramework {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *kw = [self resolveActiveWindow];
@@ -1178,12 +1181,15 @@ static inline NSString *GetAudioBridgeJS(void) {
     }
 
     // 8. POPUP THÔNG BÁO TỪ ADMIN — CHỈ HIỆN 1 LẦN DUY NHẤT MỖI ID THÔNG BÁO MỚI
-    // 8. LƯU THÔNG BÁO VÀO BỘ NHỚ ĐỆM (CACHE) — HIỆN MỖI LẦN MỞ MENU
+    // 8. POPUP THÔNG BÁO TỪ ADMIN — CHỈ HIỆN 1 LẦN KHI MỞ ỨNG DỤNG (XÓA ĐA NHIỆM VÀO LẠI SẼ HIỆN TIẾP)
     NSDictionary *ann = dict[@"announcement"];
     if (ann && [ann[@"show"] boolValue]) {
         _cachedAnnouncement = ann;
-        if (_menuOpen) {
-            [self showAnnouncementPopup];
+        if (!_hasShownLaunchAnnouncement) {
+            _hasShownLaunchAnnouncement = YES;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self showAnnouncementPopup];
+            });
         }
     } else {
         _cachedAnnouncement = nil;
@@ -1209,19 +1215,28 @@ static inline NSString *GetAudioBridgeJS(void) {
     }
 
     UIWindow *w = [self resolveActiveWindow];
-    if (!w) return;
+    if (!w) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self showAnnouncementPopup];
+        });
+        return;
+    }
+
     UIViewController *vc = w.rootViewController;
     while (vc.presentedViewController) {
         if ([vc.presentedViewController isKindOfClass:[UIAlertController class]]) {
-            return; // Đang có thông báo hiển thị thì không hiện đè
+            return;
         }
         vc = vc.presentedViewController;
     }
     if (vc) {
         [vc presentViewController:alert animated:YES completion:nil];
+    } else {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self showAnnouncementPopup];
+        });
     }
 }
-
 - (void)injectFeaturedSongIntoPlaylist {
     if (!_featuredVipSong || !_playlist) return;
     NSString *vTitle = _featuredVipSong[@"title"];
@@ -1365,19 +1380,13 @@ static inline NSString *GetAudioBridgeJS(void) {
         // TỰ ĐỘNG CẬP NHẬT CONFIG & PLAYLIST MỖI KHI MỞ MENU
         [self fetchRemoteAdminConfig];
         [self fetchRemotePlaylist];
-
-        // BẬT POPUP THÔNG BÁO MỖI LẦN MỞ MENU
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            if (self->_menuOpen) {
-                [self showAnnouncementPopup];
-            }
-        });
     } else {
         [UIView animateWithDuration:0.20 delay:0.0 options:UIViewAnimationOptionCurveEaseIn animations:^{
             self->_menuBox.alpha = 0.0;
             self->_menuBox.transform = CGAffineTransformMakeScale(0.85, 0.85);
         } completion:^(BOOL fin){
             self->_menuBox.hidden = YES;
+            self->_menuBox.transform = CGAffineTransformIdentity;
         }];
     }
 }
@@ -1385,20 +1394,22 @@ static inline NSString *GetAudioBridgeJS(void) {
     UIWindow *w = [self resolveActiveWindow];
     if (!w) return;
     CGSize sz = w.bounds.size;
-    CGFloat hw = v.bounds.size.width * 0.5f;
-    CGFloat hh = v.bounds.size.height * 0.5f;
+    CGFloat vW = v.bounds.size.width;
+    CGFloat vH = v.bounds.size.height;
 
-    CGFloat minX = hw + 4.0f;
-    CGFloat maxX = sz.width - hw - 4.0f;
-    CGFloat minY = hh + tm;
-    CGFloat maxY = sz.height - hh - bm;
+    CGRect f = v.frame;
+    CGFloat minX = 6.0f;
+    CGFloat maxX = MAX(minX, sz.width - vW - 6.0f);
+    if (f.origin.x < minX) f.origin.x = minX;
+    else if (f.origin.x > maxX) f.origin.x = maxX;
 
-    CGPoint c = v.center;
-    if (minX <= maxX) c.x = MAX(minX, MIN(maxX, c.x));
-    if (minY <= maxY) c.y = MAX(minY, MIN(maxY, c.y));
-    v.center = c;
+    CGFloat minY = tm;
+    CGFloat maxY = MAX(minY, sz.height - vH - bm);
+    if (f.origin.y < minY) f.origin.y = minY;
+    else if (f.origin.y > maxY) f.origin.y = maxY;
+
+    v.frame = f;
 }
-
 - (void)handleFloatingPan:(UIPanGestureRecognizer *)p {
     UIView *v = p.view;
     if (!v || !v.superview) return;
@@ -1412,7 +1423,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     if (!_menuBox || !_menuBox.superview) return;
     CGPoint tr = [p translationInView:_menuBox.superview];
     _menuBox.center = CGPointMake(_menuBox.center.x + tr.x, _menuBox.center.y + tr.y);
-    [self clampViewToSafeBounds:_menuBox topMargin:6.0f bottomMargin:6.0f];
+    [self clampViewToSafeBounds:_menuBox topMargin:12.0f bottomMargin:12.0f];
     [p setTranslation:CGPointZero inView:_menuBox.superview];
 }
 
