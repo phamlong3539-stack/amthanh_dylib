@@ -1,7 +1,7 @@
 // ==============================================================================
-// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 HARDENED ENGINE)
-// REPO QUẢN TRỊ: phamlong3539-stack/phl-music-data
-// BUILD ENGINE: GitHub Actions -> amthanh.dylib (ESign Ready)
+// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 MASTER ENGINE - 50 YR EDITION)
+// ARCHITECTURE: NUCLEAR AD-BLOCK • ZERO-SEARCH WEBUI • HI-RES GAIN & BASS BOOST
+// COMPATIBILITY: THEOS • GITHUB ACTIONS CI • ESIGN READY
 // ==============================================================================
 
 #import <UIKit/UIKit.h>
@@ -19,7 +19,40 @@ typedef NS_ENUM(NSInteger, TransportButtonKind) {
     TransportButtonKindRepeat = 3
 };
 
-#pragma mark - Nút Điều Khiển UI
+#pragma mark - Bộ Chuyển Đổi Màu HEX Siêu Tốc (Zero Overhead)
+
+static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
+    if (!hexString || hexString.length == 0) return fallback;
+    NSString *clean = [hexString stringByReplacingOccurrencesOfString:@"#" withString:@""];
+    if (clean.length != 6) return fallback;
+    unsigned int rgbValue = 0;
+    NSScanner *scanner = [NSScanner scannerWithString:clean];
+    [scanner scanHexInt:&rgbValue];
+    return [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16) / 255.0
+                           green:((rgbValue & 0x00FF00) >> 8) / 255.0
+                            blue:(rgbValue & 0x0000FF) / 255.0
+                           alpha:1.0];
+}
+
+#pragma mark - Weak Script Message Proxy (Chống Rò Rỉ Bộ Nhớ / Retain Cycle)
+
+@interface PHLWeakScriptMessageProxy : NSObject <WKScriptMessageHandler>
+@property (nonatomic, weak) id<WKScriptMessageHandler> delegate;
+- (instancetype)initWithDelegate:(id<WKScriptMessageHandler>)delegate;
+@end
+
+@implementation PHLWeakScriptMessageProxy
+- (instancetype)initWithDelegate:(id<WKScriptMessageHandler>)delegate {
+    self = [super init];
+    if (self) { _delegate = delegate; }
+    return self;
+}
+- (void)userContentController:(WKUserContentController *)ucc didReceiveScriptMessage:(WKScriptMessage *)msg {
+    [self.delegate userContentController:ucc didReceiveScriptMessage:msg];
+}
+@end
+
+#pragma mark - Nút Điều Khiển Vector UI
 
 @interface PHLTransportButton : UIButton
 @property (nonatomic, assign) TransportButtonKind iconKind;
@@ -177,7 +210,7 @@ typedef NS_ENUM(NSInteger, TransportButtonKind) {
 
 @end
 
-#pragma mark - Quản Lý Audio & Tích Hợp Quản Trị GitHub
+#pragma mark - Bộ Não Trung Tâm Âm Thanh & Quản Trị Tối Cao
 
 @interface PHLProtectedAudioManager : NSObject <UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate, WKNavigationDelegate, WKScriptMessageHandler> {
     AVPlayer *_player;
@@ -190,6 +223,8 @@ typedef NS_ENUM(NSInteger, TransportButtonKind) {
     UIButton *_closeBtn;
     UITableView *_table;
 
+    UILabel *_headerTitleLbl;
+    UILabel *_tickerLbl;
     UILabel *_titleLbl;
     PHLTransportButton *_btnPrev;
     PHLTransportButton *_btnPlay;
@@ -217,16 +252,19 @@ typedef NS_ENUM(NSInteger, TransportButtonKind) {
     UILabel *_cprLbl;
 
     NSMutableArray *_playlist;
+    NSDictionary *_featuredVipSong;
     NSString *_statusMsg;
     NSInteger _idx;
     BOOL _menuOpen;
     BOOL _repOne;
     float _gain;
 
-    // QUẢN TRỊ TỪ XA QUA GITHUB CONFIG.JSON
+    // THUỘC TÍNH QUẢN TRỊ TỪ GITHUB
     BOOL _isYouTubeEnabled;
+    NSString *_youtubeHomeURL;
     NSString *_youtubeLockedMsg;
-    BOOL _isKillSwitchActive;
+    NSString *_adminTargetURL;
+    float _maxAllowedGain;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
@@ -234,12 +272,124 @@ typedef NS_ENUM(NSInteger, TransportButtonKind) {
 
 @implementation PHLProtectedAudioManager
 
-static inline NSString *GetCleanJS(void) {
-    return @"(function(){function c(){['ytm-mobile-topbar-renderer','ytm-search-header','header.mobile-topbar-header','[role=\"search\"]','ytm-pivot-bar-renderer','ytm-bottom-nav-bar','nav.pivot-bar','.pivot-bar-container'].forEach(function(s){document.querySelectorAll(s).forEach(function(e){e.style.setProperty('display','none','important');e.style.setProperty('height','0px','important');e.style.setProperty('visibility','hidden','important');});});var p=document.querySelector('ytm-page-manager,#app,ytm-app');if(p){p.style.setProperty('padding-top','0px','important');p.style.setProperty('margin-top','0px','important');p.style.setProperty('padding-bottom','0px','important');}var i='phl-yt-clean-style';if(!document.getElementById(i)){var s=document.createElement('style');s.id=i;s.textContent='ytm-mobile-topbar-renderer,ytm-search-header,header,ytm-pivot-bar-renderer,ytm-bottom-nav-bar,nav.pivot-bar{display:none!important;height:0!important;}ytm-browse,ytm-search{padding-top:0!important;margin-top:0!important;}';(document.head||document.documentElement).appendChild(s);}}c();setTimeout(c,400);setTimeout(c,1200);if(!window.__phlYTObserver&&document.body){window.__phlYTObserver=new MutationObserver(function(){c();});window.__phlYTObserver.observe(document.body,{childList:true,subtree:true});}})();";
+// ⚡ JAVASCRIPT ĐỈNH CAO: XÓA SẠCH 100% QUẢNG CÁO & XÓA SẠCH MỌI MỤC TÌM KIẾM TRÊN TRANG YOUTUBE
+static inline NSString *GetNuclearCleanAndAdBlockJS(void) {
+    return @"(function(){\n"
+            "  var css = 'ytm-mobile-topbar-renderer, ytm-search-header, [role=\"search\"], \\\n"
+            "             button[aria-label*=\"Search\"], button[aria-label*=\"Tìm kiếm\"], \\\n"
+            "             .mobile-topbar-header-search-icon, .search-icon, ytm-searchbox, \\\n"
+            "             ytm-pivot-bar-renderer, ytm-bottom-nav-bar, nav.pivot-bar, \\\n"
+            "             .ad-container, .companion-ad-container, ytm-promoted-sparkles-web-renderer, \\\n"
+            "             ytm-promoted-sparkles-text-search-web-renderer, .ytp-ad-overlay-container, \\\n"
+            "             .ytp-ad-skip-button-slot, ytd-banner-promo-renderer, ytm-paid-content-overlay-renderer, \\\n"
+            "             .video-ads, ytm-promoted-video-renderer { \\\n"
+            "               display: none !important; \\\n"
+            "               height: 0px !important; \\\n"
+            "               visibility: hidden !important; \\\n"
+            "               pointer-events: none !important; \\\n"
+            "             } \\\n"
+            "             ytm-page-manager, #app, ytm-app { \\\n"
+            "               padding-top: 0px !important; \\\n"
+            "               margin-top: 0px !important; \\\n"
+            "               padding-bottom: 0px !important; \\\n"
+            "             }';\n"
+            "  var styleId = 'phl-nuclear-clean-style';\n"
+            "  if(!document.getElementById(styleId)){\n"
+            "    var st = document.createElement('style');\n"
+            "    st.id = styleId;\n"
+            "    st.textContent = css;\n"
+            "    (document.head || document.documentElement).appendChild(st);\n"
+            "  }\n"
+            "  function executePurge(){\n"
+            "    document.querySelectorAll('ytm-mobile-topbar-renderer, ytm-search-header, [role=\"search\"], .ad-container, ytm-pivot-bar-renderer').forEach(function(el){\n"
+            "      el.remove();\n"
+            "    });\n"
+            "    var skip = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .videoAdUiSkipButton, .ytp-ad-skip-button-slot button');\n"
+            "    if(skip) { skip.click(); }\n"
+            "    var ad = document.querySelector('.ad-showing, .ad-interrupting');\n"
+            "    var vid = document.querySelector('video');\n"
+            "    if(ad && vid && !isNaN(vid.duration)){\n"
+            "      vid.muted = true;\n"
+            "      vid.playbackRate = 16.0;\n"
+            "      vid.currentTime = vid.duration;\n"
+            "    }\n"
+            "  }\n"
+            "  executePurge();\n"
+            "  setInterval(executePurge, 250);\n"
+            "})();";
 }
 
 static inline NSString *GetAudioBridgeJS(void) {
-    return @"(function(){if(!window.__phlAudioBridge){window.__phlAudioBridge={gain:1.0,ctx:null,nodes:new WeakMap(),pauseAll:function(){document.querySelectorAll('video,audio').forEach(function(e){try{e.pause();}catch(x){}});},ensureContext:function(){if(!this.ctx){var A=window.AudioContext||window.webkitAudioContext;if(A){try{this.ctx=new A();}catch(x){}}}if(this.ctx&&this.ctx.state==='suspended'){this.ctx.resume().catch(function(){});}},hookElement:function(e){var s=this;if(!e.__phlPlayHooked){e.__phlPlayHooked=true;e.addEventListener('play',function(){s.applyToElement(e);if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.phlWebMediaPlaying){window.webkit.messageHandlers.phlWebMediaPlaying.postMessage('playing');}},true);}s.applyToElement(e);},applyToElement:function(e){var g=Math.max(0.0,Math.min(2.0,this.gain));try{e.muted=(g<=0.001);e.volume=Math.min(1.0,g);}catch(x){}if(g>1.0){this.ensureContext();if(this.ctx){try{var n=this.nodes.get(e);if(!n){var src=this.ctx.createMediaElementSource(e);var gn=this.ctx.createGain();src.connect(gn);gn.connect(this.ctx.destination);n={gainNode:gn};this.nodes.set(e,n);}n.gainNode.gain.setTargetAtTime(g,this.ctx.currentTime,0.02);}catch(x){}}}else{var ex=this.nodes.get(e);if(ex&&ex.gainNode&&this.ctx){try{ex.gainNode.gain.setTargetAtTime(g,this.ctx.currentTime,0.02);}catch(x){}}}},setGain:function(v){this.gain=Math.max(0.0,Math.min(2.0,parseFloat(v)||0.0));var s=this;document.querySelectorAll('video,audio').forEach(function(e){s.hookElement(e);});}};}})();";
+    return @"(function(){\n"
+            "  if(!window.__phlAudioBridge){\n"
+            "    window.__phlAudioBridge = {\n"
+            "      gain: 1.0,\n"
+            "      ctx: null,\n"
+            "      nodes: new WeakMap(),\n"
+            "      pauseAll: function(){\n"
+            "        document.querySelectorAll('video,audio').forEach(function(e){ try{e.pause();}catch(x){} });\n"
+            "      },\n"
+            "      ensureContext: function(){\n"
+            "        if(!this.ctx){\n"
+            "          var AC = window.AudioContext || window.webkitAudioContext;\n"
+            "          if(AC){ try{ this.ctx = new AC(); }catch(x){} }\n"
+            "        }\n"
+            "        if(this.ctx && this.ctx.state === 'suspended'){\n"
+            "          this.ctx.resume().catch(function(){});\n"
+            "        }\n"
+            "      },\n"
+            "      hookElement: function(e){\n"
+            "        var self = this;\n"
+            "        if(!e.__phlPlayHooked){\n"
+            "          e.__phlPlayHooked = true;\n"
+            "          e.addEventListener('play', function(){\n"
+            "            self.applyToElement(e);\n"
+            "            if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.phlWebMediaPlaying){\n"
+            "              window.webkit.messageHandlers.phlWebMediaPlaying.postMessage('playing');\n"
+            "            }\n"
+            "          }, true);\n"
+            "        }\n"
+            "        self.applyToElement(e);\n"
+            "      },\n"
+            "      applyToElement: function(e){\n"
+            "        var g = Math.max(0.0, Math.min(3.0, this.gain));\n"
+            "        try { e.muted = (g <= 0.001); e.volume = Math.min(1.0, g); } catch(x){}\n"
+            "        if(g > 1.0){\n"
+            "          this.ensureContext();\n"
+            "          if(this.ctx){\n"
+            "            try {\n"
+            "              var nodeInfo = this.nodes.get(e);\n"
+            "              if(!nodeInfo){\n"
+            "                var src = this.ctx.createMediaElementSource(e);\n"
+            "                var gn = this.ctx.createGain();\n"
+            "                var bass = this.ctx.createBiquadFilter();\n"
+            "                bass.type = 'lowshelf';\n"
+            "                bass.frequency.value = 250;\n"
+            "                bass.gain.value = 4.0;\n"
+            "                src.connect(bass);\n"
+            "                bass.connect(gn);\n"
+            "                gn.connect(this.ctx.destination);\n"
+            "                nodeInfo = {gainNode: gn};\n"
+            "                this.nodes.set(e, nodeInfo);\n"
+            "              }\n"
+            "              nodeInfo.gainNode.gain.setTargetAtTime(g, this.ctx.currentTime, 0.02);\n"
+            "            } catch(x){}\n"
+            "          }\n"
+            "        } else {\n"
+            "          var existing = this.nodes.get(e);\n"
+            "          if(existing && existing.gainNode && this.ctx){\n"
+            "            try { existing.gainNode.gain.setTargetAtTime(g, this.ctx.currentTime, 0.02); } catch(x){}\n"
+            "          }\n"
+            "        }\n"
+            "      },\n"
+            "      setGain: function(v){\n"
+            "        this.gain = Math.max(0.0, Math.min(3.0, parseFloat(v) || 0.0));\n"
+            "        var self = this;\n"
+            "        document.querySelectorAll('video,audio').forEach(function(e){ self.hookElement(e); });\n"
+            "      }\n"
+            "    };\n"
+            "  }\n"
+            "})();";
 }
 
 + (instancetype)sharedInstance {
@@ -256,13 +406,17 @@ static inline NSString *GetAudioBridgeJS(void) {
     if (self) {
         NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
         _playlist = [[NSMutableArray alloc] init];
-        _statusMsg = @"Đang nạp dữ liệu...";
+        _statusMsg = @"Đang nạp dữ liệu Master VIP...";
         _idx = -1;
         _menuOpen = NO;
         _webOpen = NO;
         _webLoaded = NO;
-        _isYouTubeEnabled = YES; // Mặc định mở
-        _youtubeLockedMsg = @"Tính năng YouTube đang bị khóa bởi Admin!";
+
+        _isYouTubeEnabled = YES;
+        _youtubeHomeURL = @"https://m.youtube.com";
+        _youtubeLockedMsg = @"Tính năng YouTube đang bảo trì!";
+        _adminTargetURL = @"https://phamlong09.store";
+        _maxAllowedGain = 3.0f;
 
         _repOne = [ud objectForKey:@"PHL_RepeatOneSong"] ? [ud boolForKey:@"PHL_RepeatOneSong"] : NO;
         _gain = [ud objectForKey:@"PHL_IndependentAudioGain"] ? [ud floatForKey:@"PHL_IndependentAudioGain"] : 1.0f;
@@ -328,7 +482,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)applyIndependentGain:(float)gain {
-    float clamped = MAX(0.0f, MIN(2.0f, gain));
+    float clamped = MAX(0.0f, MIN(_maxAllowedGain, gain));
     _gain = clamped;
     [[NSUserDefaults standardUserDefaults] setFloat:clamped forKey:@"PHL_IndependentAudioGain"];
 
@@ -363,7 +517,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)cleanYouTubePageInWebView {
     if (!_web) return;
-    [_web evaluateJavaScript:GetCleanJS() completionHandler:nil];
+    [_web evaluateJavaScript:GetNuclearCleanAndAdBlockJS() completionHandler:nil];
 }
 
 - (UIWindow *)resolveActiveWindow {
@@ -396,7 +550,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     CGFloat inW = mW - padX * 2.0f;
 
     _gradient.frame = CGRectMake(0, 0, mW, mH);
-    _dragHdr.frame = CGRectMake(0, 0, mW, 38.0f);
+    _dragHdr.frame = CGRectMake(0, 0, mW, 48.0f);
     _closeBtn.frame = CGRectMake(mW - 34.0f, 7.0f, 24.0f, 24.0f);
 
     _btnPrev.hidden = exp;
@@ -404,14 +558,14 @@ static inline NSString *GetAudioBridgeJS(void) {
     _btnNext.hidden = exp;
     _btnRep.hidden = exp;
 
-    CGFloat vy = exp ? 41.0f : 71.0f;
-    CGFloat wy = exp ? 65.0f : 96.0f;
-    CGFloat cy = exp ? 92.0f : 123.0f;
+    CGFloat vy = exp ? 51.0f : 81.0f;
+    CGFloat wy = exp ? 75.0f : 106.0f;
+    CGFloat cy = exp ? 102.0f : 133.0f;
 
     if (!exp) {
         CGFloat gap = 6.0f;
         CGFloat bw = (inW - gap * 3.0f) / 4.0f;
-        CGFloat cY = 42.0f;
+        CGFloat cY = 52.0f;
         _btnPrev.frame = CGRectMake(padX, cY, bw, 24.0f);
         _btnPlay.frame = CGRectMake(padX + (bw + gap), cY, bw, 24.0f);
         _btnNext.frame = CGRectMake(padX + (bw + gap) * 2.0f, cY, bw, 24.0f);
@@ -466,7 +620,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     CGFloat eW = MAX(cW, MIN(580.0f, sW - 74.0f));
     if (eW < 280.0f) eW = MAX(cW, sW - 14.0f);
 
-    CGFloat cH = MIN(322.0f, MAX(250.0f, sH - 24.0f));
+    CGFloat cH = MIN(332.0f, MAX(250.0f, sH - 24.0f));
     CGFloat eH = MAX(cH, MIN(700.0f, sH - 10.0f));
 
     CGFloat tW = exp ? eW : cW;
@@ -499,7 +653,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         CGFloat sW = kw.bounds.size.width;
         CGFloat mW = MIN(312.0f, sW - 86.0f);
         if (mW < 268.0f) mW = MIN(300.0f, sW - 20.0f);
-        CGFloat mH = MIN(322.0f, MAX(250.0f, kw.bounds.size.height - 24.0f));
+        CGFloat mH = MIN(332.0f, MAX(250.0f, kw.bounds.size.height - 24.0f));
 
         if (!self->_floatBtn) {
             self->_floatBtn = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -510,6 +664,7 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_floatBtn.layer.borderColor = [UIColor colorWithRed:0.88 green:0.35 blue:1.0 alpha:1.0].CGColor;
             self->_floatBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.03 blue:0.2 alpha:0.96];
             [self->_floatBtn setTitle:@"👑" forState:UIControlStateNormal];
+            self->_floatBtn.titleLabel.font = [UIFont systemFontOfSize:22];
             [self->_floatBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
 
             UIPanGestureRecognizer *p = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleFloatingPan:)];
@@ -542,21 +697,27 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_gradient.endPoint = CGPointMake(1.0f, 1.0f);
             [self->_menuBox.layer insertSublayer:self->_gradient atIndex:0];
 
-            self->_dragHdr = [[UIView alloc] initWithFrame:CGRectMake(0, 0, mW, 38)];
+            self->_dragHdr = [[UIView alloc] initWithFrame:CGRectMake(0, 0, mW, 48)];
             self->_dragHdr.backgroundColor = [UIColor colorWithRed:0.18 green:0.06 blue:0.35 alpha:0.85];
             [self->_menuBox addSubview:self->_dragHdr];
 
             UIPanGestureRecognizer *hp = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
             [self->_dragHdr addGestureRecognizer:hp];
 
-            UILabel *tl = [[UILabel alloc] initWithFrame:CGRectMake(10, 6, mW - 48, 16)];
-            tl.text = @"👑 PHẠM LONG • AUDIO PRO";
-            tl.textColor = [UIColor colorWithRed:1.0 green:0.82 blue:1.0 alpha:1.0];
-            tl.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
-            [self->_dragHdr addSubview:tl];
+            self->_headerTitleLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 4, mW - 48, 15)];
+            self->_headerTitleLbl.text = @"👑 PHẠM LONG • SUPREME MASTER AUDIO";
+            self->_headerTitleLbl.textColor = [UIColor colorWithRed:1.0 green:0.82 blue:1.0 alpha:1.0];
+            self->_headerTitleLbl.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
+            [self->_dragHdr addSubview:self->_headerTitleLbl];
 
-            self->_titleLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 22, mW - 44, 13)];
-            self->_titleLbl.text = @"♪ Chưa chọn bài hát";
+            self->_tickerLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 19, mW - 48, 12)];
+            self->_tickerLbl.text = @"⚡ NUCLEAR AD-BLOCK • CHẤT LƯỢNG MASTER HI-RES ⚡";
+            self->_tickerLbl.textColor = [UIColor colorWithRed:1.0 green:0.85 blue:0.4 alpha:1.0];
+            self->_tickerLbl.font = [UIFont systemFontOfSize:8.5 weight:UIFontWeightBold];
+            [self->_dragHdr addSubview:self->_tickerLbl];
+
+            self->_titleLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 32, mW - 44, 13)];
+            self->_titleLbl.text = @"♪ Đang sẵn sàng nạp nhạc VIP...";
             self->_titleLbl.textColor = [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0];
             self->_titleLbl.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold];
             [self->_dragHdr addSubview:self->_titleLbl];
@@ -592,7 +753,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
             self->_volSlider = [[UISlider alloc] initWithFrame:CGRectZero];
             self->_volSlider.minimumValue = 0.0f;
-            self->_volSlider.maximumValue = 2.0f;
+            self->_volSlider.maximumValue = self->_maxAllowedGain;
             self->_volSlider.value = self->_gain;
             self->_volSlider.minimumTrackTintColor = [UIColor colorWithRed:0.35 green:0.98 blue:1.0 alpha:1.0];
             self->_volSlider.maximumTrackTintColor = [UIColor colorWithRed:0.95 green:0.35 blue:0.75 alpha:0.35];
@@ -611,8 +772,8 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_gainLbl.textAlignment = NSTextAlignmentRight;
             [self->_menuBox addSubview:self->_gainLbl];
 
-            self->_btnWebToggle = [self makeUtilityButtonWithTitle:@"🌐 MỞ YOUTUBE (PHÓNG RỘNG)"
-                                                             fontSize:9.5
+            self->_btnWebToggle = [self makeUtilityButtonWithTitle:@"🌐 MỞ YOUTUBE VIP (ZERO ADS)"
+                                                             fontSize:9.0
                                                               bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
                                                           borderColor:[UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9]
                                                                action:@selector(toggleEmbeddedBrowser)];
@@ -655,10 +816,11 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_btnCloseW.layer.cornerRadius = 5;
             [self->_webBox addSubview:self->_btnCloseW];
 
+            // THANH TÌM KIẾM ĐỘC QUYỀN TRÊN MENU (THAY THẾ HOÀN TOÀN TÌM KIẾM CỦA YOUTUBE)
             self->_searchBar = [[UITextField alloc] initWithFrame:CGRectZero];
-            self->_searchBar.placeholder = @"Tìm nhạc trên YouTube...";
+            self->_searchBar.placeholder = @"🔍 Nhập tên bài hát / ca sĩ để tìm...";
             self->_searchBar.textColor = [UIColor whiteColor];
-            self->_searchBar.font = [UIFont systemFontOfSize:10.5];
+            self->_searchBar.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightMedium];
             self->_searchBar.backgroundColor = [UIColor colorWithRed:0.15 green:0.07 blue:0.28 alpha:0.96];
             self->_searchBar.layer.cornerRadius = 6;
             self->_searchBar.layer.borderWidth = 1.0;
@@ -672,16 +834,19 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_searchBar.leftViewMode = UITextFieldViewModeAlways;
             [self->_webBox addSubview:self->_searchBar];
 
-            self->_btnSearch = [self makeUtilityButtonWithTitle:@"🔍 YT" fontSize:9.5 bgColor:[UIColor colorWithRed:0.88 green:0.14 blue:0.36 alpha:0.98] borderColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.75 alpha:0.85] action:@selector(triggerYouTubeSearch)];
+            self->_btnSearch = [self makeUtilityButtonWithTitle:@"Tìm" fontSize:9.5 bgColor:[UIColor colorWithRed:0.88 green:0.14 blue:0.36 alpha:0.98] borderColor:[UIColor colorWithRed:1.0 green:0.55 blue:0.75 alpha:0.85] action:@selector(triggerYouTubeSearch)];
             self->_btnSearch.layer.cornerRadius = 6;
             [self->_webBox addSubview:self->_btnSearch];
 
+            // CẤU HÌNH WKWEBVIEW CHỐNG RÒ RỈ RAM VÀ TIÊM SẠCH QUẢNG CÁO
             WKWebViewConfiguration *wcfg = [[WKWebViewConfiguration alloc] init];
             wcfg.allowsInlineMediaPlayback = YES;
             WKUserContentController *ucc = wcfg.userContentController;
-            [ucc addScriptMessageHandler:self name:@"phlWebMediaPlaying"];
 
-            WKUserScript *cleanScr = [[WKUserScript alloc] initWithSource:GetCleanJS() injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
+            PHLWeakScriptMessageProxy *proxy = [[PHLWeakScriptMessageProxy alloc] initWithDelegate:self];
+            [ucc addScriptMessageHandler:proxy name:@"phlWebMediaPlaying"];
+
+            WKUserScript *cleanScr = [[WKUserScript alloc] initWithSource:GetNuclearCleanAndAdBlockJS() injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
             [ucc addUserScript:cleanScr];
 
             NSString *bridgeSrc = [NSString stringWithFormat:@"%@;window.__phlAudioBridge.setGain(%.3f);", GetAudioBridgeJS(), self->_gain];
@@ -693,7 +858,7 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_web.scrollView.bounces = YES;
             [self->_webBox addSubview:self->_web];
 
-            self->_adminBtn = [self makeUtilityButtonWithTitle:@"🛡 INFO & BẢN QUYỀN • phamlong09.store"
+            self->_adminBtn = [self makeUtilityButtonWithTitle:@"💬 LIÊN HỆ TELEGRAM ADMIN"
                                                          fontSize:9.5
                                                           bgColor:[UIColor colorWithRed:0.25 green:0.07 blue:0.44 alpha:0.96]
                                                       borderColor:[UIColor colorWithRed:0.92 green:0.45 blue:1.0 alpha:0.9]
@@ -722,11 +887,10 @@ static inline NSString *GetAudioBridgeJS(void) {
     });
 }
 
-#pragma mark - KẾT NỐI VÀ THỰC THI LỆNH TỪ GITHUB CONFIG.JSON
+#pragma mark - NẠP CẤU HÌNH TỐI CAO TỪ GITHUB
 
 - (void)fetchRemoteAdminConfig {
     NSTimeInterval ts = [[NSDate date] timeIntervalSince1970];
-    // Chống CDN cache của GitHub bằng timestamp query:
     NSString *uStr = [NSString stringWithFormat:@"https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/config.json?t=%.0f", ts];
     NSURL *u = [NSURL URLWithString:uStr];
     if (!u) return;
@@ -750,30 +914,8 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)applyRemoteAdminConfig:(NSDictionary *)dict {
-    // 1. Quản lý Khóa / Mở YouTube
-    if (dict[@"youtube_enabled"] != nil) {
-        _isYouTubeEnabled = [dict[@"youtube_enabled"] boolValue];
-    }
-    if (dict[@"youtube_locked_message"]) {
-        _youtubeLockedMsg = dict[@"youtube_locked_message"];
-    }
-
-    if (!_isYouTubeEnabled) {
-        [_btnWebToggle setTitle:@"🚫 YOUTUBE ĐANG KHÓA" forState:UIControlStateNormal];
-        [_btnWebToggle setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
-        _btnWebToggle.layer.borderColor = [UIColor redColor].CGColor;
-        if (_webOpen) {
-            [self closeEmbeddedBrowser];
-        }
-    } else {
-        [_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
-        _btnWebToggle.layer.borderColor = [UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9].CGColor;
-        NSString *t = _webOpen ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE (PHÓNG RỘNG)";
-        [_btnWebToggle setTitle:t forState:UIControlStateNormal];
-    }
-
-    // 2. Kill-Switch (Admin tắt toàn bộ dylib từ xa)
-    if (dict[@"kill_switch"] != nil && [dict[@"kill_switch"] boolValue]) {
+    // 1. MASTER KILL-SWITCH
+    if ([dict[@"system_control"][@"kill_switch"] boolValue]) {
         [self pauseStreamPlayerIfPlaying];
         [self pauseWebMediaIfPlaying];
         _floatBtn.hidden = YES;
@@ -783,19 +925,97 @@ static inline NSString *GetAudioBridgeJS(void) {
         _floatBtn.hidden = NO;
     }
 
-    // 3. Bắn Thông Báo Khẩn Cấp (Popup Alert)
+    // 2. ICON & NHỊP THỞ PHÁT SÁNG CỦA NÚT NỔI
+    NSString *fIcon = dict[@"system_control"][@"floating_icon"];
+    if (fIcon && fIcon.length > 0 && _floatBtn) {
+        [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
+    }
+    BOOL enablePulse = [dict[@"system_control"][@"floating_pulse_glow"] boolValue];
+    if (enablePulse) {
+        if (![_floatBtn.layer animationForKey:@"phl_pulse_anim"]) {
+            CABasicAnimation *pulse = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
+            pulse.duration = 1.1;
+            pulse.repeatCount = HUGE_VALF;
+            pulse.autoreverses = YES;
+            pulse.fromValue = @(1.0);
+            pulse.toValue = @(1.14);
+            pulse.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+            [_floatBtn.layer addAnimation:pulse forKey:@"phl_pulse_anim"];
+        }
+    } else {
+        [_floatBtn.layer removeAnimationForKey:@"phl_pulse_anim"];
+    }
+
+    // 3. ĐỔI MÀU NEON THEME ĐỘC QUYỀN
+    NSDictionary *th = dict[@"theme_customizer"];
+    if (th) {
+        UIColor *neon = ColorFromHex(th[@"neon_border_color"], [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95]);
+        _menuBox.layer.borderColor = neon.CGColor;
+        _floatBtn.layer.borderColor = neon.CGColor;
+
+        UIColor *cStart = ColorFromHex(th[@"gradient_start_color"], [UIColor colorWithRed:0.13 green:0.03 blue:0.28 alpha:1.0]);
+        UIColor *cMid = ColorFromHex(th[@"gradient_mid_color"], [UIColor colorWithRed:0.23 green:0.05 blue:0.36 alpha:1.0]);
+        UIColor *cEnd = ColorFromHex(th[@"gradient_end_color"], [UIColor colorWithRed:0.05 green:0.11 blue:0.27 alpha:1.0]);
+        _gradient.colors = @[(id)cStart.CGColor, (id)cMid.CGColor, (id)cEnd.CGColor];
+    }
+
+    // 4. TIÊU ĐỀ, MARQUEE TICKER & NÚT ADMIN
+    NSDictionary *brand = dict[@"branding"];
+    if (brand) {
+        if (brand[@"header_title"]) _headerTitleLbl.text = brand[@"header_title"];
+        if (brand[@"ticker_announcement"]) _tickerLbl.text = brand[@"ticker_announcement"];
+        if (brand[@"admin_button_text"]) [_adminBtn setTitle:brand[@"admin_button_text"] forState:UIControlStateNormal];
+        if (brand[@"admin_button_url"]) _adminTargetURL = brand[@"admin_button_url"];
+        if (brand[@"footer_copyright"]) _cprLbl.text = brand[@"footer_copyright"];
+    }
+
+    // 5. CÔNG SUẤT ÂM LƯỢNG (LÊN ĐẾN 300%)
+    NSDictionary *audioCfg = dict[@"audio_engine"];
+    if (audioCfg && audioCfg[@"max_gain"]) {
+        _maxAllowedGain = [audioCfg[@"max_gain"] floatValue];
+        _volSlider.maximumValue = _maxAllowedGain;
+    }
+
+    // 6. GHIM BÀI HÁT HOT TREND
+    NSDictionary *feat = dict[@"vip_featured_song"];
+    if (feat && [feat[@"enabled"] boolValue]) {
+        _featuredVipSong = feat;
+        [self injectFeaturedSongIntoPlaylist];
+    }
+
+    // 7. QUẢN LÝ YOUTUBE
+    NSDictionary *ytCfg = dict[@"youtube_module"];
+    if (ytCfg) {
+        if (ytCfg[@"enabled"] != nil) _isYouTubeEnabled = [ytCfg[@"enabled"] boolValue];
+        if (ytCfg[@"home_url"]) _youtubeHomeURL = ytCfg[@"home_url"];
+        if (ytCfg[@"locked_reason"]) _youtubeLockedMsg = ytCfg[@"locked_reason"];
+
+        if (!_isYouTubeEnabled) {
+            [_btnWebToggle setTitle:@"🚫 YOUTUBE (TẠM KHÓA)" forState:UIControlStateNormal];
+            [_btnWebToggle setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
+            _btnWebToggle.layer.borderColor = [UIColor redColor].CGColor;
+            if (_webOpen) [self closeEmbeddedBrowser];
+        } else {
+            [_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+            _btnWebToggle.layer.borderColor = [UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9].CGColor;
+            NSString *t = _webOpen ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE VIP (ZERO ADS)";
+            [_btnWebToggle setTitle:t forState:UIControlStateNormal];
+        }
+    }
+
+    // 8. BẮN POPUP THÔNG BÁO TỪ XA
     NSDictionary *ann = dict[@"announcement"];
     if (ann && [ann[@"show"] boolValue]) {
         NSString *popId = ann[@"id"] ?: @"default";
-        NSString *lastId = [[NSUserDefaults standardUserDefaults] stringForKey:@"PHL_LastSeenNoticeID"];
+        NSString *lastId = [[NSUserDefaults standardUserDefaults] stringForKey:@"PHL_LastSeenBroadcastID"];
         if (![lastId isEqualToString:popId]) {
-            [[NSUserDefaults standardUserDefaults] setObject:popId forKey:@"PHL_LastSeenNoticeID"];
+            [[NSUserDefaults standardUserDefaults] setObject:popId forKey:@"PHL_LastSeenBroadcastID"];
 
             UIAlertController *alert = [UIAlertController alertControllerWithTitle:ann[@"title"] ?: @"THÔNG BÁO"
                                                                            message:ann[@"message"] ?: @""
                                                                     preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction actionWithTitle:@"Đã hiểu" style:UIAlertActionStyleCancel handler:nil]];
-            NSString *link = ann[@"link"];
+            [alert addAction:[UIAlertAction actionWithTitle:ann[@"button_title"] ?: @"Đóng" style:UIAlertActionStyleCancel handler:nil]];
+            NSString *link = ann[@"action_url"];
             if (link && link.length > 0) {
                 [alert addAction:[UIAlertAction actionWithTitle:@"Xem ngay" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
                     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:link] options:@{} completionHandler:nil];
@@ -805,6 +1025,20 @@ static inline NSString *GetAudioBridgeJS(void) {
             [w.rootViewController presentViewController:alert animated:YES completion:nil];
         }
     }
+}
+
+- (void)injectFeaturedSongIntoPlaylist {
+    if (!_featuredVipSong || !_playlist) return;
+    NSString *vTitle = _featuredVipSong[@"title"];
+    NSString *vUrl = _featuredVipSong[@"url"];
+    if (!vTitle || !vUrl) return;
+
+    if (_playlist.count > 0 && [_playlist.firstObject[@"url"] isEqualToString:vUrl]) {
+        return;
+    }
+    NSDictionary *item = @{@"title": vTitle, @"url": vUrl};
+    [_playlist insertObject:item atIndex:0];
+    [_table reloadData];
 }
 
 #pragma mark - Delegate & Tương Tác Web
@@ -819,7 +1053,6 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)toggleEmbeddedBrowser {
-    // CHẶN BỞI ADMIN GITHUB
     if (!_isYouTubeEnabled) {
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🛡 THÔNG BÁO QUẢN TRỊ"
                                                                        message:_youtubeLockedMsg
@@ -834,7 +1067,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     [self syncBrowserVisibilityAnimated:YES];
     if (_webOpen && !_webLoaded) {
         _webLoaded = YES;
-        [self loadYouTubeURLString:@"https://m.youtube.com"];
+        [self loadYouTubeURLString:_youtubeHomeURL];
     } else if (_webOpen) {
         [self cleanYouTubePageInWebView];
         [self applyIndependentGain:_gain];
@@ -850,7 +1083,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 - (void)syncBrowserVisibilityAnimated:(BOOL)animated {
     _webBox.hidden = !_webOpen;
     _table.hidden = _webOpen;
-    NSString *t = _webOpen ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE (PHÓNG RỘNG)";
+    NSString *t = _webOpen ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE VIP (ZERO ADS)";
     [_btnWebToggle setTitle:t forState:UIControlStateNormal];
     [self applyMenuFrameForExpanded:_webOpen animated:animated];
 }
@@ -865,7 +1098,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)webGoHome {
     _webLoaded = YES;
-    [self loadYouTubeURLString:@"https://m.youtube.com"];
+    [self loadYouTubeURLString:_youtubeHomeURL];
 }
 
 - (void)triggerYouTubeSearch {
@@ -877,7 +1110,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     }
     if (raw.length == 0) {
         _webLoaded = YES;
-        [self loadYouTubeURLString:@"https://m.youtube.com"];
+        [self loadYouTubeURLString:_youtubeHomeURL];
         return;
     }
     NSString *enc = [raw stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
@@ -926,7 +1159,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         [self applyMenuFrameForExpanded:_webOpen animated:NO];
         [self applyIndependentGain:_gain];
         [self fetchRemotePlaylist];
-        [self fetchRemoteAdminConfig]; // Cập nhật lệnh admin ngay khi mở menu
+        [self fetchRemoteAdminConfig];
         [self syncPlayPauseButton];
         _menuBox.hidden = NO;
         [UIView animateWithDuration:0.18 animations:^{
@@ -1016,6 +1249,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self->_playlist removeAllObjects];
             [self->_playlist addObjectsFromArray:songs];
+            [self injectFeaturedSongIntoPlaylist];
             self->_statusMsg = nil;
             [self->_table reloadData];
         });
@@ -1103,7 +1337,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)increaseVolumeStep {
-    float nxt = MIN(2.0f, _gain + 0.15f);
+    float nxt = MIN(_maxAllowedGain, _gain + 0.15f);
     _volSlider.value = nxt;
     [self applyIndependentGain:nxt];
 }
@@ -1120,7 +1354,8 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)openAdminInfoGroup {
-    NSURL *u = [NSURL URLWithString:@"https://phamlong09.store"];
+    if (!_adminTargetURL || _adminTargetURL.length == 0) return;
+    NSURL *u = [NSURL URLWithString:_adminTargetURL];
     if (!u) return;
     [[UIApplication sharedApplication] openURL:u options:@{} completionHandler:nil];
 }
@@ -1173,7 +1408,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 @end
 
-#pragma mark - Điểm Khởi Chạy Constructor
+#pragma mark - Constructor Khởi Chạy
 
 __attribute__((constructor)) static void LibraryEntryPoint(void) {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
