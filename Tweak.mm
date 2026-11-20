@@ -1,4 +1,5 @@
 // ==============================================================================
+// ==============================================================================
 // 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE)
 // CÔNG NGHỆ: DIRECT GITHUB CORE API • REAL-TIME ZERO DELAY • NUCLEAR AD-BLOCK
 // ==============================================================================
@@ -291,7 +292,7 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
 
 #pragma mark - PHLProtectedAudioManager Interface
 
-@interface PHLProtectedAudioManager : NSObject <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, WKNavigationDelegate, WKScriptMessageHandler> {
+@interface PHLProtectedAudioManager : NSObject <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, WKNavigationDelegate> {
     UIButton *_floatBtn;
     UIView *_menuBox;
     CAGradientLayer *_gradient;
