@@ -150,9 +150,9 @@
 // --- OPAQUE GUARDS (CHỐNG DỰNG ĐỒ THỊ ĐIỀU KHIỂN CFG TRONG IDA / GHIDRA) ---
 #define PHL_OPAQUE_GUARD() \
     do { \
-        volatile unsigned long _0x_v1 = 0x5A7C; \
-        volatile unsigned long _0x_v2 = 0x1E3B; \
-        if (((_0x_v1 * _0x_v2) & 1) != 0) { \
+        volatile unsigned long _phl_opq_a = 0x5A7CUL; \
+        volatile unsigned long _phl_opq_b = 0x1E3BUL; \
+        if (((_phl_opq_a * _phl_opq_b) & 1UL) != 0UL) { \
             __builtin_trap(); \
         } \
     } while (0)
@@ -991,7 +991,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count) {
             NSDictionary *cur = self->_playlist[self->_idx];
-            NSString *u = cur[@"url"];
+            NSString *u = cur[PHL_DEC(URL)];
             if (u && u.length > 0) [self->_playedSongURLs addObject:u];
         }
         [self advanceToNextTrackAuto];
