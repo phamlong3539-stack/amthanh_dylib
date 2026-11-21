@@ -1,9 +1,11 @@
 // ==============================================================================
 // ==============================================================================
-// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE v2.2)
-// CÔNG NGHỆ: DIRECT GIT WIRE PROTOCOL • ZERO RATE LIMIT • 0S CDN BYPASS • PRO GOLDEN BADGE
-// TÍNH NĂNG: PHÁT NHẠC LIÊN TỤC TUẦN HOÀN 1 -> N -> 1 • KÝ HIỆU HOT VÀNG GOLD CHUYÊN NGHIỆP
+// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE v2.4)
+// CÔNG NGHỆ: DIRECT GIT WIRE PROTOCOL • ZERO RATE LIMIT • ANTI-SILENCE WATCHDOG
+// TÍNH NĂNG: BÀI HOT PHÁT ĐẦU TIÊN • CHU KỲ BỎ QUA BÀI ĐÃ PHÁT • TUẦN HOÀN 100% KHÔNG IM LẶNG
 // FIX v2.2: MUTUAL AUDIO EXCLUSION YOUTUBE ↔ GITHUB (KHÔNG CÒN NGHE 2 ÂM THANH CÙNG LÚC)
+// FIX v2.3: BRANDING CACHE 100% ĐỒNG BỘ CONFIG (KHÔNG CÒN DÍNH HARDCODE CŨ)
+// FIX v2.4: SMART QUEUE (BÀI HOT ĐẦU, BỎ QUA ĐÃ PHÁT, RESET VÒNG) & ANTI-SILENCE ENGINE
 // ==============================================================================
 
 #import <UIKit/UIKit.h>
@@ -382,6 +384,10 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     NSString *_pendingTickerText;
     NSString *_pendingFooterText;
     NSString *_pendingAdminBtnText;
+
+    // FIX v2.4: SMART UNPLAYED CYCLE & ANTI-SILENCE WATCHDOG
+    NSMutableSet<NSString *> *_playedSongURLs;
+    NSTimer *_playbackWatchdogTimer;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
@@ -603,6 +609,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     if (self) {
         NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
         _playlist = [[NSMutableArray alloc] init];
+        _playedSongURLs = [[NSMutableSet alloc] init];
         _hasAutoPlayedVip = NO;
         _hasShownLaunchAnnouncement = NO;
         _cachedAnnouncement = nil;
@@ -628,17 +635,17 @@ static inline NSString *GetAudioBridgeJS(void) {
         _lastKnownCommitSHA = [ud stringForKey:@"PHL_LastCommitSHA"];
         _lastConfigETag = [ud stringForKey:@"PHL_LastConfigETag"];
 
-        // 1. NẠP CONFIG ĐÃ LƯU TỪ TRƯỚC (ĐỘ TRỄ 0 GIÂY - CHỐNG RESET MẶC ĐỊNH)
-        NSDictionary *cachedCfg = [ud dictionaryForKey:@"PHL_CachedConfigJSON"];
-        if (cachedCfg && [cachedCfg isKindOfClass:[NSDictionary class]]) {
-            [self applyRemoteAdminConfig:cachedCfg];
-        }
-
-        // 2. NẠP PLAYLIST ĐÃ LƯU TỪ TRƯỚC (HIỆN DANH SÁCH BÀI HÁT TỨC THÌ)
+        // 1. NẠP PLAYLIST ĐÃ LƯU TỪ TRƯỚC (HIỆN DANH SÁCH BÀI HÁT TỨC THÌ)
         NSArray *cachedPlay = [ud arrayForKey:@"PHL_CachedPlaylist"];
         if (cachedPlay && [cachedPlay isKindOfClass:[NSArray class]] && cachedPlay.count > 0) {
             [_playlist addObjectsFromArray:cachedPlay];
             _statusMsg = nil;
+        }
+
+        // 2. NẠP CONFIG ĐÃ LƯU TỪ TRƯỚC (GHIM BÀI HOT LÊN ĐẦU VÀ AUTO-PLAY CHUẨN XÁC)
+        NSDictionary *cachedCfg = [ud dictionaryForKey:@"PHL_CachedConfigJSON"];
+        if (cachedCfg && [cachedCfg isKindOfClass:[NSDictionary class]]) {
+            [self applyRemoteAdminConfig:cachedCfg];
         }
 
         [self configureAudioSession];
@@ -658,23 +665,79 @@ static inline NSString *GetAudioBridgeJS(void) {
     return self;
 }
 
-#pragma mark - XỬ LÝ CHUYỂN BÀI TỰ ĐỘNG TUẦN HOÀN LIÊN TỤC (1 -> 2 -> ... -> N -> 1)
+#pragma mark - XỬ LÝ CHUYỂN BÀI THÔNG MINH (BÀI HOT ĐẦU TIÊN • BỎ QUA ĐÃ PHÁT • CHỐNG IM LẶNG)
 
-- (void)handleItemDidFinish:(NSNotification *)note {
+- (void)advanceToNextTrackAuto {
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self->_isTransitioningTrack) return;
         self->_isTransitioningTrack = YES;
 
-        if (self->_playlist.count > 0) {
-            if (self->_repOne && self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count) {
-                // LẶP LẠI 1 BÀI NẾU BẬT CHẾ ĐỘ REPEAT ONE
-                [self playSongAtIndex:self->_idx];
-            } else {
-                // CHUYỂN BÀI THEO THỨ TỰ TỪ TRÊN XUỐNG DƯỚI (1 -> 10 RỒI TỪ 10 VỀ LẠI 1 LIÊN TỤC)
-                NSInteger nxt = (self->_idx + 1) % (NSInteger)self->_playlist.count;
-                [self playSongAtIndex:nxt];
+        if (self->_playlist.count == 0) {
+            self->_isTransitioningTrack = NO;
+            return;
+        }
+
+        // Chế độ lặp 1 bài nếu user bật Repeat One
+        if (self->_repOne && self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count) {
+            [self playSongAtIndex:self->_idx];
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                self->_isTransitioningTrack = NO;
+            });
+            return;
+        }
+
+        // 1. Đánh dấu bài hiện tại vừa phát xong vào danh sách đã phát trong chu kỳ này
+        if (self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count) {
+            NSDictionary *cur = self->_playlist[self->_idx];
+            NSString *u = cur[@"url"];
+            if (u && u.length > 0) {
+                [self->_playedSongURLs addObject:u];
             }
         }
+
+        NSInteger totalCount = (NSInteger)self->_playlist.count;
+
+        // 2. Kiểm tra xem toàn bộ các bài hát trong danh sách đã được phát chưa
+        BOOL allPlayed = YES;
+        for (NSDictionary *song in self->_playlist) {
+            NSString *u = song[@"url"];
+            if (u && u.length > 0 && ![self->_playedSongURLs containsObject:u]) {
+                allPlayed = NO;
+                break;
+            }
+        }
+
+        // 3. Nếu toàn bộ bài hát đã phát xong -> Reset chu kỳ và bắt đầu vòng lặp mới từ trên xuống
+        if (allPlayed) {
+            [self->_playedSongURLs removeAllObjects];
+            // Không lặp lại ngay bài vừa mới kết thúc nếu danh sách có nhiều hơn 1 bài
+            if (self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count && totalCount > 1) {
+                NSDictionary *cur = self->_playlist[self->_idx];
+                NSString *u = cur[@"url"];
+                if (u && u.length > 0) [self->_playedSongURLs addObject:u];
+            }
+        }
+
+        // 4. Tìm bài tiếp theo từ trên xuống dưới (từ _idx + 1 trở đi) chưa phát lần nào trong chu kỳ này
+        NSInteger chosenIndex = NSNotFound;
+        for (NSInteger step = 1; step <= totalCount; step++) {
+            NSInteger candidate = (self->_idx + step) % totalCount;
+            NSDictionary *candSong = self->_playlist[candidate];
+            NSString *candUrl = candSong[@"url"];
+            if (candUrl && candUrl.length > 0 && ![self->_playedSongURLs containsObject:candUrl]) {
+                chosenIndex = candidate;
+                break;
+            }
+        }
+
+        // 5. Dự phòng an toàn: nếu không tìm thấy thì chuyển bài theo modulo
+        if (chosenIndex == NSNotFound) {
+            [self->_playedSongURLs removeAllObjects];
+            chosenIndex = (self->_idx + 1) % totalCount;
+        }
+
+        // 6. Phát bài tiếp theo
+        [self playSongAtIndex:chosenIndex];
 
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             self->_isTransitioningTrack = NO;
@@ -682,21 +745,61 @@ static inline NSString *GetAudioBridgeJS(void) {
     });
 }
 
+- (void)handleItemDidFinish:(NSNotification *)note {
+    [self advanceToNextTrackAuto];
+}
+
 - (void)handleItemFailedToPlay:(NSNotification *)note {
-    // TỰ ĐỘNG BỎ QUA BÀI LỖI MẠNG ĐỂ KHÔNG BỊ DỪNG NHẠC
+    // Tự động bỏ qua bài lỗi và phát bài tiếp theo ngay lập tức
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (self->_isTransitioningTrack) return;
-        self->_isTransitioningTrack = YES;
-
-        if (self->_playlist.count > 0) {
-            NSInteger nxt = (self->_idx + 1) % (NSInteger)self->_playlist.count;
-            [self playSongAtIndex:nxt];
+        if (self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count) {
+            NSDictionary *cur = self->_playlist[self->_idx];
+            NSString *u = cur[@"url"];
+            if (u && u.length > 0) [self->_playedSongURLs addObject:u];
         }
-
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            self->_isTransitioningTrack = NO;
-        });
+        [self advanceToNextTrackAuto];
     });
+}
+
+#pragma mark - 🛡️ WATCHDOG CHỐNG IM LẶNG (CHỐNG LỖI MẤT KẾT NỐI / RƠI RỤNG NOTIFICATION)
+
+- (void)startPlaybackWatchdog {
+    if (_playbackWatchdogTimer) {
+        [_playbackWatchdogTimer invalidate];
+        _playbackWatchdogTimer = nil;
+    }
+    _playbackWatchdogTimer = [NSTimer scheduledTimerWithTimeInterval:1.0
+                                                              target:self
+                                                            selector:@selector(checkPlaybackWatchdog)
+                                                            userInfo:nil
+                                                             repeats:YES];
+}
+
+- (void)checkPlaybackWatchdog {
+    if (!_player || !_playerItem) return;
+    if (_pausedByYouTube) return; // YouTube đang phát -> không can thiệp
+
+    // 1. Nếu item bị lỗi mạng (404/SSL/hết hạn) -> Chuyển ngay bài tiếp theo
+    if (_playerItem.status == AVPlayerItemStatusFailed) {
+        [self handleItemFailedToPlay:nil];
+        return;
+    }
+
+    // 2. Kiểm tra nếu thời gian chạy đã chạm hoặc vượt quá thời lượng bài hát
+    CMTime cur = _player.currentTime;
+    CMTime dur = _playerItem.duration;
+    if (CMTIME_IS_VALID(cur) && CMTIME_IS_VALID(dur) && dur.value > 0) {
+        Float64 cSec = CMTimeGetSeconds(cur);
+        Float64 dSec = CMTimeGetSeconds(dur);
+        if (dSec > 1.5 && cSec >= (dSec - 0.45)) {
+            // Đã hết bài nhưng hệ điều hành không bắn notification -> Watchdog chủ động chuyển bài!
+            [self advanceToNextTrackAuto];
+            return;
+        }
+    }
+
+    // 3. Đồng bộ nút UI Play/Pause
+    [self syncPlayPauseButton];
 }
 
 - (void)handleAudioSessionInterruption:(NSNotification *)note {
@@ -1037,10 +1140,14 @@ static inline NSString *GetAudioBridgeJS(void) {
             [self->_dragHdr addSubview:self->_tickerLbl];
 
             self->_titleLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 32, mW - 44, 13)];
-            self->_titleLbl.text = @"♪ Đang sẵn sàng nạp nhạc VIP...";
             self->_titleLbl.textColor = [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0];
             self->_titleLbl.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold];
             [self->_dragHdr addSubview:self->_titleLbl];
+            if (self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count) {
+                [self updateTitleLabelForCurrentSong];
+            } else {
+                self->_titleLbl.text = @"♪ Đang sẵn sàng nạp nhạc VIP...";
+            }
 
             self->_closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
             self->_closeBtn.frame = CGRectMake(mW - 34, 7, 24, 24);
@@ -1224,6 +1331,8 @@ static inline NSString *GetAudioBridgeJS(void) {
 
         [self fetchRemotePlaylist];
         [self fetchRemoteAdminConfig];
+        [self syncPlayPauseButton];
+        [self startPlaybackWatchdog];
 
         // ĐỒNG BỘ THÔNG MINH: CHỐNG CHẠM HẠN MỨC GITHUB VÀ TIẾT KIỆM PIN TỐI ĐA
         if (!self->_autoSyncTimer) {
@@ -1879,12 +1988,55 @@ static inline NSString *GetAudioBridgeJS(void) {
     [[NSUserDefaults standardUserDefaults] setObject:songs forKey:@"PHL_CachedPlaylist"];
 
     dispatch_async(dispatch_get_main_queue(), ^{
+        NSString *curPlayingUrl = (self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count)
+            ? self->_playlist[self->_idx][@"url"]
+            : nil;
+
         [self->_playlist removeAllObjects];
         [self->_playlist addObjectsFromArray:songs];
         [self injectFeaturedSongIntoPlaylist];
         self->_statusMsg = nil;
+
+        // Đồng bộ lại vị trí _idx theo URL bài hát đang phát nếu có
+        if (curPlayingUrl) {
+            for (NSInteger i = 0; i < (NSInteger)self->_playlist.count; i++) {
+                if ([self->_playlist[i][@"url"] isEqualToString:curPlayingUrl]) {
+                    self->_idx = i;
+                    break;
+                }
+            }
+        }
+
+        [self updateTitleLabelForCurrentSong];
         [self->_table reloadData];
     });
+}
+
+- (void)updateTitleLabelForCurrentSong {
+    if (_idx < 0 || _idx >= (NSInteger)_playlist.count || !_titleLbl) return;
+    NSDictionary *song = _playlist[_idx];
+    NSString *rawTitle = song[@"title"] ?: @"Đang phát";
+    BOOL isHot = [song[@"is_hot"] boolValue];
+    BOOL detectedHot = NO;
+    NSString *clean = [self cleanTitleForSong:rawTitle isHot:&detectedHot];
+    if (detectedHot) isHot = YES;
+
+    NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"♪ %@ ", clean]
+                                                                            attributes:@{
+        NSForegroundColorAttributeName: [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0],
+        NSFontAttributeName: [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold]
+    }];
+
+    if (isHot) {
+        NSAttributedString *hotBadgeAttr = [[NSAttributedString alloc] initWithString:@" HOT "
+                                                                           attributes:@{
+            NSForegroundColorAttributeName: [UIColor colorWithRed:1.0 green:0.84 blue:0.18 alpha:1.0],
+            NSFontAttributeName: [UIFont systemFontOfSize:7.5 weight:UIFontWeightHeavy],
+            NSBackgroundColorAttributeName: [UIColor colorWithRed:1.0 green:0.84 blue:0.18 alpha:0.20]
+        }];
+        [attr appendAttributedString:hotBadgeAttr];
+    }
+    _titleLbl.attributedText = attr;
 }
 
 - (void)playSongAtIndex:(NSInteger)index {
@@ -1903,7 +2055,10 @@ static inline NSString *GetAudioBridgeJS(void) {
     // FIX v2.2: Người dùng chủ động bật nhạc GitHub → xóa flag pausedByYouTube
     _pausedByYouTube = NO;
 
-    // DỌN DẸP OBSERVER CŨ ĐỂ KHÔNG BỊ TRÙNG LẶP SKIPPING BÀI HÁT
+    // FIX v2.4: Đánh dấu URL bài này đã được phát vào chu kỳ hiện tại
+    if (uStr.length > 0) {
+        [_playedSongURLs addObject:uStr];
+    }
 
     // DỌN DẸP OBSERVER CŨ ĐỂ KHÔNG BỊ TRÙNG LẶP SKIPPING BÀI HÁT
     if (_playerItem) {
@@ -1928,33 +2083,18 @@ static inline NSString *GetAudioBridgeJS(void) {
     } else {
         [_player replaceCurrentItemWithPlayerItem:_playerItem];
     }
+    _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
 
     [self applyIndependentGain:_gain];
-    [_player play];
+
+    if (@available(iOS 10.0, *)) {
+        [_player playImmediatelyAtRate:1.0f];
+    } else {
+        [_player play];
+    }
 
     // CẬP NHẬT TIÊU ĐỀ NOW PLAYING VỚI BADGE VÀNG GOLD SANG TRỌNG
-    NSString *rawTitle = song[@"title"] ?: @"Đang phát";
-    BOOL isHot = [song[@"is_hot"] boolValue];
-    BOOL detectedHot = NO;
-    NSString *clean = [self cleanTitleForSong:rawTitle isHot:&detectedHot];
-    if (detectedHot) isHot = YES;
-
-    NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"♪ %@ ", clean]
-                                                                            attributes:@{
-        NSForegroundColorAttributeName: [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0],
-        NSFontAttributeName: [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold]
-    }];
-
-    if (isHot) {
-        NSAttributedString *hotBadgeAttr = [[NSAttributedString alloc] initWithString:@" HOT "
-                                                                           attributes:@{
-            NSForegroundColorAttributeName: [UIColor colorWithRed:1.0 green:0.84 blue:0.18 alpha:1.0],
-            NSFontAttributeName: [UIFont systemFontOfSize:7.5 weight:UIFontWeightHeavy],
-            NSBackgroundColorAttributeName: [UIColor colorWithRed:1.0 green:0.84 blue:0.18 alpha:0.20]
-        }];
-        [attr appendAttributedString:hotBadgeAttr];
-    }
-    _titleLbl.attributedText = attr;
+    [self updateTitleLabelForCurrentSong];
 
     [self syncPlayPauseButton];
     [_table reloadData];
@@ -1967,6 +2107,9 @@ static inline NSString *GetAudioBridgeJS(void) {
                                         animated:YES];
         }
     });
+
+    // KÍCH HOẠT WATCHDOG CHỐNG IM LẶNG
+    [self startPlaybackWatchdog];
 }
 
 - (void)togglePlayPause {
@@ -1997,10 +2140,9 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)playNextSong {
     if (!_playlist.count) return;
-    // CHUYỂN BÀI TIẾP THEO (TỪ 1 -> 10 RỒI QUAY VỀ 1)
-    NSInteger nxt = (_idx + 1) % (NSInteger)_playlist.count;
-    [self playSongAtIndex:nxt];
     [_btnNext triggerPulseMark];
+    // CHUYỂN BÀI THÔNG MINH (BỎ QUA BÀI ĐÃ PHÁT, RESET KHI HẾT VÒNG)
+    [self advanceToNextTrackAuto];
 }
 
 - (void)playPreviousSong {
