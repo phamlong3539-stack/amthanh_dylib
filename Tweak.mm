@@ -374,6 +374,14 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     // _pausedByYouTube = YES khi GitHub bị dừng do YouTube bắt đầu phát
     // → dùng để tự động resume GitHub khi đóng YouTube
     BOOL _pausedByYouTube;
+
+    // FIX v2.3: BRANDING CACHE — LƯU GIÁ TRỊ CONFIG KHI UI CHƯA SẴN SÀNG
+    // applyRemoteAdminConfig có thể được gọi từ init() trước khi label tồn tại
+    // → lưu vào biến cache, áp dụng lại ngay khi initializeFramework hoàn tất
+    NSString *_pendingHeaderTitle;
+    NSString *_pendingTickerText;
+    NSString *_pendingFooterText;
+    NSString *_pendingAdminBtnText;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
@@ -1011,13 +1019,19 @@ static inline NSString *GetAudioBridgeJS(void) {
             [self->_dragHdr addGestureRecognizer:hp];
 
             self->_headerTitleLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 4, mW - 48, 15)];
-            self->_headerTitleLbl.text = @"👑 PHẠM LONG • SUPREME MASTER AUDIO";
+            // FIX v2.3: Dùng pending value từ config nếu đã có, không hardcode tên sai
+            self->_headerTitleLbl.text = (self->_pendingHeaderTitle.length > 0)
+                ? self->_pendingHeaderTitle
+                : @"👑 PHẠM LONG • AUDIO PRO";
             self->_headerTitleLbl.textColor = [UIColor colorWithRed:1.0 green:0.82 blue:1.0 alpha:1.0];
             self->_headerTitleLbl.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
             [self->_dragHdr addSubview:self->_headerTitleLbl];
 
             self->_tickerLbl = [[UILabel alloc] initWithFrame:CGRectMake(10, 19, mW - 48, 12)];
-            self->_tickerLbl.text = @"⚡ NUCLEAR AD-BLOCK • CHẤT LƯỢNG MASTER HI-RES ⚡";
+            // FIX v2.3: Dùng pending value từ config nếu đã có
+            self->_tickerLbl.text = (self->_pendingTickerText.length > 0)
+                ? self->_pendingTickerText
+                : @"⚡ AUDIO PRO CHUYÊN NGHIỆP ⚡";
             self->_tickerLbl.textColor = [UIColor colorWithRed:1.0 green:0.85 blue:0.4 alpha:1.0];
             self->_tickerLbl.font = [UIFont systemFontOfSize:8.5 weight:UIFontWeightBold];
             [self->_dragHdr addSubview:self->_tickerLbl];
@@ -1174,12 +1188,32 @@ static inline NSString *GetAudioBridgeJS(void) {
             [self->_menuBox addSubview:self->_adminBtn];
 
             self->_cprLbl = [[UILabel alloc] initWithFrame:CGRectZero];
-            self->_cprLbl.text = @"BẢN QUYỀN THUỘC ADMIN TELEGRAM: @PHL0990\nZALO: 0522608620";
+            // FIX v2.3: Dùng pending value từ config nếu đã có, không hardcode nội dung cũ
+            self->_cprLbl.text = (self->_pendingFooterText.length > 0)
+                ? self->_pendingFooterText
+                : @"BẢN QUYỀN ĐỘC QUYỀN PHẠM LONG\nZALO: 0522608620 • TELEGRAM: @PHL0990";
             self->_cprLbl.textColor = [UIColor colorWithRed:1.0 green:0.86 blue:0.55 alpha:0.98];
             self->_cprLbl.font = [UIFont systemFontOfSize:8 weight:UIFontWeightBold];
             self->_cprLbl.textAlignment = NSTextAlignmentCenter;
             self->_cprLbl.numberOfLines = 2;
             [self->_menuBox addSubview:self->_cprLbl];
+
+            // FIX v2.3: ÁP DỤNG BRANDING TỪ CONFIG NGAY KHI UI ĐÃ SẴN SÀNG
+            // (giải quyết lỗi applyRemoteAdminConfig gọi trước khi label tồn tại trong init)
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (self->_pendingHeaderTitle.length > 0) {
+                    self->_headerTitleLbl.text = self->_pendingHeaderTitle;
+                }
+                if (self->_pendingTickerText.length > 0) {
+                    self->_tickerLbl.text = self->_pendingTickerText;
+                }
+                if (self->_pendingFooterText.length > 0) {
+                    self->_cprLbl.text = self->_pendingFooterText;
+                }
+                if (self->_pendingAdminBtnText.length > 0) {
+                    [self->_adminBtn setTitle:self->_pendingAdminBtnText forState:UIControlStateNormal];
+                }
+            });
 
             [self layoutMenuSubviewsWithWidth:mW height:mH expanded:NO];
             [self applyIndependentGain:self->_gain];
@@ -1416,11 +1450,25 @@ static inline NSString *GetAudioBridgeJS(void) {
     // 4. TIÊU ĐỀ, MARQUEE TICKER & NÚT ADMIN
     NSDictionary *brand = dict[@"branding"];
     if (brand) {
-        if (brand[@"header_title"]) _headerTitleLbl.text = brand[@"header_title"];
-        if (brand[@"ticker_announcement"]) _tickerLbl.text = brand[@"ticker_announcement"];
-        if (brand[@"admin_button_text"]) [_adminBtn setTitle:brand[@"admin_button_text"] forState:UIControlStateNormal];
+        // FIX v2.3: Luôn lưu vào biến pending trước
+        // Nếu UI đã tồn tại thì apply ngay, nếu chưa thì initializeFramework sẽ apply sau
+        if (brand[@"header_title"]) {
+            _pendingHeaderTitle = brand[@"header_title"];
+            if (_headerTitleLbl) _headerTitleLbl.text = _pendingHeaderTitle;
+        }
+        if (brand[@"ticker_announcement"]) {
+            _pendingTickerText = brand[@"ticker_announcement"];
+            if (_tickerLbl) _tickerLbl.text = _pendingTickerText;
+        }
+        if (brand[@"admin_button_text"]) {
+            _pendingAdminBtnText = brand[@"admin_button_text"];
+            if (_adminBtn) [_adminBtn setTitle:_pendingAdminBtnText forState:UIControlStateNormal];
+        }
         if (brand[@"admin_button_url"]) _adminTargetURL = brand[@"admin_button_url"];
-        if (brand[@"footer_copyright"]) _cprLbl.text = brand[@"footer_copyright"];
+        if (brand[@"footer_copyright"]) {
+            _pendingFooterText = brand[@"footer_copyright"];
+            if (_cprLbl) _cprLbl.text = _pendingFooterText;
+        }
     }
 
     // 5. CÔNG SUẤT ÂM LƯỢNG (TỐI ĐA 300%)
