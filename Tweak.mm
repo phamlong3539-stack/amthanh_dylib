@@ -1,8 +1,9 @@
 // ==============================================================================
 // ==============================================================================
-// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE v2.1)
+// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE v2.2)
 // CÔNG NGHỆ: DIRECT GIT WIRE PROTOCOL • ZERO RATE LIMIT • 0S CDN BYPASS • PRO GOLDEN BADGE
 // TÍNH NĂNG: PHÁT NHẠC LIÊN TỤC TUẦN HOÀN 1 -> N -> 1 • KÝ HIỆU HOT VÀNG GOLD CHUYÊN NGHIỆP
+// FIX v2.2: MUTUAL AUDIO EXCLUSION YOUTUBE ↔ GITHUB (KHÔNG CÒN NGHE 2 ÂM THANH CÙNG LÚC)
 // ==============================================================================
 
 #import <UIKit/UIKit.h>
@@ -368,6 +369,11 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     NSString *_lastConfigETag;
     BOOL _isSyncingConfig;
     BOOL _isTransitioningTrack;
+
+    // FIX v2.2: MUTUAL AUDIO EXCLUSION YOUTUBE ↔ GITHUB
+    // _pausedByYouTube = YES khi GitHub bị dừng do YouTube bắt đầu phát
+    // → dùng để tự động resume GitHub khi đóng YouTube
+    BOOL _pausedByYouTube;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
@@ -499,10 +505,36 @@ static inline NSString *GetAudioBridgeJS(void) {
             "        var self = this;\n"
             "        if(!e.__phlPlayHooked){\n"
             "          e.__phlPlayHooked = true;\n"
+            // --- FIX v2.2: Thêm 'timeupdate' để bắt được autoplay của YouTube ---
+            // 'play' bắt khi user nhấn play / autoplay bắt đầu
             "          e.addEventListener('play', function(){\n"
             "            self.applyToElement(e);\n"
-            "            if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.phlWebMediaPlaying){\n"
+            "            e.__phlTimeupdateNotified = false;\n"
+            "            if(window.webkit && window.webkit.messageHandlers &&\n"
+            "               window.webkit.messageHandlers.phlWebMediaPlaying){\n"
             "              window.webkit.messageHandlers.phlWebMediaPlaying.postMessage('playing');\n"
+            "            }\n"
+            "          }, true);\n"
+            // 'timeupdate' bắt được trường hợp autoplay tiếp tục mà không fire 'play' event
+            "          e.addEventListener('timeupdate', function(){\n"
+            "            if(!e.paused && !e.__phlTimeupdateNotified && e.currentTime > 0.3){\n"
+            "              e.__phlTimeupdateNotified = true;\n"
+            "              if(window.webkit && window.webkit.messageHandlers &&\n"
+            "                 window.webkit.messageHandlers.phlWebMediaPlaying){\n"
+            "                window.webkit.messageHandlers.phlWebMediaPlaying.postMessage('playing');\n"
+            "              }\n"
+            "            }\n"
+            "          }, true);\n"
+            // 'pause' reset flag để lần play tiếp theo sẽ fire lại notification
+            "          e.addEventListener('pause', function(){\n"
+            "            e.__phlTimeupdateNotified = false;\n"
+            "            var allPaused = true;\n"
+            "            document.querySelectorAll('video,audio').forEach(function(el){\n"
+            "              if(!el.paused) allPaused = false;\n"
+            "            });\n"
+            "            if(allPaused && window.webkit && window.webkit.messageHandlers &&\n"
+            "               window.webkit.messageHandlers.phlWebMediaPaused){\n"
+            "              window.webkit.messageHandlers.phlWebMediaPaused.postMessage('paused');\n"
             "            }\n"
             "          }, true);\n"
             "        }\n"
@@ -573,6 +605,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         _webLoaded = NO;
         _isSyncingConfig = NO;
         _isTransitioningTrack = NO;
+        _pausedByYouTube = NO;
 
         // MẶC ĐỊNH AN TOÀN: KHÓA YOUTUBE BAN ĐẦU ĐỂ TRÁNH MỞ NHẦM KHI ADMIN ĐÃ ĐÓNG
         _isYouTubeEnabled = NO;
@@ -1116,6 +1149,8 @@ static inline NSString *GetAudioBridgeJS(void) {
 
             PHLWeakScriptMessageProxy *proxy = [[PHLWeakScriptMessageProxy alloc] initWithDelegate:(id<WKScriptMessageHandler>)self];
             [ucc addScriptMessageHandler:proxy name:@"phlWebMediaPlaying"];
+            // FIX v2.2: Thêm handler phlWebMediaPaused để biết YouTube đã dừng hết
+            [ucc addScriptMessageHandler:proxy name:@"phlWebMediaPaused"];
 
             WKUserScript *cleanScr = [[WKUserScript alloc] initWithSource:GetNuclearCleanAndAdBlockJS() injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
             [ucc addUserScript:cleanScr];
@@ -1548,9 +1583,24 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)userContentController:(WKUserContentController *)ucc didReceiveScriptMessage:(WKScriptMessage *)msg {
     if ([msg.name isEqualToString:@"phlWebMediaPlaying"]) {
+        // FIX v2.2: YouTube bắt đầu phát → dừng GitHub AVPlayer, đánh dấu _pausedByYouTube
         dispatch_async(dispatch_get_main_queue(), ^{
             if (self->_player && self->_player.rate > 0.01f) {
+                // GitHub đang phát → phải dừng lại, lưu dấu để auto-resume khi tắt YT
                 [self->_player pause];
+                self->_pausedByYouTube = YES;
+                [self syncPlayPauseButton];
+            }
+            // Nếu GitHub đã dừng sẵn rồi thì không set _pausedByYouTube
+            // (tránh auto-resume khi user chủ động dừng GitHub trước)
+        });
+    } else if ([msg.name isEqualToString:@"phlWebMediaPaused"]) {
+        // FIX v2.2: Tất cả media YouTube đã dừng → tự động resume GitHub nếu YT là nguyên nhân dừng
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (self->_pausedByYouTube && self->_player && self->_playerItem) {
+                self->_pausedByYouTube = NO;
+                [self configureAudioSession];
+                [self->_player play];
                 [self syncPlayPauseButton];
             }
         });
@@ -1590,6 +1640,19 @@ static inline NSString *GetAudioBridgeJS(void) {
     [self pauseWebMediaIfPlaying];
     [_searchBar resignFirstResponder];
     [self syncBrowserVisibilityAnimated:YES];
+
+    // FIX v2.2: Khi đóng YouTube → tự động resume GitHub nhạc nếu YouTube là lý do dừng
+    if (_pausedByYouTube && _player && _playerItem) {
+        _pausedByYouTube = NO;
+        // Delay nhỏ để animation đóng YouTube hoàn tất trước khi phát lại
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (self->_player && self->_playerItem && self->_player.rate < 0.01f) {
+                [self configureAudioSession];
+                [self->_player play];
+                [self syncPlayPauseButton];
+            }
+        });
+    }
 }
 
 - (void)syncBrowserVisibilityAnimated:(BOOL)animated {
@@ -1789,6 +1852,10 @@ static inline NSString *GetAudioBridgeJS(void) {
 
     [self pauseWebMediaIfPlaying];
     [self configureAudioSession];
+    // FIX v2.2: Người dùng chủ động bật nhạc GitHub → xóa flag pausedByYouTube
+    _pausedByYouTube = NO;
+
+    // DỌN DẸP OBSERVER CŨ ĐỂ KHÔNG BỊ TRÙNG LẶP SKIPPING BÀI HÁT
 
     // DỌN DẸP OBSERVER CŨ ĐỂ KHÔNG BỊ TRÙNG LẶP SKIPPING BÀI HÁT
     if (_playerItem) {
@@ -1861,9 +1928,14 @@ static inline NSString *GetAudioBridgeJS(void) {
         return;
     }
     if (_player.rate > 0.01f) {
+        // User chủ động DỪNG GitHub → xóa flag để không auto-resume
+        _pausedByYouTube = NO;
         [_player pause];
     } else {
+        // User chủ động PHÁT GitHub → dừng YouTube, xóa flag
+        _pausedByYouTube = NO;
         [self pauseWebMediaIfPlaying];
+        [self configureAudioSession];
         [_player play];
     }
     [self syncPlayPauseButton];
