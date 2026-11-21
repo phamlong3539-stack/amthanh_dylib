@@ -1,7 +1,8 @@
 // ==============================================================================
 // ==============================================================================
-// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE v2.0)
-// CÔNG NGHỆ: DIRECT GIT WIRE PROTOCOL • ZERO RATE LIMIT • 0S CDN BYPASS • NUCLEAR AD-BLOCK
+// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE v2.1)
+// CÔNG NGHỆ: DIRECT GIT WIRE PROTOCOL • ZERO RATE LIMIT • 0S CDN BYPASS • PRO GOLDEN BADGE
+// TÍNH NĂNG: PHÁT NHẠC LIÊN TỤC TUẦN HOÀN 1 -> N -> 1 • KÝ HIỆU HOT VÀNG GOLD CHUYÊN NGHIỆP
 // ==============================================================================
 
 #import <UIKit/UIKit.h>
@@ -366,12 +367,46 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     NSString *_lastKnownCommitSHA;
     NSString *_lastConfigETag;
     BOOL _isSyncingConfig;
+    BOOL _isTransitioningTrack;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
 @end
 
 @implementation PHLProtectedAudioManager
+
+#pragma mark - XỬ LÝ LÀM SẠCH TÊN BÀI HÁT & NHẬN DIỆN BÀI HOT PRO
+
+- (NSString *)cleanTitleForSong:(NSString *)rawTitle isHot:(BOOL *)outIsHot {
+    if (!rawTitle || rawTitle.length == 0) {
+        if (outIsHot) *outIsHot = NO;
+        return @"Bài hát chưa đặt tên";
+    }
+
+    NSString *clean = rawTitle;
+    BOOL isHot = NO;
+
+    if ([clean rangeOfString:@"HOT" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+        [clean rangeOfString:@"TREND" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+        isHot = YES;
+    }
+
+    // Tự động gỡ bỏ các ký hiệu rườm rà như ⭐ [HOT TREND], [HOT TREND], ⭐ [HOT], [HOT], v.v.
+    NSArray *redundantPrefixes = @[
+        @"⭐ [HOT TREND]", @"[HOT TREND]",
+        @"⭐ [HOT]", @"[HOT]",
+        @"⭐", @"🔥"
+    ];
+    for (NSString *prefix in redundantPrefixes) {
+        clean = [clean stringByReplacingOccurrencesOfString:prefix withString:@"" options:NSCaseInsensitiveSearch range:NSMakeRange(0, clean.length)];
+    }
+
+    clean = [clean stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (clean.length == 0) clean = rawTitle;
+
+    if (outIsHot) *outIsHot = isHot;
+    return clean;
+}
 
 static inline NSString *GetNuclearCleanAndAdBlockJS(void) {
     return @"(function(){\n"
@@ -537,6 +572,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         _webOpen = NO;
         _webLoaded = NO;
         _isSyncingConfig = NO;
+        _isTransitioningTrack = NO;
 
         // MẶC ĐỊNH AN TOÀN: KHÓA YOUTUBE BAN ĐẦU ĐỂ TRÁNH MỞ NHẦM KHI ADMIN ĐÃ ĐÓNG
         _isYouTubeEnabled = NO;
@@ -545,6 +581,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         _adminTargetURL = @"https://phamlong09.store";
         _maxAllowedGain = 3.0f;
 
+        // MẶC ĐỊNH PHÁT TUẦN HOÀN TOÀN BỘ DANH SÁCH (1 -> 10 -> 1)
         _repOne = [ud objectForKey:@"PHL_RepeatOneSong"] ? [ud boolForKey:@"PHL_RepeatOneSong"] : NO;
         _gain = [ud objectForKey:@"PHL_IndependentAudioGain"] ? [ud floatForKey:@"PHL_IndependentAudioGain"] : 1.0f;
         _lastKnownCommitSHA = [ud stringForKey:@"PHL_LastCommitSHA"];
@@ -564,9 +601,11 @@ static inline NSString *GetAudioBridgeJS(void) {
         }
 
         [self configureAudioSession];
+
+        // LẮNG NGHE NGẮT PHIÊN ÂM THANH (CUỘC GỌI ĐẾN / BÁO THỨC) ĐỂ TỰ ĐỘNG TIẾP TỤC PHÁT
         [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(handleItemDidFinish:)
-                                                     name:AVPlayerItemDidPlayToEndTimeNotification
+                                                 selector:@selector(handleAudioSessionInterruption:)
+                                                     name:AVAudioSessionInterruptionNotification
                                                    object:nil];
 
         // LẮNG NGHE KHI APP MỞ LẠI -> ĐỒNG BỘ LỆNH TỨC THÌ
@@ -578,13 +617,65 @@ static inline NSString *GetAudioBridgeJS(void) {
     return self;
 }
 
+#pragma mark - XỬ LÝ CHUYỂN BÀI TỰ ĐỘNG TUẦN HOÀN LIÊN TỤC (1 -> 2 -> ... -> N -> 1)
+
 - (void)handleItemDidFinish:(NSNotification *)note {
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (self->_repOne && self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count) {
-            [self playSongAtIndex:self->_idx];
-        } else if (self->_playlist.count > 0) {
+        if (self->_isTransitioningTrack) return;
+        self->_isTransitioningTrack = YES;
+
+        if (self->_playlist.count > 0) {
+            if (self->_repOne && self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count) {
+                // LẶP LẠI 1 BÀI NẾU BẬT CHẾ ĐỘ REPEAT ONE
+                [self playSongAtIndex:self->_idx];
+            } else {
+                // CHUYỂN BÀI THEO THỨ TỰ TỪ TRÊN XUỐNG DƯỚI (1 -> 10 RỒI TỪ 10 VỀ LẠI 1 LIÊN TỤC)
+                NSInteger nxt = (self->_idx + 1) % (NSInteger)self->_playlist.count;
+                [self playSongAtIndex:nxt];
+            }
+        }
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            self->_isTransitioningTrack = NO;
+        });
+    });
+}
+
+- (void)handleItemFailedToPlay:(NSNotification *)note {
+    // TỰ ĐỘNG BỎ QUA BÀI LỖI MẠNG ĐỂ KHÔNG BỊ DỪNG NHẠC
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (self->_isTransitioningTrack) return;
+        self->_isTransitioningTrack = YES;
+
+        if (self->_playlist.count > 0) {
             NSInteger nxt = (self->_idx + 1) % (NSInteger)self->_playlist.count;
             [self playSongAtIndex:nxt];
+        }
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            self->_isTransitioningTrack = NO;
+        });
+    });
+}
+
+- (void)handleAudioSessionInterruption:(NSNotification *)note {
+    NSNumber *type = note.userInfo[AVAudioSessionInterruptionTypeKey];
+    if (!type) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([type unsignedIntegerValue] == AVAudioSessionInterruptionTypeBegan) {
+            if (self->_player && self->_player.rate > 0.01f) {
+                [self->_player pause];
+                [self syncPlayPauseButton];
+            }
+        } else if ([type unsignedIntegerValue] == AVAudioSessionInterruptionTypeEnded) {
+            NSNumber *opt = note.userInfo[AVAudioSessionInterruptionOptionKey];
+            if (opt && ([opt unsignedIntegerValue] & AVAudioSessionInterruptionOptionShouldResume)) {
+                if (self->_player && self->_playerItem) {
+                    [self configureAudioSession];
+                    [self->_player play];
+                    [self syncPlayPauseButton];
+                }
+            }
         }
     });
 }
@@ -1079,7 +1170,6 @@ static inline NSString *GetAudioBridgeJS(void) {
     _isSyncingConfig = YES;
 
     // TẦNG 1: DÙNG GIT WIRE PROTOCOL LẤY COMMIT SHA TRỰC TIẾP
-    // ƯU ĐIỂM: 0s DELAY, KHÔNG BỊ HẠN CHẾ 60 REQUEST/GIỜ CỦA GITHUB REST API
     NSString *refsUrlStr = PHL_DecryptString(kEnc_GIT_INFO_REFS, kLen_GIT_INFO_REFS);
     NSURL *refsUrl = [NSURL URLWithString:refsUrlStr];
     if (!refsUrl) {
@@ -1305,7 +1395,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         _volSlider.maximumValue = _maxAllowedGain;
     }
 
-    // 6. GHIM BÀI HÁT HOT TREND
+    // 6. GHIM BÀI HÁT HOT TREND VIP
     NSDictionary *feat = dict[@"vip_featured_song"];
     if (feat && [feat[@"enabled"] boolValue]) {
         _featuredVipSong = feat;
@@ -1409,16 +1499,37 @@ static inline NSString *GetAudioBridgeJS(void) {
     NSString *vUrl = _featuredVipSong[@"url"];
     if (!vUrl || vUrl.length == 0) return;
 
-    if (_playlist.count > 0 && [_playlist.firstObject[@"url"] isEqualToString:vUrl]) {
-        NSMutableDictionary *first = [_playlist.firstObject mutableCopy];
-        first[@"title"] = vTitle ?: @"⭐ [HOT TREND] VIP Song";
-        _playlist[0] = first;
-        [_table reloadData];
-    } else {
-        NSDictionary *item = @{@"title": vTitle ?: @"⭐ [HOT TREND] VIP Song", @"url": vUrl};
-        [_playlist insertObject:item atIndex:0];
-        [_table reloadData];
+    BOOL isHotDetected = NO;
+    NSString *clean = [self cleanTitleForSong:vTitle isHot:&isHotDetected];
+
+    // TÌM XEM BÀI HÁT ĐÃ TỒN TẠI TRONG DANH SÁCH CHƯA ĐỂ TRÁNH TRÙNG LẶP
+    NSInteger existingIdx = NSNotFound;
+    for (NSInteger i = 0; i < (NSInteger)_playlist.count; i++) {
+        NSDictionary *it = _playlist[i];
+        if ([it[@"url"] isEqualToString:vUrl]) {
+            existingIdx = i;
+            break;
+        }
     }
+
+    NSMutableDictionary *featuredItem = [NSMutableDictionary dictionary];
+    featuredItem[@"title"] = clean;
+    featuredItem[@"raw_title"] = vTitle ?: clean;
+    featuredItem[@"url"] = vUrl;
+    featuredItem[@"is_hot"] = @(YES);
+
+    if (existingIdx == 0) {
+        _playlist[0] = featuredItem;
+    } else {
+        if (existingIdx != NSNotFound) {
+            [_playlist removeObjectAtIndex:existingIdx];
+            if (_idx == existingIdx) _idx = 0;
+            else if (_idx > existingIdx) _idx--;
+        }
+        [_playlist insertObject:featuredItem atIndex:0];
+    }
+
+    [_table reloadData];
 
     // TỰ ĐỘNG PHÁT NHẠC VIP KHI VÀO ỨNG DỤNG NẾU ENABLED = TRUE
     if ([_featuredVipSong[@"enabled"] boolValue]) {
@@ -1679,14 +1790,22 @@ static inline NSString *GetAudioBridgeJS(void) {
     [self pauseWebMediaIfPlaying];
     [self configureAudioSession];
 
+    // DỌN DẸP OBSERVER CŨ ĐỂ KHÔNG BỊ TRÙNG LẶP SKIPPING BÀI HÁT
     if (_playerItem) {
         [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:_playerItem];
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemFailedToPlayToEndTimeNotification object:_playerItem];
     }
 
     _playerItem = [AVPlayerItem playerItemWithURL:u];
+
+    // CHỈ ĐĂNG KÝ OBSERVER CHUYỂN BÀI DUY NHẤT CHO _playerItem HIỆN TẠI
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleItemDidFinish:)
                                                  name:AVPlayerItemDidPlayToEndTimeNotification
+                                               object:_playerItem];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleItemFailedToPlay:)
+                                                 name:AVPlayerItemFailedToPlayToEndTimeNotification
                                                object:_playerItem];
 
     if (!_player) {
@@ -1698,10 +1817,41 @@ static inline NSString *GetAudioBridgeJS(void) {
     [self applyIndependentGain:_gain];
     [_player play];
 
-    NSString *t = song[@"title"] ?: @"Đang phát";
-    _titleLbl.text = [NSString stringWithFormat:@"♪ %@", t];
+    // CẬP NHẬT TIÊU ĐỀ NOW PLAYING VỚI BADGE VÀNG GOLD SANG TRỌNG
+    NSString *rawTitle = song[@"title"] ?: @"Đang phát";
+    BOOL isHot = [song[@"is_hot"] boolValue];
+    BOOL detectedHot = NO;
+    NSString *clean = [self cleanTitleForSong:rawTitle isHot:&detectedHot];
+    if (detectedHot) isHot = YES;
+
+    NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"♪ %@ ", clean]
+                                                                            attributes:@{
+        NSForegroundColorAttributeName: [UIColor colorWithRed:0.38 green:1.0 blue:0.82 alpha:1.0],
+        NSFontAttributeName: [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold]
+    }];
+
+    if (isHot) {
+        NSAttributedString *hotBadgeAttr = [[NSAttributedString alloc] initWithString:@" HOT "
+                                                                           attributes:@{
+            NSForegroundColorAttributeName: [UIColor colorWithRed:1.0 green:0.84 blue:0.18 alpha:1.0],
+            NSFontAttributeName: [UIFont systemFontOfSize:7.5 weight:UIFontWeightHeavy],
+            NSBackgroundColorAttributeName: [UIColor colorWithRed:1.0 green:0.84 blue:0.18 alpha:0.20]
+        }];
+        [attr appendAttributedString:hotBadgeAttr];
+    }
+    _titleLbl.attributedText = attr;
+
     [self syncPlayPauseButton];
     [_table reloadData];
+
+    // TỰ ĐỘNG CUỘN ĐẾN BÀI HÁT ĐANG PHÁT TRONG DANH SÁCH
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (self->_table && self->_playlist.count > index) {
+            [self->_table scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:index inSection:0]
+                                atScrollPosition:UITableViewScrollPositionMiddle
+                                        animated:YES];
+        }
+    });
 }
 
 - (void)togglePlayPause {
@@ -1727,6 +1877,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)playNextSong {
     if (!_playlist.count) return;
+    // CHUYỂN BÀI TIẾP THEO (TỪ 1 -> 10 RỒI QUAY VỀ 1)
     NSInteger nxt = (_idx + 1) % (NSInteger)_playlist.count;
     [self playSongAtIndex:nxt];
     [_btnNext triggerPulseMark];
@@ -1734,6 +1885,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)playPreviousSong {
     if (!_playlist.count) return;
+    // LÙI BÀI (TỪ 1 QUAY VỀ BÀI CUỐI 10)
     NSInteger prv = (_idx <= 0) ? (NSInteger)_playlist.count - 1 : _idx - 1;
     [_btnPrev triggerPulseMark];
     [self playSongAtIndex:prv];
@@ -1789,7 +1941,25 @@ static inline NSString *GetAudioBridgeJS(void) {
         c.detailTextLabel.font = [UIFont systemFontOfSize:8.5];
     }
 
+    // BADGE "HOT" VÀNG NHỎ CHUYÊN NGHIỆP TRÊN TỪNG DÒNG BÀI HÁT
+    UILabel *hotBadge = (UILabel *)[c.contentView viewWithTag:777];
+    if (!hotBadge) {
+        hotBadge = [[UILabel alloc] init];
+        hotBadge.tag = 777;
+        hotBadge.font = [UIFont systemFontOfSize:7.5 weight:UIFontWeightHeavy];
+        hotBadge.textColor = [UIColor colorWithRed:1.0 green:0.84 blue:0.18 alpha:1.0]; // Màu vàng kim loại #FFD700
+        hotBadge.textAlignment = NSTextAlignmentCenter;
+        hotBadge.backgroundColor = [UIColor colorWithRed:1.0 green:0.84 blue:0.18 alpha:0.18]; // Nền vàng mờ tinh tế
+        hotBadge.layer.borderColor = [UIColor colorWithRed:1.0 green:0.84 blue:0.18 alpha:0.85].CGColor; // Viền vàng thanh mảnh
+        hotBadge.layer.borderWidth = 0.8f;
+        hotBadge.layer.cornerRadius = 3.5f;
+        hotBadge.clipsToBounds = YES;
+        hotBadge.text = @"HOT";
+        [c.contentView addSubview:hotBadge];
+    }
+
     if (_playlist.count == 0) {
+        hotBadge.hidden = YES;
         c.textLabel.textColor = [UIColor colorWithRed:1.0 green:0.65 blue:0.75 alpha:1.0];
         c.textLabel.text = _statusMsg ?: @"Không có bài hát";
         c.detailTextLabel.textColor = [UIColor lightGrayColor];
@@ -1798,13 +1968,32 @@ static inline NSString *GetAudioBridgeJS(void) {
     }
 
     NSDictionary *song = _playlist[ip.row];
-    NSString *title = song[@"title"] ?: @"Bài hát chưa đặt tên";
+    NSString *rawTitle = song[@"title"] ?: @"Bài hát chưa đặt tên";
+    BOOL isHot = [song[@"is_hot"] boolValue];
+    BOOL detectedHot = NO;
+    NSString *cleanTitle = [self cleanTitleForSong:rawTitle isHot:&detectedHot];
+    if (detectedHot) isHot = YES;
+
     BOOL isCur = (ip.row == _idx);
 
     c.textLabel.textColor = isCur ? [UIColor colorWithRed:1.0 green:0.65 blue:1.0 alpha:1.0] : [UIColor whiteColor];
-    c.textLabel.text = title;
+    c.textLabel.text = cleanTitle;
     c.detailTextLabel.textColor = isCur ? [UIColor colorWithRed:0.35 green:1.0 blue:0.75 alpha:1.0] : [UIColor colorWithRed:0.45 green:0.92 blue:1.0 alpha:1.0];
     c.detailTextLabel.text = isCur ? @"🔊 Đang phát trực tiếp" : @"▶ Chạm để phát nhạc";
+
+    if (isHot) {
+        hotBadge.hidden = NO;
+        CGSize sz = [cleanTitle sizeWithAttributes:@{NSFontAttributeName: c.textLabel.font}];
+        CGFloat badgeW = 28.0f;
+        CGFloat badgeH = 13.0f;
+        CGFloat badgeX = 16.0f + sz.width + 6.0f;
+        CGFloat maxBadgeX = tv.bounds.size.width - badgeW - 8.0f;
+        if (badgeX > maxBadgeX) badgeX = maxBadgeX;
+        hotBadge.frame = CGRectMake(badgeX, 6.0f, badgeW, badgeH);
+    } else {
+        hotBadge.hidden = YES;
+    }
+
     return c;
 }
 
