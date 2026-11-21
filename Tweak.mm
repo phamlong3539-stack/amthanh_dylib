@@ -1,7 +1,7 @@
 // ==============================================================================
 // ==============================================================================
-// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE)
-// CÔNG NGHỆ: DIRECT GITHUB CORE API • REAL-TIME ZERO DELAY • NUCLEAR AD-BLOCK
+// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE v2.0)
+// CÔNG NGHỆ: DIRECT GIT WIRE PROTOCOL • ZERO RATE LIMIT • 0S CDN BYPASS • NUCLEAR AD-BLOCK
 // ==============================================================================
 
 #import <UIKit/UIKit.h>
@@ -35,6 +35,18 @@ static const size_t kLen_GITHUB_RAW_LOGO = 81;
 // https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/playlist.json
 static const uint8_t kEnc_GITHUB_RAW_PLAYLIST[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x65, 0x4F, 0x4E, 0x10, 0x02, 0x13, 0x4B, 0x01, 0x0E, 0x1C, 0x01, 0x1F, 0x09, 0x19, 0x1E, 0x0B, 0x1D, 0x13, 0x1E, 0x1C, 0x07, 0x11, 0x1B, 0x02, 0x59, 0x1B, 0x16, 0x17, 0x54, 0x0C, 0x15, 0x1F, 0x12, 0xEC, 0xEE, 0xEC, 0xE4, 0xB7, 0xB0, 0xB5, 0xBE, 0xA5, 0xFA, 0xFE, 0xEA, 0xEF, 0xE6, 0xA1, 0xFF, 0xF8, 0xFD, 0xBF, 0xFE, 0xE1, 0xE6, 0xFF, 0xF4, 0xB5, 0xFD, 0xFB, 0xEF, 0xFD, 0xB2, 0xF3, 0xFE, 0xC9, 0xCF, 0x8D, 0xD3, 0xC8, 0xC4, 0xDF, 0xCB, 0xC1, 0xDA, 0xDE, 0x85, 0xC6, 0xDE, 0xC1, 0xC1 };
 static const size_t kLen_GITHUB_RAW_PLAYLIST = 86;
+
+// https://github.com/phamlong3539-stack/phl-music-data.git/info/refs?service=git-upload-pack
+static const uint8_t kEnc_GIT_INFO_REFS[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x65, 0x4F, 0x4E, 0x05, 0x0A, 0x10, 0x0D, 0x13, 0x05, 0x46, 0x0A, 0x05, 0x06, 0x43, 0x1D, 0x06, 0x0E, 0x1D, 0x1D, 0x1D, 0x1D, 0x13, 0x46, 0x43, 0x44, 0x41, 0x54, 0x09, 0x0F, 0x1D, 0x1E, 0x15, 0x50, 0xF0, 0xE9, 0xEE, 0xAE, 0xE9, 0xF0, 0xF5, 0xEE, 0xEB, 0xA4, 0xEE, 0xEA, 0xF8, 0xEC, 0xA0, 0xE8, 0xF9, 0xE5, 0xBD, 0xFA, 0xFA, 0xF3, 0xF9, 0xB8, 0xEA, 0xFC, 0xFC, 0xE8, 0xA3, 0xEE, 0xFB, 0xED, 0xD6, 0xC8, 0xC1, 0xC6, 0x99, 0xC2, 0xCF, 0xD3, 0x85, 0xDC, 0xDA, 0xC7, 0xC3, 0xCC, 0xCA, 0x82, 0xC0, 0xD0, 0xD1, 0xD8 };
+static const size_t kLen_GIT_INFO_REFS = 90;
+
+// https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/
+static const uint8_t kEnc_GITHUB_RAW_BASE[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x65, 0x4F, 0x4E, 0x10, 0x02, 0x13, 0x4B, 0x01, 0x0E, 0x1C, 0x01, 0x1F, 0x09, 0x19, 0x1E, 0x0B, 0x1D, 0x13, 0x1E, 0x1C, 0x07, 0x11, 0x1B, 0x02, 0x59, 0x1B, 0x16, 0x17, 0x54, 0x0C, 0x15, 0x1F, 0x12, 0xEC, 0xEE, 0xEC, 0xE4, 0xB7, 0xB0, 0xB5, 0xBE, 0xA5, 0xFA, 0xFE, 0xEA, 0xEF, 0xE6, 0xA1, 0xFF, 0xF8, 0xFD, 0xBF, 0xFE, 0xE1, 0xE6, 0xFF, 0xF4, 0xB5, 0xFD, 0xFB, 0xEF, 0xFD, 0xB2 };
+static const size_t kLen_GITHUB_RAW_BASE = 68;
+
+// https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/config.json
+static const uint8_t kEnc_GITHUB_RAW_CFG[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x65, 0x4F, 0x4E, 0x10, 0x02, 0x13, 0x4B, 0x01, 0x0E, 0x1C, 0x01, 0x1F, 0x09, 0x19, 0x1E, 0x0B, 0x1D, 0x13, 0x1E, 0x1C, 0x07, 0x11, 0x1B, 0x02, 0x59, 0x1B, 0x16, 0x17, 0x54, 0x0C, 0x15, 0x1F, 0x12, 0xEC, 0xEE, 0xEC, 0xE4, 0xB7, 0xB0, 0xB5, 0xBE, 0xA5, 0xFA, 0xFE, 0xEA, 0xEF, 0xE6, 0xA1, 0xFF, 0xF8, 0xFD, 0xBF, 0xFE, 0xE1, 0xE6, 0xFF, 0xF4, 0xB5, 0xFD, 0xFB, 0xEF, 0xFD, 0xB2, 0xF3, 0xFE, 0xC9, 0xCF, 0x8D, 0xC0, 0xCB, 0xCB, 0xC0, 0xCE, 0xCF, 0x87, 0xC0, 0xD8, 0xC3, 0xC3 };
+static const size_t kLen_GITHUB_RAW_CFG = 84;
 
 // https://api.github.com/repos/phamlong3539-stack/phl-music-data/contents/config.json
 static const uint8_t kEnc_GITHUB_API_CFG[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x65, 0x4F, 0x4E, 0x03, 0x13, 0x0D, 0x4B, 0x01, 0x0E, 0x1C, 0x01, 0x1F, 0x09, 0x42, 0x0E, 0x01, 0x02, 0x5F, 0x03, 0x17, 0x03, 0x1B, 0x06, 0x59, 0x07, 0x10, 0x18, 0x17, 0x17, 0x13, 0x13, 0x19, 0x4C, 0xB5, 0xB2, 0xBB, 0xAE, 0xF7, 0xF1, 0xE7, 0xE4, 0xE3, 0xA6, 0xFA, 0xE3, 0xE0, 0xA0, 0xE3, 0xFA, 0xE3, 0xF8, 0xF1, 0xBE, 0xF0, 0xF4, 0xE2, 0xF6, 0xB7, 0xFA, 0xF5, 0xF5, 0xE8, 0xF8, 0xF0, 0xEB, 0xD3, 0x8E, 0xC1, 0xCC, 0xCA, 0xC3, 0xCF, 0xC0, 0x86, 0xC3, 0xD9, 0xC4, 0xC2 };
@@ -349,6 +361,11 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     NSString *_adminTargetURL;
     float _maxAllowedGain;
     NSTimer *_autoSyncTimer;
+
+    // CÔNG NGHỆ CHỐNG TRỄ & CHỐNG LẶP LỖI DAO ĐỘNG
+    NSString *_lastKnownCommitSHA;
+    NSString *_lastConfigETag;
+    BOOL _isSyncingConfig;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
@@ -385,7 +402,6 @@ static inline NSString *GetNuclearCleanAndAdBlockJS(void) {
             "  }\n"
             "  var musicFilterTriggered = false;\n"
             "  function executePurge(){\n"
-            // TỰ ĐỘNG CHUYỂN SANG MỤC ÂM NHẠC TRÊN TRANG CHỦ (BÊN CẠNH TẤT CẢ)
             "    if(!musicFilterTriggered && (window.location.pathname === '/' || window.location.pathname === '')){\n"
             "      var chips = document.querySelectorAll('ytm-chip-cloud-chip-renderer, ytm-feed-filter-chip-bar-renderer button, [role=\"tab\"], .chip-container button');\n"
             "      for(var i=0; i<chips.length; i++){\n"
@@ -393,7 +409,6 @@ static inline NSString *GetNuclearCleanAndAdBlockJS(void) {
             "        if(t === 'âm nhạc' || t === 'music'){\n"
             "          chips[i].click();\n"
             "          musicFilterTriggered = true;\n"
-            // Khi đã bấm chuyển Âm nhạc, ẩn toàn bộ thanh Tất cả/Âm nhạc/Trò chơi đi để màn hình sạch bóng
             "          setTimeout(function(){\n"
             "            var cBar = document.querySelector('ytm-feed-filter-chip-bar-renderer, ytm-chip-cloud-renderer, #chips');\n"
             "            if(cBar){ cBar.style.display = 'none'; cBar.style.height = '0px'; }\n"
@@ -416,7 +431,13 @@ static inline NSString *GetNuclearCleanAndAdBlockJS(void) {
             "    }\n"
             "  }\n"
             "  executePurge();\n"
-            "  setInterval(executePurge, 250);\n"
+            "  if(!window.__phlObserverActive){\n"
+            "    window.__phlObserverActive = true;\n"
+            "    var obs = new MutationObserver(function(){\n"
+            "      if(!window.__phlThrottle){ window.__phlThrottle = setTimeout(function(){ executePurge(); window.__phlThrottle = null; }, 500); }\n"
+            "    });\n"
+            "    if(document.body){ obs.observe(document.body, {childList: true, subtree: true}); }\n"
+            "  }\n"
             "})();";
 }
 
@@ -515,15 +536,32 @@ static inline NSString *GetAudioBridgeJS(void) {
         _menuOpen = NO;
         _webOpen = NO;
         _webLoaded = NO;
+        _isSyncingConfig = NO;
 
-        _isYouTubeEnabled = YES;
+        // MẶC ĐỊNH AN TOÀN: KHÓA YOUTUBE BAN ĐẦU ĐỂ TRÁNH MỞ NHẦM KHI ADMIN ĐÃ ĐÓNG
+        _isYouTubeEnabled = NO;
         _youtubeHomeURL = @"https://m.youtube.com";
-        _youtubeLockedMsg = @"Tính năng YouTube đang bảo trì!";
+        _youtubeLockedMsg = @"Tính năng YouTube đang bảo trì hạ tầng.";
         _adminTargetURL = @"https://phamlong09.store";
         _maxAllowedGain = 3.0f;
 
         _repOne = [ud objectForKey:@"PHL_RepeatOneSong"] ? [ud boolForKey:@"PHL_RepeatOneSong"] : NO;
         _gain = [ud objectForKey:@"PHL_IndependentAudioGain"] ? [ud floatForKey:@"PHL_IndependentAudioGain"] : 1.0f;
+        _lastKnownCommitSHA = [ud stringForKey:@"PHL_LastCommitSHA"];
+        _lastConfigETag = [ud stringForKey:@"PHL_LastConfigETag"];
+
+        // 1. NẠP CONFIG ĐÃ LƯU TỪ TRƯỚC (ĐỘ TRỄ 0 GIÂY - CHỐNG RESET MẶC ĐỊNH)
+        NSDictionary *cachedCfg = [ud dictionaryForKey:@"PHL_CachedConfigJSON"];
+        if (cachedCfg && [cachedCfg isKindOfClass:[NSDictionary class]]) {
+            [self applyRemoteAdminConfig:cachedCfg];
+        }
+
+        // 2. NẠP PLAYLIST ĐÃ LƯU TỪ TRƯỚC (HIỆN DANH SÁCH BÀI HÁT TỨC THÌ)
+        NSArray *cachedPlay = [ud arrayForKey:@"PHL_CachedPlaylist"];
+        if (cachedPlay && [cachedPlay isKindOfClass:[NSArray class]] && cachedPlay.count > 0) {
+            [_playlist addObjectsFromArray:cachedPlay];
+            _statusMsg = nil;
+        }
 
         [self configureAudioSession];
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -531,7 +569,7 @@ static inline NSString *GetAudioBridgeJS(void) {
                                                      name:AVPlayerItemDidPlayToEndTimeNotification
                                                    object:nil];
 
-        // LẮNG NGHE KHI APP MỞ LẠI -> NẠP LỆNH TỨC THÌ
+        // LẮNG NGHE KHI APP MỞ LẠI -> ĐỒNG BỘ LỆNH TỨC THÌ
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(fetchRemoteAdminConfig)
                                                      name:UIApplicationDidBecomeActiveNotification
@@ -647,7 +685,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     NSString *rawLogo = PHL_DecryptString(kEnc_GITHUB_RAW_LOGO, kLen_GITHUB_RAW_LOGO);
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:rawLogo]
                                                        cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
-                                                   timeoutInterval:8.0];
+                                                   timeoutInterval:6.0];
     [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
     [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
         if (!e && d && d.length > 0) {
@@ -784,11 +822,12 @@ static inline NSString *GetAudioBridgeJS(void) {
         blk();
     }
 }
+
 - (void)initializeFramework {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *kw = [self resolveActiveWindow];
         if (!kw) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [self initializeFramework];
             });
             return;
@@ -915,12 +954,12 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_gainLbl.textAlignment = NSTextAlignmentRight;
             [self->_menuBox addSubview:self->_gainLbl];
 
-            self->_btnWebToggle = [self makeUtilityButtonWithTitle:@"🌐 MỞ YOUTUBE VIP (ZERO ADS)"
-                                                             fontSize:9.0
-                                                              bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
-                                                          borderColor:[UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9]
-                                                               action:@selector(toggleEmbeddedBrowser)];
-            [self->_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+            self->_btnWebToggle = [self makeUtilityButtonWithTitle:@"🚫 YOUTUBE (TẠM KHÓA)"
+                                                              fontSize:9.0
+                                                               bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
+                                                           borderColor:[UIColor redColor]
+                                                                action:@selector(toggleEmbeddedBrowser)];
+            [self->_btnWebToggle setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
             [self->_menuBox addSubview:self->_btnWebToggle];
 
             self->_table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
@@ -1026,59 +1065,164 @@ static inline NSString *GetAudioBridgeJS(void) {
         [self fetchRemotePlaylist];
         [self fetchRemoteAdminConfig];
 
-        // TỰ ĐỘNG ĐỒNG BỘ CONFIG MỖI 10 GIÂY (CHỐNG TRỄ HOÀN TOÀN)
+        // ĐỒNG BỘ THÔNG MINH: CHỐNG CHẠM HẠN MỨC GITHUB VÀ TIẾT KIỆM PIN TỐI ĐA
         if (!self->_autoSyncTimer) {
-            self->_autoSyncTimer = [NSTimer scheduledTimerWithTimeInterval:10.0 target:self selector:@selector(fetchRemoteAdminConfig) userInfo:nil repeats:YES];
+            self->_autoSyncTimer = [NSTimer scheduledTimerWithTimeInterval:25.0 target:self selector:@selector(fetchRemoteAdminConfig) userInfo:nil repeats:YES];
         }
     });
 }
 
-#pragma mark - BỘ ĐỒNG BỘ ZERO-LATENCY (ĐỘ TRỄ 0 GIÂY QUA GITHUB API)
+#pragma mark - BỘ ĐỒNG BỘ ZERO-LATENCY (CÔNG NGHỆ DIRECT GIT PROTOCOL • KHÔNG HẠN MỨC RATE LIMIT)
 
 - (void)fetchRemoteAdminConfig {
-    NSURL *apiUrl = [NSURL URLWithString:PHL_DecryptString(kEnc_GITHUB_API_CFG, kLen_GITHUB_API_CFG)];
-    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:apiUrl cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData timeoutInterval:5.0];
+    if (_isSyncingConfig) return;
+    _isSyncingConfig = YES;
+
+    // TẦNG 1: DÙNG GIT WIRE PROTOCOL LẤY COMMIT SHA TRỰC TIẾP
+    // ƯU ĐIỂM: 0s DELAY, KHÔNG BỊ HẠN CHẾ 60 REQUEST/GIỜ CỦA GITHUB REST API
+    NSString *refsUrlStr = PHL_DecryptString(kEnc_GIT_INFO_REFS, kLen_GIT_INFO_REFS);
+    NSURL *refsUrl = [NSURL URLWithString:refsUrlStr];
+    if (!refsUrl) {
+        _isSyncingConfig = NO;
+        [self fallbackFetchApiConfig];
+        return;
+    }
+
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:refsUrl cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:4.0];
     [req setValue:@"PHL-Engine/1.0" forHTTPHeaderField:@"User-Agent"];
     [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
 
-    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        NSHTTPURLResponse *httpResp = (NSHTTPURLResponse *)response;
-        if (!error && data && httpResp.statusCode == 200) {
-            NSDictionary *apiJson = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-            NSString *base64Str = apiJson[@"content"];
-            if (base64Str && base64Str.length > 0) {
-                NSString *cleanBase64 = [base64Str stringByReplacingOccurrencesOfString:@"\n" withString:@""];
-                cleanBase64 = [cleanBase64 stringByReplacingOccurrencesOfString:@"\r" withString:@""];
-                NSData *decodedData = [[NSData alloc] initWithBase64EncodedString:cleanBase64 options:0];
-                if (decodedData) {
-                    NSDictionary *config = [NSJSONSerialization JSONObjectWithData:decodedData options:0 error:nil];
-                    if (config && [config isKindOfClass:[NSDictionary class]]) {
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            [self applyRemoteAdminConfig:config];
-                        });
-                        return; // NẠP THÀNH CÔNG VỚI ĐỘ TRỄ 0 GIÂY
+    [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
+        NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
+        if (!e && d && hr.statusCode == 200) {
+            NSString *rawText = [[NSString alloc] initWithData:d encoding:NSUTF8StringEncoding];
+            if (rawText && rawText.length > 0) {
+                NSRange headRange = [rawText rangeOfString:@" HEAD"];
+                if (headRange.location != NSNotFound && headRange.location >= 40) {
+                    NSString *sha = [rawText substringWithRange:NSMakeRange(headRange.location - 40, 40)];
+                    NSCharacterSet *hexChars = [NSCharacterSet characterSetWithCharactersInString:@"0123456789abcdefABCDEF"];
+                    if (sha.length == 40 && [sha rangeOfCharacterFromSet:[hexChars invertedSet]].location == NSNotFound) {
+                        // NẾU COMMIT SHA KHÔNG ĐỔI -> DỮ LIỆU ĐANG MỚI NHẤT, KHÔNG CẦN TẢI LẠI
+                        if (self->_lastKnownCommitSHA && [sha isEqualToString:self->_lastKnownCommitSHA]) {
+                            self->_isSyncingConfig = NO;
+                            return;
+                        }
+
+                        // COMMIT MỚI CỦA ADMIN: TẢI TRỰC TIẾP THEO SHA (BỎ QUA 100% CACHE 5 PHÚT FASTLY CDN)
+                        NSString *rawBase = PHL_DecryptString(kEnc_GITHUB_RAW_BASE, kLen_GITHUB_RAW_BASE);
+                        NSString *shaCfgUrl = [NSString stringWithFormat:@"%@%@/config.json", rawBase, sha];
+                        [self downloadConfigFromURL:[NSURL URLWithString:shaCfgUrl] commitSHA:sha];
+                        return;
                     }
                 }
             }
         }
 
-        // DỰ PHÒNG NẾU GITHUB API HẾT HẠN MỨC (FALLBACK)
-        [self fallbackFetchRawConfig];
-    }];
-    [task resume];
+        // TẦNG DỰ PHÒNG NẾU GIT PROTOCOL GẶP SỰ CỐ MẠNG
+        [self fallbackFetchApiConfig];
+    }] resume];
 }
 
-- (void)fallbackFetchRawConfig {
-    NSTimeInterval ts = [[NSDate date] timeIntervalSince1970];
-    NSString *baseApi = PHL_DecryptString(kEnc_GITHUB_API_CFG, kLen_GITHUB_API_CFG); NSString *uStr = [NSString stringWithFormat:@"%@?v=%.0f", baseApi, ts];
-    NSURL *u = [NSURL URLWithString:uStr];
-    if (!u) return;
-    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:u cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData timeoutInterval:5.0];
+- (void)downloadConfigFromURL:(NSURL *)url commitSHA:(NSString *)sha {
+    if (!url) {
+        _isSyncingConfig = NO;
+        return;
+    }
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:5.0];
+    [req setValue:@"PHL-Engine/1.0" forHTTPHeaderField:@"User-Agent"];
     [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
+
     [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
-        if (!e && d) {
+        self->_isSyncingConfig = NO;
+        NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
+        if (!e && d && hr.statusCode == 200) {
+            NSError *jsonErr = nil;
+            NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:d options:0 error:&jsonErr];
+            if (!jsonErr && [dict isKindOfClass:[NSDictionary class]] && (dict[@"system_control"] || dict[@"youtube_module"])) {
+                if (sha && sha.length == 40) {
+                    self->_lastKnownCommitSHA = sha;
+                    [[NSUserDefaults standardUserDefaults] setObject:sha forKey:@"PHL_LastCommitSHA"];
+                }
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self applyRemoteAdminConfig:dict];
+                });
+                return;
+            }
+        }
+        [self fallbackFetchApiConfig];
+    }] resume];
+}
+
+- (void)fallbackFetchApiConfig {
+    NSString *apiUrlStr = PHL_DecryptString(kEnc_GITHUB_API_CFG, kLen_GITHUB_API_CFG);
+    NSURL *apiUrl = [NSURL URLWithString:apiUrlStr];
+    if (!apiUrl) {
+        _isSyncingConfig = NO;
+        [self fallbackFetchDirectRawConfig];
+        return;
+    }
+
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:apiUrl cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:5.0];
+    [req setValue:@"PHL-Engine/1.0" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
+    if (_lastConfigETag && _lastConfigETag.length > 0) {
+        [req setValue:_lastConfigETag forHTTPHeaderField:@"If-None-Match"];
+    }
+
+    [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
+        NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
+        if (hr && hr.statusCode == 304) {
+            self->_isSyncingConfig = NO;
+            return;
+        }
+
+        if (!e && d && hr && hr.statusCode == 200) {
+            self->_isSyncingConfig = NO;
+            NSString *etag = hr.allHeaderFields[@"ETag"];
+            if (etag) {
+                self->_lastConfigETag = etag;
+                [[NSUserDefaults standardUserDefaults] setObject:etag forKey:@"PHL_LastConfigETag"];
+            }
+
+            NSDictionary *apiJson = [NSJSONSerialization JSONObjectWithData:d options:0 error:nil];
+            NSString *base64Str = apiJson[@"content"];
+            if (base64Str && [base64Str isKindOfClass:[NSString class]]) {
+                NSString *clean = [base64Str stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+                clean = [clean stringByReplacingOccurrencesOfString:@"\r" withString:@""];
+                NSData *decoded = [[NSData alloc] initWithBase64EncodedString:clean options:0];
+                if (decoded) {
+                    NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:decoded options:0 error:nil];
+                    if ([dict isKindOfClass:[NSDictionary class]] && (dict[@"system_control"] || dict[@"youtube_module"])) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [self applyRemoteAdminConfig:dict];
+                        });
+                        return;
+                    }
+                }
+            }
+        }
+
+        [self fallbackFetchDirectRawConfig];
+    }] resume];
+}
+
+- (void)fallbackFetchDirectRawConfig {
+    NSString *rawUrlStr = PHL_DecryptString(kEnc_GITHUB_RAW_CFG, kLen_GITHUB_RAW_CFG);
+    NSURL *rawUrl = [NSURL URLWithString:rawUrlStr];
+    if (!rawUrl) {
+        _isSyncingConfig = NO;
+        return;
+    }
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:rawUrl cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:5.0];
+    [req setValue:@"PHL-Engine/1.0" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"no-cache" forHTTPHeaderField:@"Cache-Control"];
+
+    [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
+        self->_isSyncingConfig = NO;
+        NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
+        if (!e && d && hr && hr.statusCode == 200) {
             NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:d options:0 error:nil];
-            if (dict && [dict isKindOfClass:[NSDictionary class]]) {
+            if ([dict isKindOfClass:[NSDictionary class]] && (dict[@"system_control"] || dict[@"youtube_module"])) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self applyRemoteAdminConfig:dict];
                 });
@@ -1088,10 +1232,19 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)applyRemoteAdminConfig:(NSDictionary *)dict {
+    // CHẶN HOÀN TOÀN CÁC GÓI TIN LỖI 403 HOẶC ĐỊNH DẠNG KHÔNG CHUẨN
+    if (![dict isKindOfClass:[NSDictionary class]]) return;
+    if (!dict[@"system_control"] && !dict[@"youtube_module"]) return;
+
+    // LƯU CẤU HÌNH HỢP LỆ VÀO BỘ NHỚ CỤC BỘ ĐỂ CHỐNG LỖI MỞ LẠI KHI KHỞI ĐỘNG
+    [[NSUserDefaults standardUserDefaults] setObject:dict forKey:@"PHL_CachedConfigJSON"];
+
     // 1. MASTER KILL-SWITCH
     if ([dict[@"system_control"][@"kill_switch"] boolValue]) {
         [self pauseStreamPlayerIfPlaying];
         [self pauseWebMediaIfPlaying];
+        _menuOpen = NO;
+        _webOpen = NO;
         _floatBtn.hidden = YES;
         _menuBox.hidden = YES;
         return;
@@ -1102,7 +1255,6 @@ static inline NSString *GetAudioBridgeJS(void) {
     // 2. TÙY BIẾN NÚT NỔI & HIỆU ỨNG THỞ PHÁT SÁNG
     NSString *fIcon = dict[@"system_control"][@"floating_icon"];
     if (fIcon && fIcon.length > 0 && _floatBtn) {
-        // Giữ nguyên logo tùy biến
         if (!_floatBtn.currentImage) {
             [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
         }
@@ -1160,10 +1312,12 @@ static inline NSString *GetAudioBridgeJS(void) {
         [self injectFeaturedSongIntoPlaylist];
     }
 
-    // 7. QUẢN LÝ KHÓA / MỞ YOUTUBE TỨC THÌ
+    // 7. QUẢN LÝ KHÓA / MỞ YOUTUBE TỨC THÌ (XỬ LÝ TRIỆT ĐỂ LỖI MỞ LẠI NGOÀI Ý MUỐN)
     NSDictionary *ytCfg = dict[@"youtube_module"];
     if (ytCfg) {
-        if (ytCfg[@"enabled"] != nil) _isYouTubeEnabled = [ytCfg[@"enabled"] boolValue];
+        if (ytCfg[@"enabled"] != nil) {
+            _isYouTubeEnabled = [ytCfg[@"enabled"] boolValue];
+        }
         if (ytCfg[@"home_url"]) _youtubeHomeURL = ytCfg[@"home_url"];
         if (ytCfg[@"locked_reason"]) _youtubeLockedMsg = ytCfg[@"locked_reason"];
 
@@ -1171,7 +1325,18 @@ static inline NSString *GetAudioBridgeJS(void) {
             [_btnWebToggle setTitle:@"🚫 YOUTUBE (TẠM KHÓA)" forState:UIControlStateNormal];
             [_btnWebToggle setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
             _btnWebToggle.layer.borderColor = [UIColor redColor].CGColor;
-            if (_webOpen) [self closeEmbeddedBrowser];
+
+            // NẾU ADMIN ĐÃ KHÓA -> DỪNG NGAY MEDIA VÀ THU HẸP GIAO DIỆN VỀ MENU NHẠC
+            [self pauseWebMediaIfPlaying];
+            if (_webOpen) {
+                _webOpen = NO;
+                _webBox.hidden = YES;
+                _table.hidden = NO;
+                [self applyMenuFrameForExpanded:NO animated:YES];
+            } else {
+                _webBox.hidden = YES;
+                _table.hidden = NO;
+            }
         } else {
             [_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
             _btnWebToggle.layer.borderColor = [UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9].CGColor;
@@ -1180,8 +1345,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         }
     }
 
-    // 8. POPUP THÔNG BÁO TỪ ADMIN — CHỈ HIỆN 1 LẦN DUY NHẤT MỖI ID THÔNG BÁO MỚI
-    // 8. POPUP THÔNG BÁO TỪ ADMIN — CHỈ HIỆN 1 LẦN KHI MỞ ỨNG DỤNG (XÓA ĐA NHIỆM VÀO LẠI SẼ HIỆN TIẾP)
+    // 8. POPUP THÔNG BÁO TỪ ADMIN — CHỈ HIỆN 1 LẦN KHI MỞ ỨNG DỤNG
     NSDictionary *ann = dict[@"announcement"];
     if (ann && [ann[@"show"] boolValue]) {
         _cachedAnnouncement = ann;
@@ -1195,6 +1359,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         _cachedAnnouncement = nil;
     }
 }
+
 - (void)showAnnouncementPopup {
     if (!_cachedAnnouncement) return;
     if (![_cachedAnnouncement[@"show"] boolValue]) return;
@@ -1216,7 +1381,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
     UIWindow *w = [self resolveActiveWindow];
     if (!w) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self showAnnouncementPopup];
         });
         return;
@@ -1232,11 +1397,12 @@ static inline NSString *GetAudioBridgeJS(void) {
     if (vc) {
         [vc presentViewController:alert animated:YES completion:nil];
     } else {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self showAnnouncementPopup];
         });
     }
 }
+
 - (void)injectFeaturedSongIntoPlaylist {
     if (!_featuredVipSong || !_playlist) return;
     NSString *vTitle = _featuredVipSong[@"title"];
@@ -1264,6 +1430,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         }
     }
 }
+
 - (void)webView:(WKWebView *)webView didCommitNavigation:(WKNavigation *)navigation {
     [self cleanYouTubePageInWebView];
 }
@@ -1307,8 +1474,10 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)closeEmbeddedBrowser {
-    if (!_webOpen) return;
+    if (!_webOpen && _webBox.hidden) return;
     _webOpen = NO;
+    [self pauseWebMediaIfPlaying];
+    [_searchBar resignFirstResponder];
     [self syncBrowserVisibilityAnimated:YES];
 }
 
@@ -1316,14 +1485,16 @@ static inline NSString *GetAudioBridgeJS(void) {
     [self applyMenuFrameForExpanded:_webOpen animated:animated];
     _webBox.hidden = !_webOpen;
     _table.hidden = _webOpen;
-    
+
     if (!_isYouTubeEnabled) {
         [_btnWebToggle setTitle:@"🚫 YOUTUBE (TẠM KHÓA)" forState:UIControlStateNormal];
         [_btnWebToggle setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
+        _btnWebToggle.layer.borderColor = [UIColor redColor].CGColor;
     } else {
         NSString *t = _webOpen ? @"☰ ĐANG MỞ YOUTUBE • VỀ KHO NHẠC (THU GỌN)" : @"🌐 MỞ YOUTUBE VIP (ZERO ADS)";
         [_btnWebToggle setTitle:t forState:UIControlStateNormal];
         [_btnWebToggle setTitleColor:[UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] forState:UIControlStateNormal];
+        _btnWebToggle.layer.borderColor = [UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9].CGColor;
     }
 }
 
@@ -1367,21 +1538,33 @@ static inline NSString *GetAudioBridgeJS(void) {
 - (void)toggleMenu {
     _menuOpen = !_menuOpen;
     if (_menuOpen) {
+        // NẾU YOUTUBE ĐANG BỊ KHÓA -> CHẮC CHẮN KHÔNG MỞ TRÌNH DUYỆT
+        if (!_isYouTubeEnabled) {
+            _webOpen = NO;
+        }
+
         _menuBox.hidden = NO;
         _table.hidden = _webOpen;
         _webBox.hidden = !_webOpen;
         [self applyMenuFrameForExpanded:_webOpen animated:NO];
         _menuBox.transform = CGAffineTransformMakeScale(0.85, 0.85);
-        [UIView animateWithDuration:0.25 delay:0.0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+        [UIView animateWithDuration:0.22 delay:0.0 options:UIViewAnimationOptionCurveEaseOut animations:^{
             self->_menuBox.alpha = 1.0;
             self->_menuBox.transform = CGAffineTransformIdentity;
         } completion:nil];
 
-        // TỰ ĐỘNG CẬP NHẬT CONFIG & PLAYLIST MỖI KHI MỞ MENU
+        // ĐỒNG BỘ CONFIG & PLAYLIST TỨC THÌ KHI MỞ MENU
         [self fetchRemoteAdminConfig];
         [self fetchRemotePlaylist];
     } else {
-        [UIView animateWithDuration:0.20 delay:0.0 options:UIViewAnimationOptionCurveEaseIn animations:^{
+        [_searchBar resignFirstResponder];
+        // ĐÓNG MENU -> TỰ ĐỘNG THU GỌN WEB ĐỂ LẦN SAU MỞ LẠI SẼ HIỆN MENU NHẠC GỌN GÀNG
+        _webOpen = NO;
+        _webBox.hidden = YES;
+        _table.hidden = NO;
+        [self applyMenuFrameForExpanded:NO animated:NO];
+
+        [UIView animateWithDuration:0.18 delay:0.0 options:UIViewAnimationOptionCurveEaseIn animations:^{
             self->_menuBox.alpha = 0.0;
             self->_menuBox.transform = CGAffineTransformMakeScale(0.85, 0.85);
         } completion:^(BOOL fin){
@@ -1390,6 +1573,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         }];
     }
 }
+
 - (void)clampViewToSafeBounds:(UIView *)v topMargin:(CGFloat)tm bottomMargin:(CGFloat)bm {
     UIWindow *w = [self resolveActiveWindow];
     if (!w) return;
@@ -1410,6 +1594,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
     v.frame = f;
 }
+
 - (void)handleFloatingPan:(UIPanGestureRecognizer *)p {
     UIView *v = p.view;
     if (!v || !v.superview) return;
@@ -1428,7 +1613,14 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)fetchRemotePlaylist {
-    NSURL *u = [NSURL URLWithString:PHL_DecryptString(kEnc_GITHUB_RAW_PLAYLIST, kLen_GITHUB_RAW_PLAYLIST)];
+    NSURL *u = nil;
+    if (_lastKnownCommitSHA && _lastKnownCommitSHA.length == 40) {
+        NSString *rawBase = PHL_DecryptString(kEnc_GITHUB_RAW_BASE, kLen_GITHUB_RAW_BASE);
+        u = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@/playlist.json", rawBase, _lastKnownCommitSHA]];
+    }
+    if (!u) {
+        u = [NSURL URLWithString:PHL_DecryptString(kEnc_GITHUB_RAW_PLAYLIST, kLen_GITHUB_RAW_PLAYLIST)];
+    }
     if (!u) return;
 
     NSURLSessionConfiguration *c = [NSURLSessionConfiguration ephemeralSessionConfiguration];
@@ -1437,54 +1629,40 @@ static inline NSString *GetAudioBridgeJS(void) {
     NSURLSessionDataTask *t = [s dataTaskWithURL:u completionHandler:^(NSData *d, NSURLResponse *r, NSError *e) {
         NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
         if (e || !d || hr.statusCode != 200) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                self->_statusMsg = [NSString stringWithFormat:@"Không tải được danh sách (Mã %ld)", (long)hr.statusCode];
-                [self->_table reloadData];
-            });
-            return;
-        }
-
-        NSError *je = nil;
-        NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:d options:0 error:&je];
-        if (je || ![dict isKindOfClass:[NSDictionary class]]) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                self->_statusMsg = @"Lỗi dữ liệu danh sách phát";
-                [self->_table reloadData];
-            });
-            return;
-        }
-
-        NSArray *songs = nil;
-        if ([dict isKindOfClass:[NSDictionary class]]) {
-            songs = dict[@"songs"] ?: dict[@"playlist"];
-        } else if ([dict isKindOfClass:[NSArray class]]) {
-            songs = (NSArray *)dict;
-        }
-        if (![songs isKindOfClass:[NSArray class]] || songs.count == 0) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self->_playlist removeAllObjects];
-                self->_statusMsg = @"Danh sách bài hát đang trống";
-                [self->_table reloadData];
-            });
-            return;
-        }
-
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self->_playlist removeAllObjects];
-            [self->_playlist addObjectsFromArray:songs];
-            [self injectFeaturedSongIntoPlaylist];
-            // TỰ ĐỘNG PHÁT NHẠC VIP KHI VÀO ỨNG DỤNG NẾU ENABLED = TRUE
-            if (self->_featuredVipSong && [self->_featuredVipSong[@"enabled"] boolValue]) {
-                if (!self->_hasAutoPlayedVip && self->_playlist.count > 0 && (!self->_player || self->_player.rate < 0.01f || self->_idx < 0)) {
-                    self->_hasAutoPlayedVip = YES;
-                    [self playSongAtIndex:0];
-                }
+            // NẾU URL THEO SHA THẤT BẠI -> DỰ PHÒNG THEO RAW MAIN
+            if (self->_lastKnownCommitSHA) {
+                NSURL *fallbackU = [NSURL URLWithString:PHL_DecryptString(kEnc_GITHUB_RAW_PLAYLIST, kLen_GITHUB_RAW_PLAYLIST)];
+                [[[NSURLSession sharedSession] dataTaskWithURL:fallbackU completionHandler:^(NSData *fd, NSURLResponse *fr, NSError *fe) {
+                    if (!fe && fd && ((NSHTTPURLResponse *)fr).statusCode == 200) {
+                        [self parseAndApplyPlaylistData:fd];
+                    }
+                }] resume];
             }
-            self->_statusMsg = nil;
-            [self->_table reloadData];
-        });
+            return;
+        }
+        [self parseAndApplyPlaylistData:d];
     }];
     [t resume];
+}
+
+- (void)parseAndApplyPlaylistData:(NSData *)data {
+    NSError *je = nil;
+    NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:0 error:&je];
+    if (je || ![dict isKindOfClass:[NSDictionary class]]) return;
+
+    NSArray *songs = dict[@"songs"] ?: dict[@"playlist"];
+    if (![songs isKindOfClass:[NSArray class]] || songs.count == 0) return;
+
+    // LƯU CACHE PLAYLIST VÀO BỘ NHỚ CỤC BỘ
+    [[NSUserDefaults standardUserDefaults] setObject:songs forKey:@"PHL_CachedPlaylist"];
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self->_playlist removeAllObjects];
+        [self->_playlist addObjectsFromArray:songs];
+        [self injectFeaturedSongIntoPlaylist];
+        self->_statusMsg = nil;
+        [self->_table reloadData];
+    });
 }
 
 - (void)playSongAtIndex:(NSInteger)index {
@@ -1643,12 +1821,12 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 @end
 
-#pragma mark - Constructor Khởi Chạy
+#pragma mark - Constructor Khởi Chạy (Khởi động tức thì 0 giây trễ)
 
 __attribute__((constructor)) static void LibraryEntryPoint(void) {
     PHL_EnforceSecuritySanity();
     PHL_StartSecurityWatchdog();
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    dispatch_async(dispatch_get_main_queue(), ^{
         [[PHLProtectedAudioManager sharedInstance] initializeFramework];
     });
 }
