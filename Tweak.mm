@@ -1,7 +1,8 @@
 // ==============================================================================
 // ==============================================================================
-// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE v2.4)
+// 👑 PHL ENTERPRISE SECURE AUDIO RUNTIME (ARM64 ZERO-LATENCY MASTER ENGINE v2.4 PRO OBFUSCATED)
 // CÔNG NGHỆ: DIRECT GIT WIRE PROTOCOL • ZERO RATE LIMIT • ANTI-SILENCE WATCHDOG
+// BẢO MẬT: ENTERPRISE SYMBOL OBFUSCATION • ROLLING CIPHER STRING HIDING • OPAQUE PREDICATES
 // TÍNH NĂNG: BÀI HOT PHÁT ĐẦU TIÊN • CHU KỲ BỎ QUA BÀI ĐÃ PHÁT • TUẦN HOÀN 100% KHÔNG IM LẶNG
 // FIX v2.2: MUTUAL AUDIO EXCLUSION YOUTUBE ↔ GITHUB (KHÔNG CÒN NGHE 2 ÂM THANH CÙNG LÚC)
 // FIX v2.3: BRANDING CACHE 100% ĐỒNG BỘ CONFIG (KHÔNG CÒN DÍNH HARDCODE CŨ)
@@ -19,6 +20,143 @@
 
 #define PHL_HIDDEN __attribute__((visibility("hidden")))
 
+#pragma mark - 🛡️ TẦNG 0: BẢNG LÀM RỐI KÝ HIỆU & METADATA (ENTERPRISE SYMBOL OBFUSCATION)
+
+// --- TÊN LỚP (CLASSES) ---
+#define PHLProtectedAudioManager                _0x7b4a_AudioManager
+#define PHLWeakScriptMessageProxy               _0x6c3d_ScriptProxy
+#define PHLTransportButton                      _0x5d2e_VectorButton
+#define TransportButtonKind                     _0x_TbKind
+
+// --- BIẾN NỘI BỘ (IVARS) ---
+#define _playedSongURLs                         _0x_u1
+#define _playbackWatchdogTimer                  _0x_u2
+#define _pausedByYouTube                        _0x_u3
+#define _isTransitioningTrack                   _0x_u4
+#define _isSyncingConfig                        _0x_u5
+#define _lastKnownCommitSHA                     _0x_u6
+#define _lastConfigETag                         _0x_u7
+#define _pendingHeaderTitle                     _0x_u8
+#define _pendingTickerText                      _0x_u9
+#define _pendingFooterText                      _0x_ua
+#define _pendingAdminBtnText                    _0x_ub
+#define _featuredVipSong                        _0x_uc
+#define _hasAutoPlayedVip                       _0x_ud
+#define _hasShownLaunchAnnouncement             _0x_ue
+#define _cachedAnnouncement                     _0x_uf
+#define _isYouTubeEnabled                       _0x_v1
+#define _youtubeHomeURL                         _0x_v2
+#define _youtubeLockedMsg                       _0x_v3
+#define _adminTargetURL                         _0x_v4
+#define _maxAllowedGain                         _0x_v5
+#define _autoSyncTimer                          _0x_v6
+#define _statusMsg                              _0x_v7
+#define _playlist                               _0x_v8
+#define _menuOpen                               _0x_v9
+#define _webOpen                                _0x_va
+#define _webLoaded                              _0x_vb
+#define _repOne                                 _0x_vc
+#define _gain                                   _0x_vd
+#define _idx                                    _0x_ve
+#define _floatBtn                               _0x_vf
+#define _menuBox                                _0x_w1
+#define _gradient                               _0x_w2
+#define _dragHdr                                _0x_w3
+#define _headerTitleLbl                         _0x_w4
+#define _tickerLbl                              _0x_w5
+#define _titleLbl                               _0x_w6
+#define _closeBtn                               _0x_w7
+#define _table                                  _0x_w8
+#define _player                                 _0x_w9
+#define _playerItem                             _0x_wa
+#define _btnPrev                                _0x_wb
+#define _btnPlay                                _0x_wc
+#define _btnNext                                _0x_wd
+#define _btnRep                                 _0x_we
+#define _btnMute                                _0x_wf
+#define _btnVolUp                               _0x_x1
+#define _volSlider                              _0x_x2
+#define _gainLbl                                _0x_x3
+#define _btnWebToggle                           _0x_x4
+#define _webBox                                 _0x_x5
+#define _btnBack                                _0x_x6
+#define _btnFwd                                 _0x_x7
+#define _btnHome                                _0x_x8
+#define _btnCloseW                              _0x_x9
+#define _searchBar                              _0x_xa
+#define _btnSearch                              _0x_xb
+#define _web                                    _0x_xc
+#define _adminBtn                               _0x_xd
+#define _cprLbl                                 _0x_xe
+
+// --- PHƯƠNG THỨC NỘI BỘ (METHODS & SELECTORS) ---
+#define advanceToNextTrackAuto                  _0x_a8f1_nxt
+#define startPlaybackWatchdog                   _0x_b9e2_swd
+#define checkPlaybackWatchdog                   _0x_ca03_cwd
+#define updateTitleLabelForCurrentSong          _0x_db14_utl
+#define playSongAtIndex                         _0x_ec25_psi
+#define fetchRemoteAdminConfig                  _0x_fd36_fac
+#define applyRemoteAdminConfig                  _0x_0e47_aac
+#define fetchRemotePlaylist                     _0x_1f58_fpl
+#define parseAndApplyPlaylistData               _0x_2069_pad
+#define injectFeaturedSongIntoPlaylist          _0x_317a_inj
+#define cleanYouTubePageInWebView               _0x_428b_cln
+#define pauseWebMediaIfPlaying                  _0x_539c_pwb
+#define pauseStreamPlayerIfPlaying              _0x_64ad_psp
+#define cleanTitleForSong                       _0x_75be_cts
+#define applyIndependentGain                    _0x_86cf_aig
+#define applyGainToItem                         _0x_97d0_agi
+#define loadRemoteLogo                          _0x_a8e1_lrl
+#define applyLogoImageToButton                  _0x_b9f2_alb
+#define showAnnouncementPopup                   _0x_ca03_sap
+#define toggleEmbeddedBrowser                   _0x_db14_teb
+#define closeEmbeddedBrowser                    _0x_ec25_ceb
+#define syncBrowserVisibilityAnimated           _0x_fd36_sbv
+#define loadYouTubeURLString                    _0x_0e47_lyu
+#define triggerYouTubeSearch                    _0x_1f58_tys
+#define openAdminInfoGroup                      _0x_2069_oai
+#define toggleRepeatMode                        _0x_317a_trm
+#define syncRepeatButton                        _0x_428b_srb
+#define syncPlayPauseButton                     _0x_539c_spb
+#define togglePlayPause                         _0x_64ad_tpp
+#define playNextSong                            _0x_75be_pns
+#define playPreviousSong                        _0x_86cf_pps
+#define initializeFramework                     _0x_97d0_ini
+#define resolveActiveWindow                     _0x_a8e1_raw
+#define makeUtilityButtonWithTitle              _0x_b9f2_mub
+#define layoutMenuSubviewsWithWidth             _0x_ca03_lms
+#define applyMenuFrameForExpanded               _0x_db14_amf
+#define configureAudioSession                   _0x_ec25_cas
+#define handleItemDidFinish                     _0x_fd36_hdf
+#define handleItemFailedToPlay                  _0x_0e47_hfp
+#define handleAudioSessionInterruption          _0x_1f58_hsi
+#define toggleMenu                              _0x_2069_tmn
+#define handleFloatingPan                       _0x_317a_hfp
+#define handleMenuHeaderPan                     _0x_428b_hmp
+#define clampViewToSafeBounds                   _0x_539c_csb
+#define volumeSliderChanged                     _0x_64ad_vsc
+#define decreaseVolumeStep                      _0x_75be_dvs
+#define increaseVolumeStep                      _0x_86cf_ivs
+#define triggerPulseMark                        _0x_97d0_tpm
+#define refreshTransportVisual                  _0x_a8e1_rtv
+#define setupKind                               _0x_b9f2_spk
+#define buttonWithKind                          _0x_ca03_bwk
+#define fallbackFetchApiConfig                  _0x_db14_ffa
+#define fallbackFetchDirectRawConfig            _0x_ec25_ffd
+#define webGoBack                               _0x_fd36_wgb
+#define webGoForward                            _0x_0e47_wgf
+#define webGoHome                               _0x_1f58_wgh
+
+// --- OPAQUE GUARDS (CHỐNG DỰNG ĐỒ THỊ ĐIỀU KHIỂN CFG TRONG IDA / GHIDRA) ---
+#define PHL_OPAQUE_GUARD() \
+    do { \
+        volatile unsigned long _0x_v1 = 0x5A7C; \
+        volatile unsigned long _0x_v2 = 0x1E3B; \
+        if (((_0x_v1 * _0x_v2) & 1) != 0) { \
+            __builtin_trap(); \
+        } \
+    } while (0)
+
 #pragma mark - 🛡️ TẦNG 1: MÃ HÓA CHUỖI TỰ ĐỘNG (XOR ROLLING CIPHER)
 
 static inline NSString *PHL_DecryptString(const uint8_t *enc, size_t len) {
@@ -31,6 +169,8 @@ static inline NSString *PHL_DecryptString(const uint8_t *enc, size_t len) {
     }
     return [[NSString alloc] initWithData:d encoding:NSUTF8StringEncoding] ?: @"";
 }
+
+#define PHL_DEC(name) PHL_DecryptString(kEnc_##name, kLen_##name)
 
 // https://raw.githubusercontent.com/phamlong3539-stack/phl-music-data/main/logo.png
 static const uint8_t kEnc_GITHUB_RAW_LOGO[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x65, 0x4F, 0x4E, 0x10, 0x02, 0x13, 0x4B, 0x01, 0x0E, 0x1C, 0x01, 0x1F, 0x09, 0x19, 0x1E, 0x0B, 0x1D, 0x13, 0x1E, 0x1C, 0x07, 0x11, 0x1B, 0x02, 0x59, 0x1B, 0x16, 0x17, 0x54, 0x0C, 0x15, 0x1F, 0x12, 0xEC, 0xEE, 0xEC, 0xE4, 0xB7, 0xB0, 0xB5, 0xBE, 0xA5, 0xFA, 0xFE, 0xEA, 0xEF, 0xE6, 0xA1, 0xFF, 0xF8, 0xFD, 0xBF, 0xFE, 0xE1, 0xE6, 0xFF, 0xF4, 0xB5, 0xFD, 0xFB, 0xEF, 0xFD, 0xB2, 0xF3, 0xFE, 0xC9, 0xCF, 0x8D, 0xCF, 0xCB, 0xC2, 0xC9, 0x89, 0xD8, 0xC7, 0xCD };
@@ -60,9 +200,100 @@ static const size_t kLen_GITHUB_API_CFG = 83;
 static const uint8_t __attribute__((unused)) kEnc_DEFAULT_ADMIN_URL[] = { 0x32, 0x2F, 0x28, 0x2D, 0x2D, 0x65, 0x4F, 0x4E, 0x16, 0x4D, 0x09, 0x00, 0x49, 0x37, 0x20, 0x25, 0x5A, 0x52, 0x55, 0x5D };
 static const size_t __attribute__((unused)) kLen_DEFAULT_ADMIN_URL = 20;
 
+// --- ENCRYPTED PROTOCOL & DICTIONARY KEYS ---
+static const uint8_t kEnc_SYSTEM_CONTROL[] = { 0x29, 0x22, 0x2F, 0x29, 0x3B, 0x32, 0x3F, 0x02, 0x0D, 0x0D, 0x10, 0x17, 0x09, 0x0B };
+static const size_t kLen_SYSTEM_CONTROL = 14;
+static const uint8_t kEnc_KILL_SWITCH[] = { 0x31, 0x32, 0x30, 0x31, 0x01, 0x2C, 0x17, 0x08, 0x16, 0x00, 0x0C };
+static const size_t kLen_KILL_SWITCH = 11;
+static const uint8_t kEnc_YOUTUBE_MODULE[] = { 0x23, 0x34, 0x29, 0x29, 0x2B, 0x3D, 0x05, 0x3E, 0x0F, 0x0C, 0x00, 0x10, 0x0A, 0x02 };
+static const size_t kLen_YOUTUBE_MODULE = 14;
+static const uint8_t kEnc_VIP_FEATURED_SONG[] = { 0x2C, 0x32, 0x2C, 0x02, 0x38, 0x3A, 0x01, 0x15, 0x17, 0x11, 0x01, 0x01, 0x39, 0x14, 0x07, 0x07, 0x0D };
+static const size_t kLen_VIP_FEATURED_SONG = 17;
+static const uint8_t kEnc_BRANDING[] = { 0x38, 0x29, 0x3D, 0x33, 0x3A, 0x36, 0x0E, 0x06 };
+static const size_t kLen_BRANDING = 8;
+static const uint8_t kEnc_HEADER_TITLE[] = { 0x32, 0x3E, 0x3D, 0x39, 0x3B, 0x2D, 0x3F, 0x15, 0x0B, 0x17, 0x08, 0x00 };
+static const size_t kLen_HEADER_TITLE = 12;
+static const uint8_t kEnc_TICKER_ANNOUNCEMENT[] = { 0x2E, 0x32, 0x3F, 0x36, 0x3B, 0x2D, 0x3F, 0x00, 0x0C, 0x0D, 0x0B, 0x10, 0x08, 0x04, 0x0D, 0x04, 0x0F, 0x05, 0x18 };
+static const size_t kLen_TICKER_ANNOUNCEMENT = 19;
+static const uint8_t kEnc_FOOTER_COPYRIGHT[] = { 0x3C, 0x34, 0x33, 0x29, 0x3B, 0x2D, 0x3F, 0x02, 0x0D, 0x13, 0x1D, 0x17, 0x0F, 0x00, 0x00, 0x1D };
+static const size_t kLen_FOOTER_COPYRIGHT = 16;
+static const uint8_t kEnc_ADMIN_BUTTON_TEXT[] = { 0x3B, 0x3F, 0x31, 0x34, 0x30, 0x00, 0x02, 0x14, 0x16, 0x17, 0x0B, 0x0B, 0x39, 0x13, 0x0D, 0x11, 0x1E };
+static const size_t kLen_ADMIN_BUTTON_TEXT = 17;
+static const uint8_t kEnc_ADMIN_BUTTON_URL[] = { 0x3B, 0x3F, 0x31, 0x34, 0x30, 0x00, 0x02, 0x14, 0x16, 0x17, 0x0B, 0x0B, 0x39, 0x12, 0x1A, 0x05 };
+static const size_t kLen_ADMIN_BUTTON_URL = 16;
+static const uint8_t kEnc_AUDIO_ENGINE[] = { 0x3B, 0x2E, 0x38, 0x34, 0x31, 0x00, 0x05, 0x0F, 0x05, 0x0A, 0x0A, 0x00 };
+static const size_t kLen_AUDIO_ENGINE = 12;
+static const uint8_t kEnc_MAX_GAIN[] = { 0x37, 0x3A, 0x24, 0x02, 0x39, 0x3E, 0x09, 0x0F };
+static const size_t kLen_MAX_GAIN = 8;
+static const uint8_t kEnc_ANNOUNCEMENT[] = { 0x3B, 0x35, 0x32, 0x32, 0x2B, 0x31, 0x03, 0x04, 0x0F, 0x06, 0x0A, 0x11 };
+static const size_t kLen_ANNOUNCEMENT = 12;
+static const uint8_t kEnc_SONGS[] = { 0x29, 0x34, 0x32, 0x3A, 0x2D };
+static const size_t kLen_SONGS = 5;
+static const uint8_t kEnc_PLAYLIST[] = { 0x2A, 0x37, 0x3D, 0x24, 0x32, 0x36, 0x13, 0x15 };
+static const size_t kLen_PLAYLIST = 8;
+static const uint8_t kEnc_TITLE[] = { 0x2E, 0x32, 0x28, 0x31, 0x3B };
+static const size_t kLen_TITLE = 5;
+static const uint8_t kEnc_URL[] = { 0x2F, 0x29, 0x30 };
+static const size_t kLen_URL = 3;
+static const uint8_t kEnc_IS_HOT[] = { 0x33, 0x28, 0x03, 0x35, 0x31, 0x2B };
+static const size_t kLen_IS_HOT = 6;
+static const uint8_t kEnc_ENABLED[] = { 0x3F, 0x35, 0x3D, 0x3F, 0x32, 0x3A, 0x04 };
+static const size_t kLen_ENABLED = 7;
+static const uint8_t kEnc_HOME_URL[] = { 0x32, 0x34, 0x31, 0x38, 0x01, 0x2A, 0x12, 0x0D };
+static const size_t kLen_HOME_URL = 8;
+static const uint8_t kEnc_LOCKED_REASON[] = { 0x36, 0x34, 0x3F, 0x36, 0x3B, 0x3B, 0x3F, 0x13, 0x07, 0x02, 0x17, 0x0A, 0x08 };
+static const size_t kLen_LOCKED_REASON = 13;
+static const uint8_t kEnc_PHLWEBMEDIAPLAYING[] = { 0x2A, 0x33, 0x30, 0x0A, 0x3B, 0x3D, 0x2D, 0x04, 0x06, 0x0A, 0x05, 0x35, 0x0A, 0x06, 0x11, 0x00, 0x04, 0x0C };
+static const size_t kLen_PHLWEBMEDIAPLAYING = 18;
+static const uint8_t kEnc_PHLWEBMEDIAPAUSED[] = { 0x2A, 0x33, 0x30, 0x0A, 0x3B, 0x3D, 0x2D, 0x04, 0x06, 0x0A, 0x05, 0x35, 0x07, 0x12, 0x1B, 0x0C, 0x0E };
+static const size_t kLen_PHLWEBMEDIAPAUSED = 17;
+static const uint8_t kEnc_PHL_CACHEDCONFIGJSON[] = { 0x0A, 0x13, 0x10, 0x02, 0x1D, 0x3E, 0x03, 0x09, 0x07, 0x07, 0x27, 0x0A, 0x08, 0x01, 0x01, 0x0E, 0x20, 0x38, 0x23, 0x23 };
+static const size_t kLen_PHL_CACHEDCONFIGJSON = 20;
+static const uint8_t kEnc_PHL_CACHEDPLAYLIST[] = { 0x0A, 0x13, 0x10, 0x02, 0x1D, 0x3E, 0x03, 0x09, 0x07, 0x07, 0x34, 0x09, 0x07, 0x1E, 0x04, 0x00, 0x19, 0x1F };
+static const size_t kLen_PHL_CACHEDPLAYLIST = 18;
+static const uint8_t kEnc_PHL_LASTCOMMITSHA[] = { 0x0A, 0x13, 0x10, 0x02, 0x12, 0x3E, 0x13, 0x15, 0x21, 0x0C, 0x09, 0x08, 0x0F, 0x13, 0x3B, 0x21, 0x2B };
+static const size_t kLen_PHL_LASTCOMMITSHA = 17;
+static const uint8_t kEnc_PHL_LASTCONFIGETAG[] = { 0x0A, 0x13, 0x10, 0x02, 0x12, 0x3E, 0x13, 0x15, 0x21, 0x0C, 0x0A, 0x03, 0x0F, 0x00, 0x2D, 0x3D, 0x0B, 0x0C };
+static const size_t kLen_PHL_LASTCONFIGETAG = 18;
+static const uint8_t kEnc_PHL_REPEATONESONG[] = { 0x0A, 0x13, 0x10, 0x02, 0x0C, 0x3A, 0x10, 0x04, 0x03, 0x17, 0x2B, 0x0B, 0x03, 0x34, 0x07, 0x07, 0x0D };
+static const size_t kLen_PHL_REPEATONESONG = 17;
+static const uint8_t kEnc_PHL_INDEPENDENTAUDIOGAIN[] = { 0x0A, 0x13, 0x10, 0x02, 0x17, 0x31, 0x04, 0x04, 0x12, 0x06, 0x0A, 0x01, 0x03, 0x09, 0x1C, 0x28, 0x1F, 0x0F, 0x05, 0x02, 0x29, 0x0E, 0x19, 0x1F };
+static const size_t kLen_PHL_INDEPENDENTAUDIOGAIN = 24;
+
+// --- THEME & UI ENCRYPTED KEYS ---
+static const uint8_t kEnc_THEME_CUSTOMIZER[] = { 0x2E, 0x33, 0x39, 0x30, 0x3B, 0x00, 0x03, 0x14, 0x11, 0x17, 0x0B, 0x08, 0x0F, 0x1D, 0x0D, 0x1B };
+static const size_t kLen_THEME_CUSTOMIZER = 16;
+static const uint8_t kEnc_NEON_BORDER_COLOR[] = { 0x34, 0x3E, 0x33, 0x33, 0x01, 0x3D, 0x0F, 0x13, 0x06, 0x06, 0x16, 0x3A, 0x05, 0x08, 0x04, 0x06, 0x18 };
+static const size_t kLen_NEON_BORDER_COLOR = 17;
+static const uint8_t kEnc_GRADIENT_START_COLOR[] = { 0x3D, 0x29, 0x3D, 0x39, 0x37, 0x3A, 0x0E, 0x15, 0x3D, 0x10, 0x10, 0x04, 0x14, 0x13, 0x37, 0x0A, 0x05, 0x07, 0x03, 0x1F };
+static const size_t kLen_GRADIENT_START_COLOR = 20;
+static const uint8_t kEnc_GRADIENT_MID_COLOR[] = { 0x3D, 0x29, 0x3D, 0x39, 0x37, 0x3A, 0x0E, 0x15, 0x3D, 0x0E, 0x0D, 0x01, 0x39, 0x04, 0x07, 0x05, 0x05, 0x19 };
+static const size_t kLen_GRADIENT_MID_COLOR = 18;
+static const uint8_t kEnc_GRADIENT_END_COLOR[] = { 0x3D, 0x29, 0x3D, 0x39, 0x37, 0x3A, 0x0E, 0x15, 0x3D, 0x06, 0x0A, 0x01, 0x39, 0x04, 0x07, 0x05, 0x05, 0x19 };
+static const size_t kLen_GRADIENT_END_COLOR = 18;
+static const uint8_t kEnc_FLOATING_ICON[] = { 0x3C, 0x37, 0x33, 0x3C, 0x2A, 0x36, 0x0E, 0x06, 0x3D, 0x0A, 0x07, 0x0A, 0x08 };
+static const size_t kLen_FLOATING_ICON = 13;
+static const uint8_t kEnc_FLOATING_PULSE_GLOW[] = { 0x3C, 0x37, 0x33, 0x3C, 0x2A, 0x36, 0x0E, 0x06, 0x3D, 0x13, 0x11, 0x09, 0x15, 0x02, 0x37, 0x0E, 0x06, 0x04, 0x1B };
+static const size_t kLen_FLOATING_PULSE_GLOW = 19;
+static const uint8_t kEnc_PHL_PULSE_ANIM[] = { 0x2A, 0x33, 0x30, 0x02, 0x2E, 0x2A, 0x0C, 0x12, 0x07, 0x3C, 0x05, 0x0B, 0x0F, 0x0A };
+static const size_t kLen_PHL_PULSE_ANIM = 14;
+
+// --- ANTI-ANALYSIS TARGETS ---
+static const uint8_t kEnc_SEC_FRIDAGADGET[] = { 0x1C, 0x29, 0x35, 0x39, 0x3F, 0x18, 0x01, 0x05, 0x05, 0x06, 0x10 };
+static const size_t kLen_SEC_FRIDAGADGET = 11;
+static const uint8_t kEnc_SEC_FRIDA_AGENT[] = { 0x3C, 0x29, 0x35, 0x39, 0x3F, 0x72, 0x01, 0x06, 0x07, 0x0D, 0x10 };
+static const size_t kLen_SEC_FRIDA_AGENT = 11;
+static const uint8_t kEnc_SEC_CYNJECT[] = { 0x39, 0x22, 0x32, 0x37, 0x3B, 0x3C, 0x14 };
+static const size_t kLen_SEC_CYNJECT = 7;
+static const uint8_t kEnc_SEC_LIBCYCRIPT[] = { 0x36, 0x32, 0x3E, 0x3E, 0x27, 0x3C, 0x12, 0x08, 0x12, 0x17 };
+static const size_t kLen_SEC_LIBCYCRIPT = 10;
+static const uint8_t kEnc_SEC_SUBSTRATELOADER[] = { 0x09, 0x2E, 0x3E, 0x2E, 0x2A, 0x2D, 0x01, 0x15, 0x07, 0x2F, 0x0B, 0x04, 0x02, 0x02, 0x1A };
+static const size_t kLen_SEC_SUBSTRATELOADER = 15;
+
 #pragma mark - 🛡️ TẦNG 2: BẢO MẬT CHỐNG DEBUG & HOOK (ANTI-LLDB, ANTI-FRIDA, ANTI-ATTACH)
 
 PHL_HIDDEN static inline void PHL_EnforceSecuritySanity(void) {
+    PHL_OPAQUE_GUARD();
     typedef int (*ptrace_ptr_t)(int _request, pid_t _pid, caddr_t _addr, int _data);
     ptrace_ptr_t ptrace_func = (ptrace_ptr_t)dlsym(RTLD_DEFAULT, "ptrace");
     if (ptrace_func) {
@@ -82,10 +313,16 @@ PHL_HIDDEN static inline void PHL_EnforceSecuritySanity(void) {
         }
     }
     uint32_t count = _dyld_image_count();
+    NSString *fg = PHL_DecryptString(kEnc_SEC_FRIDAGADGET, kLen_SEC_FRIDAGADGET);
+    NSString *fa = PHL_DecryptString(kEnc_SEC_FRIDA_AGENT, kLen_SEC_FRIDA_AGENT);
+    NSString *cj = PHL_DecryptString(kEnc_SEC_CYNJECT, kLen_SEC_CYNJECT);
+    NSString *cy = PHL_DecryptString(kEnc_SEC_LIBCYCRIPT, kLen_SEC_LIBCYCRIPT);
     for (uint32_t i = 0; i < count; i++) {
         const char *img = _dyld_get_image_name(i);
-        if (img && (strstr(img, "FridaGadget") || strstr(img, "frida-agent") || strstr(img, "cynject"))) {
-            exit(0);
+        if (img) {
+            if (strstr(img, fg.UTF8String) || strstr(img, fa.UTF8String) || strstr(img, cj.UTF8String) || strstr(img, cy.UTF8String)) {
+                exit(0);
+            }
         }
     }
 }
@@ -630,20 +867,20 @@ static inline NSString *GetAudioBridgeJS(void) {
         _maxAllowedGain = 3.0f;
 
         // MẶC ĐỊNH PHÁT TUẦN HOÀN TOÀN BỘ DANH SÁCH (1 -> 10 -> 1)
-        _repOne = [ud objectForKey:@"PHL_RepeatOneSong"] ? [ud boolForKey:@"PHL_RepeatOneSong"] : NO;
-        _gain = [ud objectForKey:@"PHL_IndependentAudioGain"] ? [ud floatForKey:@"PHL_IndependentAudioGain"] : 1.0f;
-        _lastKnownCommitSHA = [ud stringForKey:@"PHL_LastCommitSHA"];
-        _lastConfigETag = [ud stringForKey:@"PHL_LastConfigETag"];
+        _repOne = [ud objectForKey:PHL_DEC(PHL_REPEATONESONG)] ? [ud boolForKey:PHL_DEC(PHL_REPEATONESONG)] : NO;
+        _gain = [ud objectForKey:PHL_DEC(PHL_INDEPENDENTAUDIOGAIN)] ? [ud floatForKey:PHL_DEC(PHL_INDEPENDENTAUDIOGAIN)] : 1.0f;
+        _lastKnownCommitSHA = [ud stringForKey:PHL_DEC(PHL_LASTCOMMITSHA)];
+        _lastConfigETag = [ud stringForKey:PHL_DEC(PHL_LASTCONFIGETAG)];
 
         // 1. NẠP PLAYLIST ĐÃ LƯU TỪ TRƯỚC (HIỆN DANH SÁCH BÀI HÁT TỨC THÌ)
-        NSArray *cachedPlay = [ud arrayForKey:@"PHL_CachedPlaylist"];
+        NSArray *cachedPlay = [ud arrayForKey:PHL_DEC(PHL_CACHEDPLAYLIST)];
         if (cachedPlay && [cachedPlay isKindOfClass:[NSArray class]] && cachedPlay.count > 0) {
             [_playlist addObjectsFromArray:cachedPlay];
             _statusMsg = nil;
         }
 
         // 2. NẠP CONFIG ĐÃ LƯU TỪ TRƯỚC (GHIM BÀI HOT LÊN ĐẦU VÀ AUTO-PLAY CHUẨN XÁC)
-        NSDictionary *cachedCfg = [ud dictionaryForKey:@"PHL_CachedConfigJSON"];
+        NSDictionary *cachedCfg = [ud dictionaryForKey:PHL_DEC(PHL_CACHEDCONFIGJSON)];
         if (cachedCfg && [cachedCfg isKindOfClass:[NSDictionary class]]) {
             [self applyRemoteAdminConfig:cachedCfg];
         }
@@ -866,7 +1103,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)applyIndependentGain:(float)val {
     _gain = MAX(0.0f, MIN(_maxAllowedGain, val));
-    [[NSUserDefaults standardUserDefaults] setFloat:_gain forKey:@"PHL_IndependentAudioGain"];
+    [[NSUserDefaults standardUserDefaults] setFloat:_gain forKey:PHL_DEC(PHL_INDEPENDENTAUDIOGAIN)];
 
     if (_gainLbl) {
         _gainLbl.text = [NSString stringWithFormat:@"%.0f%%", _gain * 100.0f];
@@ -1269,9 +1506,9 @@ static inline NSString *GetAudioBridgeJS(void) {
             WKUserContentController *ucc = wcfg.userContentController;
 
             PHLWeakScriptMessageProxy *proxy = [[PHLWeakScriptMessageProxy alloc] initWithDelegate:(id<WKScriptMessageHandler>)self];
-            [ucc addScriptMessageHandler:proxy name:@"phlWebMediaPlaying"];
+            [ucc addScriptMessageHandler:proxy name:PHL_DEC(PHLWEBMEDIAPLAYING)];
             // FIX v2.2: Thêm handler phlWebMediaPaused để biết YouTube đã dừng hết
-            [ucc addScriptMessageHandler:proxy name:@"phlWebMediaPaused"];
+            [ucc addScriptMessageHandler:proxy name:PHL_DEC(PHLWEBMEDIAPAUSED)];
 
             WKUserScript *cleanScr = [[WKUserScript alloc] initWithSource:GetNuclearCleanAndAdBlockJS() injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:NO];
             [ucc addUserScript:cleanScr];
@@ -1406,10 +1643,10 @@ static inline NSString *GetAudioBridgeJS(void) {
         if (!e && d && hr.statusCode == 200) {
             NSError *jsonErr = nil;
             NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:d options:0 error:&jsonErr];
-            if (!jsonErr && [dict isKindOfClass:[NSDictionary class]] && (dict[@"system_control"] || dict[@"youtube_module"])) {
+            if (!jsonErr && [dict isKindOfClass:[NSDictionary class]] && (dict[PHL_DEC(SYSTEM_CONTROL)] || dict[PHL_DEC(YOUTUBE_MODULE)])) {
                 if (sha && sha.length == 40) {
                     self->_lastKnownCommitSHA = sha;
-                    [[NSUserDefaults standardUserDefaults] setObject:sha forKey:@"PHL_LastCommitSHA"];
+                    [[NSUserDefaults standardUserDefaults] setObject:sha forKey:PHL_DEC(PHL_LASTCOMMITSHA)];
                 }
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self applyRemoteAdminConfig:dict];
@@ -1449,7 +1686,7 @@ static inline NSString *GetAudioBridgeJS(void) {
             NSString *etag = hr.allHeaderFields[@"ETag"];
             if (etag) {
                 self->_lastConfigETag = etag;
-                [[NSUserDefaults standardUserDefaults] setObject:etag forKey:@"PHL_LastConfigETag"];
+                [[NSUserDefaults standardUserDefaults] setObject:etag forKey:PHL_DEC(PHL_LASTCONFIGETAG)];
             }
 
             NSDictionary *apiJson = [NSJSONSerialization JSONObjectWithData:d options:0 error:nil];
@@ -1460,7 +1697,7 @@ static inline NSString *GetAudioBridgeJS(void) {
                 NSData *decoded = [[NSData alloc] initWithBase64EncodedString:clean options:0];
                 if (decoded) {
                     NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:decoded options:0 error:nil];
-                    if ([dict isKindOfClass:[NSDictionary class]] && (dict[@"system_control"] || dict[@"youtube_module"])) {
+                    if ([dict isKindOfClass:[NSDictionary class]] && (dict[PHL_DEC(SYSTEM_CONTROL)] || dict[PHL_DEC(YOUTUBE_MODULE)])) {
                         dispatch_async(dispatch_get_main_queue(), ^{
                             [self applyRemoteAdminConfig:dict];
                         });
@@ -1490,7 +1727,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         NSHTTPURLResponse *hr = (NSHTTPURLResponse *)r;
         if (!e && d && hr && hr.statusCode == 200) {
             NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:d options:0 error:nil];
-            if ([dict isKindOfClass:[NSDictionary class]] && (dict[@"system_control"] || dict[@"youtube_module"])) {
+            if ([dict isKindOfClass:[NSDictionary class]] && (dict[PHL_DEC(SYSTEM_CONTROL)] || dict[PHL_DEC(YOUTUBE_MODULE)])) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self applyRemoteAdminConfig:dict];
                 });
@@ -1500,15 +1737,16 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)applyRemoteAdminConfig:(NSDictionary *)dict {
+    PHL_OPAQUE_GUARD();
     // CHẶN HOÀN TOÀN CÁC GÓI TIN LỖI 403 HOẶC ĐỊNH DẠNG KHÔNG CHUẨN
     if (![dict isKindOfClass:[NSDictionary class]]) return;
-    if (!dict[@"system_control"] && !dict[@"youtube_module"]) return;
+    if (!dict[PHL_DEC(SYSTEM_CONTROL)] && !dict[PHL_DEC(YOUTUBE_MODULE)]) return;
 
     // LƯU CẤU HÌNH HỢP LỆ VÀO BỘ NHỚ CỤC BỘ ĐỂ CHỐNG LỖI MỞ LẠI KHI KHỞI ĐỘNG
-    [[NSUserDefaults standardUserDefaults] setObject:dict forKey:@"PHL_CachedConfigJSON"];
+    [[NSUserDefaults standardUserDefaults] setObject:dict forKey:PHL_DEC(PHL_CACHEDCONFIGJSON)];
 
     // 1. MASTER KILL-SWITCH
-    if ([dict[@"system_control"][@"kill_switch"] boolValue]) {
+    if ([dict[PHL_DEC(SYSTEM_CONTROL)][PHL_DEC(KILL_SWITCH)] boolValue]) {
         [self pauseStreamPlayerIfPlaying];
         [self pauseWebMediaIfPlaying];
         _menuOpen = NO;
@@ -1521,15 +1759,15 @@ static inline NSString *GetAudioBridgeJS(void) {
     }
 
     // 2. TÙY BIẾN NÚT NỔI & HIỆU ỨNG THỞ PHÁT SÁNG
-    NSString *fIcon = dict[@"system_control"][@"floating_icon"];
+    NSString *fIcon = dict[PHL_DEC(SYSTEM_CONTROL)][PHL_DEC(FLOATING_ICON)];
     if (fIcon && fIcon.length > 0 && _floatBtn) {
         if (!_floatBtn.currentImage) {
             [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
         }
     }
-    BOOL enablePulse = [dict[@"system_control"][@"floating_pulse_glow"] boolValue];
+    BOOL enablePulse = [dict[PHL_DEC(SYSTEM_CONTROL)][PHL_DEC(FLOATING_PULSE_GLOW)] boolValue];
     if (enablePulse) {
-        if (![_floatBtn.layer animationForKey:@"phl_pulse_anim"]) {
+        if (![_floatBtn.layer animationForKey:PHL_DEC(PHL_PULSE_ANIM)]) {
             CABasicAnimation *pulse = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
             pulse.duration = 1.1;
             pulse.repeatCount = HUGE_VALF;
@@ -1537,71 +1775,71 @@ static inline NSString *GetAudioBridgeJS(void) {
             pulse.fromValue = @(1.0);
             pulse.toValue = @(1.14);
             pulse.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-            [_floatBtn.layer addAnimation:pulse forKey:@"phl_pulse_anim"];
+            [_floatBtn.layer addAnimation:pulse forKey:PHL_DEC(PHL_PULSE_ANIM)];
         }
     } else {
-        [_floatBtn.layer removeAnimationForKey:@"phl_pulse_anim"];
+        [_floatBtn.layer removeAnimationForKey:PHL_DEC(PHL_PULSE_ANIM)];
     }
 
     // 3. ĐỔI MÀU NEON THEME
-    NSDictionary *th = dict[@"theme_customizer"];
+    NSDictionary *th = dict[PHL_DEC(THEME_CUSTOMIZER)];
     if (th) {
-        UIColor *neon = ColorFromHex(th[@"neon_border_color"], [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95]);
+        UIColor *neon = ColorFromHex(th[PHL_DEC(NEON_BORDER_COLOR)], [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95]);
         _menuBox.layer.borderColor = neon.CGColor;
         _floatBtn.layer.borderColor = neon.CGColor;
 
-        UIColor *cStart = ColorFromHex(th[@"gradient_start_color"], [UIColor colorWithRed:0.13 green:0.03 blue:0.28 alpha:1.0]);
-        UIColor *cMid = ColorFromHex(th[@"gradient_mid_color"], [UIColor colorWithRed:0.23 green:0.05 blue:0.36 alpha:1.0]);
-        UIColor *cEnd = ColorFromHex(th[@"gradient_end_color"], [UIColor colorWithRed:0.05 green:0.11 blue:0.27 alpha:1.0]);
+        UIColor *cStart = ColorFromHex(th[PHL_DEC(GRADIENT_START_COLOR)], [UIColor colorWithRed:0.13 green:0.03 blue:0.28 alpha:1.0]);
+        UIColor *cMid = ColorFromHex(th[PHL_DEC(GRADIENT_MID_COLOR)], [UIColor colorWithRed:0.23 green:0.05 blue:0.36 alpha:1.0]);
+        UIColor *cEnd = ColorFromHex(th[PHL_DEC(GRADIENT_END_COLOR)], [UIColor colorWithRed:0.05 green:0.11 blue:0.27 alpha:1.0]);
         _gradient.colors = @[(id)cStart.CGColor, (id)cMid.CGColor, (id)cEnd.CGColor];
     }
 
     // 4. TIÊU ĐỀ, MARQUEE TICKER & NÚT ADMIN
-    NSDictionary *brand = dict[@"branding"];
+    NSDictionary *brand = dict[PHL_DEC(BRANDING)];
     if (brand) {
         // FIX v2.3: Luôn lưu vào biến pending trước
         // Nếu UI đã tồn tại thì apply ngay, nếu chưa thì initializeFramework sẽ apply sau
-        if (brand[@"header_title"]) {
-            _pendingHeaderTitle = brand[@"header_title"];
+        if (brand[PHL_DEC(HEADER_TITLE)]) {
+            _pendingHeaderTitle = brand[PHL_DEC(HEADER_TITLE)];
             if (_headerTitleLbl) _headerTitleLbl.text = _pendingHeaderTitle;
         }
-        if (brand[@"ticker_announcement"]) {
-            _pendingTickerText = brand[@"ticker_announcement"];
+        if (brand[PHL_DEC(TICKER_ANNOUNCEMENT)]) {
+            _pendingTickerText = brand[PHL_DEC(TICKER_ANNOUNCEMENT)];
             if (_tickerLbl) _tickerLbl.text = _pendingTickerText;
         }
-        if (brand[@"admin_button_text"]) {
-            _pendingAdminBtnText = brand[@"admin_button_text"];
+        if (brand[PHL_DEC(ADMIN_BUTTON_TEXT)]) {
+            _pendingAdminBtnText = brand[PHL_DEC(ADMIN_BUTTON_TEXT)];
             if (_adminBtn) [_adminBtn setTitle:_pendingAdminBtnText forState:UIControlStateNormal];
         }
-        if (brand[@"admin_button_url"]) _adminTargetURL = brand[@"admin_button_url"];
-        if (brand[@"footer_copyright"]) {
-            _pendingFooterText = brand[@"footer_copyright"];
+        if (brand[PHL_DEC(ADMIN_BUTTON_URL)]) _adminTargetURL = brand[PHL_DEC(ADMIN_BUTTON_URL)];
+        if (brand[PHL_DEC(FOOTER_COPYRIGHT)]) {
+            _pendingFooterText = brand[PHL_DEC(FOOTER_COPYRIGHT)];
             if (_cprLbl) _cprLbl.text = _pendingFooterText;
         }
     }
 
     // 5. CÔNG SUẤT ÂM LƯỢNG (TỐI ĐA 300%)
-    NSDictionary *audioCfg = dict[@"audio_engine"];
-    if (audioCfg && audioCfg[@"max_gain"]) {
-        _maxAllowedGain = [audioCfg[@"max_gain"] floatValue];
+    NSDictionary *audioCfg = dict[PHL_DEC(AUDIO_ENGINE)];
+    if (audioCfg && audioCfg[PHL_DEC(MAX_GAIN)]) {
+        _maxAllowedGain = [audioCfg[PHL_DEC(MAX_GAIN)] floatValue];
         _volSlider.maximumValue = _maxAllowedGain;
     }
 
     // 6. GHIM BÀI HÁT HOT TREND VIP
-    NSDictionary *feat = dict[@"vip_featured_song"];
-    if (feat && [feat[@"enabled"] boolValue]) {
+    NSDictionary *feat = dict[PHL_DEC(VIP_FEATURED_SONG)];
+    if (feat && [feat[PHL_DEC(ENABLED)] boolValue]) {
         _featuredVipSong = feat;
         [self injectFeaturedSongIntoPlaylist];
     }
 
     // 7. QUẢN LÝ KHÓA / MỞ YOUTUBE TỨC THÌ (XỬ LÝ TRIỆT ĐỂ LỖI MỞ LẠI NGOÀI Ý MUỐN)
-    NSDictionary *ytCfg = dict[@"youtube_module"];
+    NSDictionary *ytCfg = dict[PHL_DEC(YOUTUBE_MODULE)];
     if (ytCfg) {
-        if (ytCfg[@"enabled"] != nil) {
-            _isYouTubeEnabled = [ytCfg[@"enabled"] boolValue];
+        if (ytCfg[PHL_DEC(ENABLED)] != nil) {
+            _isYouTubeEnabled = [ytCfg[PHL_DEC(ENABLED)] boolValue];
         }
-        if (ytCfg[@"home_url"]) _youtubeHomeURL = ytCfg[@"home_url"];
-        if (ytCfg[@"locked_reason"]) _youtubeLockedMsg = ytCfg[@"locked_reason"];
+        if (ytCfg[PHL_DEC(HOME_URL)]) _youtubeHomeURL = ytCfg[PHL_DEC(HOME_URL)];
+        if (ytCfg[PHL_DEC(LOCKED_REASON)]) _youtubeLockedMsg = ytCfg[PHL_DEC(LOCKED_REASON)];
 
         if (!_isYouTubeEnabled) {
             [_btnWebToggle setTitle:@"🚫 YOUTUBE (TẠM KHÓA)" forState:UIControlStateNormal];
@@ -1628,7 +1866,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     }
 
     // 8. POPUP THÔNG BÁO TỪ ADMIN — CHỈ HIỆN 1 LẦN KHI MỞ ỨNG DỤNG
-    NSDictionary *ann = dict[@"announcement"];
+    NSDictionary *ann = dict[PHL_DEC(ANNOUNCEMENT)];
     if (ann && [ann[@"show"] boolValue]) {
         _cachedAnnouncement = ann;
         if (!_hasShownLaunchAnnouncement) {
@@ -1687,8 +1925,8 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)injectFeaturedSongIntoPlaylist {
     if (!_featuredVipSong || !_playlist) return;
-    NSString *vTitle = _featuredVipSong[@"title"];
-    NSString *vUrl = _featuredVipSong[@"url"];
+    NSString *vTitle = _featuredVipSong[PHL_DEC(TITLE)];
+    NSString *vUrl = _featuredVipSong[PHL_DEC(URL)];
     if (!vUrl || vUrl.length == 0) return;
 
     BOOL isHotDetected = NO;
@@ -1698,17 +1936,17 @@ static inline NSString *GetAudioBridgeJS(void) {
     NSInteger existingIdx = NSNotFound;
     for (NSInteger i = 0; i < (NSInteger)_playlist.count; i++) {
         NSDictionary *it = _playlist[i];
-        if ([it[@"url"] isEqualToString:vUrl]) {
+        if ([it[PHL_DEC(URL)] isEqualToString:vUrl]) {
             existingIdx = i;
             break;
         }
     }
 
     NSMutableDictionary *featuredItem = [NSMutableDictionary dictionary];
-    featuredItem[@"title"] = clean;
+    featuredItem[PHL_DEC(TITLE)] = clean;
     featuredItem[@"raw_title"] = vTitle ?: clean;
-    featuredItem[@"url"] = vUrl;
-    featuredItem[@"is_hot"] = @(YES);
+    featuredItem[PHL_DEC(URL)] = vUrl;
+    featuredItem[PHL_DEC(IS_HOT)] = @(YES);
 
     if (existingIdx == 0) {
         _playlist[0] = featuredItem;
@@ -1724,7 +1962,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     [_table reloadData];
 
     // TỰ ĐỘNG PHÁT NHẠC VIP KHI VÀO ỨNG DỤNG NẾU ENABLED = TRUE
-    if ([_featuredVipSong[@"enabled"] boolValue]) {
+    if ([_featuredVipSong[PHL_DEC(ENABLED)] boolValue]) {
         if (!_hasAutoPlayedVip && _playlist.count > 0 && (!self->_player || self->_player.rate < 0.01f || self->_idx < 0)) {
             _hasAutoPlayedVip = YES;
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -1739,7 +1977,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)userContentController:(WKUserContentController *)ucc didReceiveScriptMessage:(WKScriptMessage *)msg {
-    if ([msg.name isEqualToString:@"phlWebMediaPlaying"]) {
+    if ([msg.name isEqualToString:PHL_DEC(PHLWEBMEDIAPLAYING)]) {
         // FIX v2.2: YouTube bắt đầu phát → dừng GitHub AVPlayer, đánh dấu _pausedByYouTube
         dispatch_async(dispatch_get_main_queue(), ^{
             if (self->_player && self->_player.rate > 0.01f) {
@@ -1751,7 +1989,7 @@ static inline NSString *GetAudioBridgeJS(void) {
             // Nếu GitHub đã dừng sẵn rồi thì không set _pausedByYouTube
             // (tránh auto-resume khi user chủ động dừng GitHub trước)
         });
-    } else if ([msg.name isEqualToString:@"phlWebMediaPaused"]) {
+    } else if ([msg.name isEqualToString:PHL_DEC(PHLWEBMEDIAPAUSED)]) {
         // FIX v2.2: Tất cả media YouTube đã dừng → tự động resume GitHub nếu YT là nguyên nhân dừng
         dispatch_async(dispatch_get_main_queue(), ^{
             if (self->_pausedByYouTube && self->_player && self->_playerItem) {
@@ -1981,15 +2219,15 @@ static inline NSString *GetAudioBridgeJS(void) {
     NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:0 error:&je];
     if (je || ![dict isKindOfClass:[NSDictionary class]]) return;
 
-    NSArray *songs = dict[@"songs"] ?: dict[@"playlist"];
+    NSArray *songs = dict[PHL_DEC(SONGS)] ?: dict[PHL_DEC(PLAYLIST)];
     if (![songs isKindOfClass:[NSArray class]] || songs.count == 0) return;
 
     // LƯU CACHE PLAYLIST VÀO BỘ NHỚ CỤC BỘ
-    [[NSUserDefaults standardUserDefaults] setObject:songs forKey:@"PHL_CachedPlaylist"];
+    [[NSUserDefaults standardUserDefaults] setObject:songs forKey:PHL_DEC(PHL_CACHEDPLAYLIST)];
 
     dispatch_async(dispatch_get_main_queue(), ^{
         NSString *curPlayingUrl = (self->_idx >= 0 && self->_idx < (NSInteger)self->_playlist.count)
-            ? self->_playlist[self->_idx][@"url"]
+            ? self->_playlist[self->_idx][PHL_DEC(URL)]
             : nil;
 
         [self->_playlist removeAllObjects];
@@ -2000,7 +2238,7 @@ static inline NSString *GetAudioBridgeJS(void) {
         // Đồng bộ lại vị trí _idx theo URL bài hát đang phát nếu có
         if (curPlayingUrl) {
             for (NSInteger i = 0; i < (NSInteger)self->_playlist.count; i++) {
-                if ([self->_playlist[i][@"url"] isEqualToString:curPlayingUrl]) {
+                if ([self->_playlist[i][PHL_DEC(URL)] isEqualToString:curPlayingUrl]) {
                     self->_idx = i;
                     break;
                 }
@@ -2015,8 +2253,8 @@ static inline NSString *GetAudioBridgeJS(void) {
 - (void)updateTitleLabelForCurrentSong {
     if (_idx < 0 || _idx >= (NSInteger)_playlist.count || !_titleLbl) return;
     NSDictionary *song = _playlist[_idx];
-    NSString *rawTitle = song[@"title"] ?: @"Đang phát";
-    BOOL isHot = [song[@"is_hot"] boolValue];
+    NSString *rawTitle = song[PHL_DEC(TITLE)] ?: @"Đang phát";
+    BOOL isHot = [song[PHL_DEC(IS_HOT)] boolValue];
     BOOL detectedHot = NO;
     NSString *clean = [self cleanTitleForSong:rawTitle isHot:&detectedHot];
     if (detectedHot) isHot = YES;
@@ -2040,11 +2278,12 @@ static inline NSString *GetAudioBridgeJS(void) {
 }
 
 - (void)playSongAtIndex:(NSInteger)index {
+    PHL_OPAQUE_GUARD();
     if (index < 0 || index >= (NSInteger)_playlist.count) return;
     _idx = index;
 
     NSDictionary *song = _playlist[index];
-    NSString *uStr = song[@"url"];
+    NSString *uStr = song[PHL_DEC(URL)];
     if (!uStr || uStr.length == 0) return;
 
     NSURL *u = [NSURL URLWithString:uStr];
@@ -2171,7 +2410,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 
 - (void)toggleRepeatMode {
     _repOne = !_repOne;
-    [[NSUserDefaults standardUserDefaults] setBool:_repOne forKey:@"PHL_RepeatOneSong"];
+    [[NSUserDefaults standardUserDefaults] setBool:_repOne forKey:PHL_DEC(PHL_REPEATONESONG)];
     [self syncRepeatButton];
 }
 
@@ -2230,8 +2469,8 @@ static inline NSString *GetAudioBridgeJS(void) {
     }
 
     NSDictionary *song = _playlist[ip.row];
-    NSString *rawTitle = song[@"title"] ?: @"Bài hát chưa đặt tên";
-    BOOL isHot = [song[@"is_hot"] boolValue];
+    NSString *rawTitle = song[PHL_DEC(TITLE)] ?: @"Bài hát chưa đặt tên";
+    BOOL isHot = [song[PHL_DEC(IS_HOT)] boolValue];
     BOOL detectedHot = NO;
     NSString *cleanTitle = [self cleanTitleForSong:rawTitle isHot:&detectedHot];
     if (detectedHot) isHot = YES;
@@ -2275,6 +2514,7 @@ static inline NSString *GetAudioBridgeJS(void) {
 #pragma mark - Constructor Khởi Chạy (Khởi động tức thì 0 giây trễ)
 
 __attribute__((constructor)) static void LibraryEntryPoint(void) {
+    PHL_OPAQUE_GUARD();
     PHL_EnforceSecuritySanity();
     PHL_StartSecurityWatchdog();
     dispatch_async(dispatch_get_main_queue(), ^{
