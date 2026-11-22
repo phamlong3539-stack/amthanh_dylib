@@ -88,6 +88,10 @@
 #define _web                                    _0x_xc
 #define _adminBtn                               _0x_xd
 #define _cprLbl                                 _0x_xe
+#define _cachedAdminConfig                      _0x_xf1
+#define _pendingNeonColor                       _0x_xf2
+#define _pendingGradientColors                  _0x_xf3
+#define _enablePulseGlow                        _0x_xf4
 
 // --- PHƯƠNG THỨC NỘI BỘ (METHODS & SELECTORS) ---
 #define advanceToNextTrackAuto                  _0x_a8f1_nxt
@@ -146,6 +150,10 @@
 #define webGoBack                               _0x_fd36_wgb
 #define webGoForward                            _0x_0e47_wgf
 #define webGoHome                               _0x_1f58_wgh
+#define ensureFloatingButtonPulseAnimation      _0x_fa01_efp
+#define handleAppDidBecomeActive                _0x_fa02_hba
+#define handleAppWillEnterForeground            _0x_fa03_wef
+#define handleAppDidEnterBackground             _0x_fa04_deb
 
 // --- OPAQUE GUARDS (CHỐNG DỰNG ĐỒ THỊ ĐIỀU KHIỂN CFG TRONG IDA / GHIDRA) ---
 #define PHL_OPAQUE_GUARD() \
@@ -625,9 +633,19 @@ static inline UIColor *ColorFromHex(NSString *hexString, UIColor *fallback) {
     // FIX v2.4: SMART UNPLAYED CYCLE & ANTI-SILENCE WATCHDOG
     NSMutableSet<NSString *> *_playedSongURLs;
     NSTimer *_playbackWatchdogTimer;
+
+    // FIX v2.5: THEME & ANIMATION PERSISTENCE ACROSS RE-ENTRY
+    NSDictionary *_cachedAdminConfig;
+    UIColor *_pendingNeonColor;
+    NSArray *_pendingGradientColors;
+    BOOL _enablePulseGlow;
 }
 + (instancetype)sharedInstance;
 - (void)initializeFramework;
+- (void)ensureFloatingButtonPulseAnimation;
+- (void)handleAppDidBecomeActive:(NSNotification *)note;
+- (void)handleAppWillEnterForeground:(NSNotification *)note;
+- (void)handleAppDidEnterBackground:(NSNotification *)note;
 @end
 
 @implementation PHLProtectedAudioManager
@@ -859,8 +877,8 @@ static inline NSString *GetAudioBridgeJS(void) {
         _isTransitioningTrack = NO;
         _pausedByYouTube = NO;
 
-        // MẶC ĐỊNH AN TOÀN: KHÓA YOUTUBE BAN ĐẦU ĐỂ TRÁNH MỞ NHẦM KHI ADMIN ĐÃ ĐÓNG
-        _isYouTubeEnabled = NO;
+        // MẶC ĐỊNH AN TOÀN: NẠP TRẠNG THÁI YOUTUBE TỪ BỘ NHỚ LƯU TRỮ TRƯỚC ĐÓ
+        _isYouTubeEnabled = [ud objectForKey:@"PHL_Cached_YT_Enabled"] ? [ud boolForKey:@"PHL_Cached_YT_Enabled"] : YES;
         _youtubeHomeURL = @"https://m.youtube.com";
         _youtubeLockedMsg = @"Tính năng YouTube đang bảo trì hạ tầng.";
         _adminTargetURL = @"https://phamlong09.store";
@@ -872,6 +890,15 @@ static inline NSString *GetAudioBridgeJS(void) {
         _lastKnownCommitSHA = [ud stringForKey:PHL_DEC(PHL_LASTCOMMITSHA)];
         _lastConfigETag = [ud stringForKey:PHL_DEC(PHL_LASTCONFIGETAG)];
 
+        // FIX v2.5: Mặc định theme Màu Hồng #FF85C0 và hiệu ứng thở nút nổi
+        _enablePulseGlow = YES;
+        _pendingNeonColor = [UIColor colorWithRed:1.0 green:0.52 blue:0.75 alpha:1.0];
+        _pendingGradientColors = @[
+            (id)[UIColor colorWithRed:0.18 green:0.03 blue:0.13 alpha:1.0].CGColor,
+            (id)[UIColor colorWithRed:0.30 green:0.06 blue:0.21 alpha:1.0].CGColor,
+            (id)[UIColor colorWithRed:0.07 green:0.01 blue:0.05 alpha:1.0].CGColor
+        ];
+
         // 1. NẠP PLAYLIST ĐÃ LƯU TỪ TRƯỚC (HIỆN DANH SÁCH BÀI HÁT TỨC THÌ)
         NSArray *cachedPlay = [ud arrayForKey:PHL_DEC(PHL_CACHEDPLAYLIST)];
         if (cachedPlay && [cachedPlay isKindOfClass:[NSArray class]] && cachedPlay.count > 0) {
@@ -879,9 +906,17 @@ static inline NSString *GetAudioBridgeJS(void) {
             _statusMsg = nil;
         }
 
-        // 2. NẠP CONFIG ĐÃ LƯU TỪ TRƯỚC (GHIM BÀI HOT LÊN ĐẦU VÀ AUTO-PLAY CHUẨN XÁC)
+        // 2. NẠP CONFIG ĐÃ LƯU TỪ TRƯỚC (CẢ NSUSERDEFAULTS VÀ TẬP TIN DỰ PHÒNG CỤC BỘ)
         NSDictionary *cachedCfg = [ud dictionaryForKey:PHL_DEC(PHL_CACHEDCONFIGJSON)];
+        if (!cachedCfg) {
+            NSString *backupPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"phl_admin_config_backup.json"];
+            NSData *bData = [NSData dataWithContentsOfFile:backupPath];
+            if (bData) {
+                cachedCfg = [NSJSONSerialization JSONObjectWithData:bData options:0 error:nil];
+            }
+        }
         if (cachedCfg && [cachedCfg isKindOfClass:[NSDictionary class]]) {
+            _cachedAdminConfig = cachedCfg;
             [self applyRemoteAdminConfig:cachedCfg];
         }
 
@@ -893,10 +928,18 @@ static inline NSString *GetAudioBridgeJS(void) {
                                                      name:AVAudioSessionInterruptionNotification
                                                    object:nil];
 
-        // LẮNG NGHE KHI APP MỞ LẠI -> ĐỒNG BỘ LỆNH TỨC THÌ
+        // LẮNG NGHE KHI APP MỞ LẠI / TỪ NỀN QUAY LẠI -> TIẾP TỤC CHUYỂN ĐỘNG NÚT & ĐỒNG BỘ CONFIG
         [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(fetchRemoteAdminConfig)
+                                                 selector:@selector(handleAppDidBecomeActive:)
                                                      name:UIApplicationDidBecomeActiveNotification
+                                                   object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(handleAppWillEnterForeground:)
+                                                     name:UIApplicationWillEnterForegroundNotification
+                                                   object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(handleAppDidEnterBackground:)
+                                                     name:UIApplicationDidEnterBackgroundNotification
                                                    object:nil];
     }
     return self;
@@ -1180,6 +1223,10 @@ static inline NSString *GetAudioBridgeJS(void) {
     _floatBtn.imageEdgeInsets = UIEdgeInsetsMake(4, 4, 4, 4);
     _floatBtn.layer.cornerRadius = 24.0f;
     _floatBtn.clipsToBounds = YES;
+    if (_pendingNeonColor) {
+        _floatBtn.layer.borderColor = _pendingNeonColor.CGColor;
+    }
+    [self ensureFloatingButtonPulseAnimation];
 }
 
 - (UIButton *)makeUtilityButtonWithTitle:(NSString *)title fontSize:(CGFloat)sz bgColor:(UIColor *)bg borderColor:(UIColor *)bc action:(SEL)act {
@@ -1316,8 +1363,9 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_floatBtn.layer.cornerRadius = 24;
             self->_floatBtn.clipsToBounds = YES;
             self->_floatBtn.layer.borderWidth = 2.2;
-            self->_floatBtn.layer.borderColor = [UIColor colorWithRed:0.88 green:0.35 blue:1.0 alpha:1.0].CGColor;
-            self->_floatBtn.backgroundColor = [UIColor colorWithRed:0.08 green:0.03 blue:0.2 alpha:0.96];
+            UIColor *initNeon = self->_pendingNeonColor ?: [UIColor colorWithRed:1.0 green:0.52 blue:0.75 alpha:1.0];
+            self->_floatBtn.layer.borderColor = initNeon.CGColor;
+            self->_floatBtn.backgroundColor = [UIColor colorWithRed:0.12 green:0.02 blue:0.08 alpha:0.96];
             [self->_floatBtn setTitle:@"👑" forState:UIControlStateNormal];
             self->_floatBtn.titleLabel.font = [UIFont systemFontOfSize:22];
             [self->_floatBtn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
@@ -1326,33 +1374,36 @@ static inline NSString *GetAudioBridgeJS(void) {
             [self->_floatBtn addGestureRecognizer:p];
             [kw addSubview:self->_floatBtn];
             [self loadRemoteLogo];
+            [self ensureFloatingButtonPulseAnimation];
         } else if (self->_floatBtn.superview != kw) {
             [kw addSubview:self->_floatBtn];
+            [self ensureFloatingButtonPulseAnimation];
         }
 
         if (!self->_menuBox) {
             self->_menuBox = [[UIView alloc] initWithFrame:CGRectMake(70, 16, mW, mH)];
-            self->_menuBox.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.16 alpha:0.98];
+            self->_menuBox.backgroundColor = [UIColor colorWithRed:0.10 green:0.02 blue:0.07 alpha:0.98];
             self->_menuBox.layer.cornerRadius = 16;
             self->_menuBox.layer.borderWidth = 1.6;
-            self->_menuBox.layer.borderColor = [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95].CGColor;
+            UIColor *initNeon = self->_pendingNeonColor ?: [UIColor colorWithRed:1.0 green:0.52 blue:0.75 alpha:1.0];
+            self->_menuBox.layer.borderColor = initNeon.CGColor;
             self->_menuBox.clipsToBounds = YES;
             self->_menuBox.hidden = YES;
             self->_menuBox.alpha = 0.0;
 
             self->_gradient = [CAGradientLayer layer];
             self->_gradient.frame = CGRectMake(0, 0, mW, mH);
-            self->_gradient.colors = @[
-                (id)[UIColor colorWithRed:0.13 green:0.03 blue:0.28 alpha:1.0].CGColor,
-                (id)[UIColor colorWithRed:0.23 green:0.05 blue:0.36 alpha:1.0].CGColor,
-                (id)[UIColor colorWithRed:0.05 green:0.11 blue:0.27 alpha:1.0].CGColor
+            self->_gradient.colors = self->_pendingGradientColors ?: @[
+                (id)[UIColor colorWithRed:0.18 green:0.03 blue:0.13 alpha:1.0].CGColor,
+                (id)[UIColor colorWithRed:0.30 green:0.06 blue:0.21 alpha:1.0].CGColor,
+                (id)[UIColor colorWithRed:0.07 green:0.01 blue:0.05 alpha:1.0].CGColor
             ];
             self->_gradient.startPoint = CGPointMake(0.0f, 0.0f);
             self->_gradient.endPoint = CGPointMake(1.0f, 1.0f);
             [self->_menuBox.layer insertSublayer:self->_gradient atIndex:0];
 
             self->_dragHdr = [[UIView alloc] initWithFrame:CGRectMake(0, 0, mW, 48)];
-            self->_dragHdr.backgroundColor = [UIColor colorWithRed:0.18 green:0.06 blue:0.35 alpha:0.85];
+            self->_dragHdr.backgroundColor = [UIColor colorWithRed:0.25 green:0.05 blue:0.18 alpha:0.88];
             [self->_menuBox addSubview:self->_dragHdr];
 
             UIPanGestureRecognizer *hp = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleMenuHeaderPan:)];
@@ -1436,12 +1487,16 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_gainLbl.textAlignment = NSTextAlignmentRight;
             [self->_menuBox addSubview:self->_gainLbl];
 
-            self->_btnWebToggle = [self makeUtilityButtonWithTitle:@"🚫 YOUTUBE (TẠM KHÓA)"
+            NSString *ytInitTitle = self->_isYouTubeEnabled ? @"🎬 YOUTUBE PRO (BẤM MỞ)" : @"🚫 YOUTUBE (TẠM KHÓA)";
+            UIColor *ytInitColor = self->_isYouTubeEnabled ? [UIColor colorWithRed:0.65 green:0.98 blue:1.0 alpha:1.0] : [UIColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0];
+            UIColor *ytInitBorder = self->_isYouTubeEnabled ? [UIColor colorWithRed:0.38 green:0.95 blue:1.0 alpha:0.9] : [UIColor redColor];
+
+            self->_btnWebToggle = [self makeUtilityButtonWithTitle:ytInitTitle
                                                               fontSize:9.0
                                                                bgColor:[UIColor colorWithRed:0.12 green:0.24 blue:0.48 alpha:0.95]
-                                                           borderColor:[UIColor redColor]
+                                                           borderColor:ytInitBorder
                                                                 action:@selector(toggleEmbeddedBrowser)];
-            [self->_btnWebToggle setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.4 alpha:1.0] forState:UIControlStateNormal];
+            [self->_btnWebToggle setTitleColor:ytInitColor forState:UIControlStateNormal];
             [self->_menuBox addSubview:self->_btnWebToggle];
 
             self->_table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
@@ -1542,20 +1597,26 @@ static inline NSString *GetAudioBridgeJS(void) {
             self->_cprLbl.numberOfLines = 2;
             [self->_menuBox addSubview:self->_cprLbl];
 
-            // FIX v2.3: ÁP DỤNG BRANDING TỪ CONFIG NGAY KHI UI ĐÃ SẴN SÀNG
-            // (giải quyết lỗi applyRemoteAdminConfig gọi trước khi label tồn tại trong init)
+            // FIX v2.5: ÁP DỤNG TRỌN VẸN CONFIG & THEME NGAY KHI UI VỪA SẴN SÀNG
+            // (Khắc phục triệt để lỗi mất màu hồng và đơ icon khi thoát ra vào lại game)
             dispatch_async(dispatch_get_main_queue(), ^{
-                if (self->_pendingHeaderTitle.length > 0) {
-                    self->_headerTitleLbl.text = self->_pendingHeaderTitle;
-                }
-                if (self->_pendingTickerText.length > 0) {
-                    self->_tickerLbl.text = self->_pendingTickerText;
-                }
-                if (self->_pendingFooterText.length > 0) {
-                    self->_cprLbl.text = self->_pendingFooterText;
-                }
-                if (self->_pendingAdminBtnText.length > 0) {
-                    [self->_adminBtn setTitle:self->_pendingAdminBtnText forState:UIControlStateNormal];
+                NSDictionary *configToApply = self->_cachedAdminConfig ?: [[NSUserDefaults standardUserDefaults] dictionaryForKey:PHL_DEC(PHL_CACHEDCONFIGJSON)];
+                if (configToApply && [configToApply isKindOfClass:[NSDictionary class]]) {
+                    [self applyRemoteAdminConfig:configToApply];
+                } else {
+                    if (self->_pendingHeaderTitle.length > 0) {
+                        self->_headerTitleLbl.text = self->_pendingHeaderTitle;
+                    }
+                    if (self->_pendingTickerText.length > 0) {
+                        self->_tickerLbl.text = self->_pendingTickerText;
+                    }
+                    if (self->_pendingFooterText.length > 0) {
+                        self->_cprLbl.text = self->_pendingFooterText;
+                    }
+                    if (self->_pendingAdminBtnText.length > 0) {
+                        [self->_adminBtn setTitle:self->_pendingAdminBtnText forState:UIControlStateNormal];
+                    }
+                    [self ensureFloatingButtonPulseAnimation];
                 }
             });
 
@@ -1610,6 +1671,12 @@ static inline NSString *GetAudioBridgeJS(void) {
                         // NẾU COMMIT SHA KHÔNG ĐỔI -> DỮ LIỆU ĐANG MỚI NHẤT, KHÔNG CẦN TẢI LẠI
                         if (self->_lastKnownCommitSHA && [sha isEqualToString:self->_lastKnownCommitSHA]) {
                             self->_isSyncingConfig = NO;
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [self ensureFloatingButtonPulseAnimation];
+                                if (self->_cachedAdminConfig) {
+                                    [self applyRemoteAdminConfig:self->_cachedAdminConfig];
+                                }
+                            });
                             return;
                         }
 
@@ -1742,8 +1809,23 @@ static inline NSString *GetAudioBridgeJS(void) {
     if (![dict isKindOfClass:[NSDictionary class]]) return;
     if (!dict[PHL_DEC(SYSTEM_CONTROL)] && !dict[PHL_DEC(YOUTUBE_MODULE)]) return;
 
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self applyRemoteAdminConfig:dict];
+        });
+        return;
+    }
+
     // LƯU CẤU HÌNH HỢP LỆ VÀO BỘ NHỚ CỤC BỘ ĐỂ CHỐNG LỖI MỞ LẠI KHI KHỞI ĐỘNG
+    _cachedAdminConfig = dict;
     [[NSUserDefaults standardUserDefaults] setObject:dict forKey:PHL_DEC(PHL_CACHEDCONFIGJSON)];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+
+    NSString *backupPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"phl_admin_config_backup.json"];
+    NSData *backupData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:nil];
+    if (backupData) {
+        [backupData writeToFile:backupPath atomically:YES];
+    }
 
     // 1. MASTER KILL-SWITCH
     if ([dict[PHL_DEC(SYSTEM_CONTROL)][PHL_DEC(KILL_SWITCH)] boolValue]) {
@@ -1751,8 +1833,8 @@ static inline NSString *GetAudioBridgeJS(void) {
         [self pauseWebMediaIfPlaying];
         _menuOpen = NO;
         _webOpen = NO;
-        _floatBtn.hidden = YES;
-        _menuBox.hidden = YES;
+        if (_floatBtn) _floatBtn.hidden = YES;
+        if (_menuBox) _menuBox.hidden = YES;
         return;
     } else if (_floatBtn) {
         _floatBtn.hidden = NO;
@@ -1765,33 +1847,27 @@ static inline NSString *GetAudioBridgeJS(void) {
             [_floatBtn setTitle:fIcon forState:UIControlStateNormal];
         }
     }
-    BOOL enablePulse = [dict[PHL_DEC(SYSTEM_CONTROL)][PHL_DEC(FLOATING_PULSE_GLOW)] boolValue];
-    if (enablePulse) {
-        if (![_floatBtn.layer animationForKey:PHL_DEC(PHL_PULSE_ANIM)]) {
-            CABasicAnimation *pulse = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
-            pulse.duration = 1.1;
-            pulse.repeatCount = HUGE_VALF;
-            pulse.autoreverses = YES;
-            pulse.fromValue = @(1.0);
-            pulse.toValue = @(1.14);
-            pulse.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-            [_floatBtn.layer addAnimation:pulse forKey:PHL_DEC(PHL_PULSE_ANIM)];
-        }
-    } else {
-        [_floatBtn.layer removeAnimationForKey:PHL_DEC(PHL_PULSE_ANIM)];
+    if (dict[PHL_DEC(SYSTEM_CONTROL)][PHL_DEC(FLOATING_PULSE_GLOW)] != nil) {
+        _enablePulseGlow = [dict[PHL_DEC(SYSTEM_CONTROL)][PHL_DEC(FLOATING_PULSE_GLOW)] boolValue];
     }
+    [self ensureFloatingButtonPulseAnimation];
 
-    // 3. ĐỔI MÀU NEON THEME
+    // 3. ĐỔI MÀU NEON THEME & GRADIENT
     NSDictionary *th = dict[PHL_DEC(THEME_CUSTOMIZER)];
     if (th) {
-        UIColor *neon = ColorFromHex(th[PHL_DEC(NEON_BORDER_COLOR)], [UIColor colorWithRed:0.85 green:0.42 blue:1.0 alpha:0.95]);
-        _menuBox.layer.borderColor = neon.CGColor;
-        _floatBtn.layer.borderColor = neon.CGColor;
+        UIColor *neon = ColorFromHex(th[PHL_DEC(NEON_BORDER_COLOR)], [UIColor colorWithRed:1.0 green:0.52 blue:0.75 alpha:1.0]);
+        _pendingNeonColor = neon;
+        if (_menuBox) _menuBox.layer.borderColor = neon.CGColor;
+        if (_floatBtn) _floatBtn.layer.borderColor = neon.CGColor;
+        if (_searchBar) _searchBar.layer.borderColor = [neon colorWithAlphaComponent:0.75].CGColor;
+        if (_adminBtn) _adminBtn.layer.borderColor = neon.CGColor;
+        if (_table) _table.separatorColor = [neon colorWithAlphaComponent:0.25];
 
-        UIColor *cStart = ColorFromHex(th[PHL_DEC(GRADIENT_START_COLOR)], [UIColor colorWithRed:0.13 green:0.03 blue:0.28 alpha:1.0]);
-        UIColor *cMid = ColorFromHex(th[PHL_DEC(GRADIENT_MID_COLOR)], [UIColor colorWithRed:0.23 green:0.05 blue:0.36 alpha:1.0]);
-        UIColor *cEnd = ColorFromHex(th[PHL_DEC(GRADIENT_END_COLOR)], [UIColor colorWithRed:0.05 green:0.11 blue:0.27 alpha:1.0]);
-        _gradient.colors = @[(id)cStart.CGColor, (id)cMid.CGColor, (id)cEnd.CGColor];
+        UIColor *cStart = ColorFromHex(th[PHL_DEC(GRADIENT_START_COLOR)], [UIColor colorWithRed:0.18 green:0.03 blue:0.13 alpha:1.0]);
+        UIColor *cMid = ColorFromHex(th[PHL_DEC(GRADIENT_MID_COLOR)], [UIColor colorWithRed:0.30 green:0.06 blue:0.21 alpha:1.0]);
+        UIColor *cEnd = ColorFromHex(th[PHL_DEC(GRADIENT_END_COLOR)], [UIColor colorWithRed:0.07 green:0.01 blue:0.05 alpha:1.0]);
+        _pendingGradientColors = @[(id)cStart.CGColor, (id)cMid.CGColor, (id)cEnd.CGColor];
+        if (_gradient) _gradient.colors = _pendingGradientColors;
     }
 
     // 4. TIÊU ĐỀ, MARQUEE TICKER & NÚT ADMIN
@@ -1837,6 +1913,7 @@ static inline NSString *GetAudioBridgeJS(void) {
     if (ytCfg) {
         if (ytCfg[PHL_DEC(ENABLED)] != nil) {
             _isYouTubeEnabled = [ytCfg[PHL_DEC(ENABLED)] boolValue];
+            [[NSUserDefaults standardUserDefaults] setBool:_isYouTubeEnabled forKey:@"PHL_Cached_YT_Enabled"];
         }
         if (ytCfg[PHL_DEC(HOME_URL)]) _youtubeHomeURL = ytCfg[PHL_DEC(HOME_URL)];
         if (ytCfg[PHL_DEC(LOCKED_REASON)]) _youtubeLockedMsg = ytCfg[PHL_DEC(LOCKED_REASON)];
@@ -2179,6 +2256,68 @@ static inline NSString *GetAudioBridgeJS(void) {
     _menuBox.center = CGPointMake(_menuBox.center.x + tr.x, _menuBox.center.y + tr.y);
     [self clampViewToSafeBounds:_menuBox topMargin:12.0f bottomMargin:12.0f];
     [p setTranslation:CGPointZero inView:_menuBox.superview];
+}
+
+#pragma mark - ĐẢM BẢO CHUYỂN ĐỘNG NÚT NỔI & KHÔI PHỤC KHI RA VÀO GAME
+
+- (void)ensureFloatingButtonPulseAnimation {
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self ensureFloatingButtonPulseAnimation];
+        });
+        return;
+    }
+    if (!_floatBtn) return;
+    if (_enablePulseGlow) {
+        CAAnimation *existing = [_floatBtn.layer animationForKey:PHL_DEC(PHL_PULSE_ANIM)];
+        if (!existing) {
+            CABasicAnimation *pulse = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
+            pulse.duration = 1.1;
+            pulse.repeatCount = HUGE_VALF;
+            pulse.autoreverses = YES;
+            pulse.fromValue = @(1.0);
+            pulse.toValue = @(1.14);
+            pulse.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+            pulse.removedOnCompletion = NO;
+            pulse.fillMode = kCAFillModeForwards;
+            [_floatBtn.layer addAnimation:pulse forKey:PHL_DEC(PHL_PULSE_ANIM)];
+        }
+    } else {
+        [_floatBtn.layer removeAnimationForKey:PHL_DEC(PHL_PULSE_ANIM)];
+    }
+}
+
+- (void)handleAppDidBecomeActive:(NSNotification *)note {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self ensureFloatingButtonPulseAnimation];
+        NSDictionary *cfg = self->_cachedAdminConfig ?: [[NSUserDefaults standardUserDefaults] dictionaryForKey:PHL_DEC(PHL_CACHEDCONFIGJSON)];
+        if (cfg) {
+            [self applyRemoteAdminConfig:cfg];
+        }
+        [self fetchRemoteAdminConfig];
+        // Kích hoạt nhịp tim đồng bộ ngầm định kỳ 30s khi đang chơi game
+        if (!self->_autoSyncTimer) {
+            self->_autoSyncTimer = [NSTimer scheduledTimerWithTimeInterval:30.0 target:self selector:@selector(fetchRemoteAdminConfig) userInfo:nil repeats:YES];
+        }
+    });
+}
+
+- (void)handleAppWillEnterForeground:(NSNotification *)note {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self ensureFloatingButtonPulseAnimation];
+        NSDictionary *cfg = self->_cachedAdminConfig ?: [[NSUserDefaults standardUserDefaults] dictionaryForKey:PHL_DEC(PHL_CACHEDCONFIGJSON)];
+        if (cfg) {
+            [self applyRemoteAdminConfig:cfg];
+        }
+    });
+}
+
+- (void)handleAppDidEnterBackground:(NSNotification *)note {
+    // Tạm dừng timer khi ở chế độ nền để CHỐNG NÓNG MÁY & TIẾT KIỆM PIN 100%
+    if (_autoSyncTimer) {
+        [_autoSyncTimer invalidate];
+        _autoSyncTimer = nil;
+    }
 }
 
 - (void)fetchRemotePlaylist {
