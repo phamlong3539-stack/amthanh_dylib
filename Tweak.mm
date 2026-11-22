@@ -1254,28 +1254,47 @@ static inline NSString *GetAudioBridgeJS(void) {
     CGFloat padX = 8.0f;
     CGFloat inW = mW - (padX * 2.0f);
     CGFloat cy = 52.0f;
-
-    CGFloat gap = 6.0f;
-    CGFloat bW = floorf((inW - (gap * 3.0f)) / 4.0f);
-    _btnPrev.frame = CGRectMake(padX, cy, bW, 26.0f);
-    _btnPlay.frame = CGRectMake(padX + (bW + gap), cy, bW, 26.0f);
-    _btnNext.frame = CGRectMake(padX + (bW + gap) * 2.0f, cy, bW, 26.0f);
-    _btnRep.frame = CGRectMake(padX + (bW + gap) * 3.0f, cy, bW, 26.0f);
-    cy += 30.0f;
-
-    CGFloat vy = cy;
-    CGFloat wy = cy + 26.0f;
-    cy = wy + 27.0f;
-
-    bW = 34.0f;
-    _btnMute.frame = CGRectMake(padX, vy, 24.0f, 22.0f);
-    _volSlider.frame = CGRectMake(padX + 26.0f, vy, MAX(60.0f, inW - 26.0f - 24.0f - bW - 2.0f), 22.0f);
-    _btnVolUp.frame = CGRectMake(mW - padX - bW - 26.0f, vy, 24.0f, 22.0f);
-    _gainLbl.frame = CGRectMake(mW - padX - bW, vy, bW, 22.0f);
-
-    _btnWebToggle.frame = CGRectMake(padX, wy, inW, 23.0f);
-
     CGFloat fH = 48.0f;
+
+    if (exp) {
+        // === YouTube mode: ẩn transport + volume controls để YouTube chiếm toàn bộ không gian ===
+        _btnPrev.hidden = YES;    _btnPrev.frame = CGRectZero;
+        _btnPlay.hidden = YES;    _btnPlay.frame = CGRectZero;
+        _btnNext.hidden = YES;    _btnNext.frame = CGRectZero;
+        _btnRep.hidden = YES;     _btnRep.frame = CGRectZero;
+        _btnMute.hidden = YES;    _btnMute.frame = CGRectZero;
+        _volSlider.hidden = YES;  _volSlider.frame = CGRectZero;
+        _btnVolUp.hidden = YES;   _btnVolUp.frame = CGRectZero;
+        _gainLbl.hidden = YES;    _gainLbl.frame = CGRectZero;
+
+        // Nút toggle YouTube được đẩy lên sát header
+        _btnWebToggle.frame = CGRectMake(padX, cy, inW, 23.0f);
+        cy += 27.0f;
+    } else {
+        // === Music mode: hiện lại transport + volume controls ===
+        _btnPrev.hidden = NO; _btnPlay.hidden = NO; _btnNext.hidden = NO; _btnRep.hidden = NO;
+        _btnMute.hidden = NO; _volSlider.hidden = NO; _btnVolUp.hidden = NO; _gainLbl.hidden = NO;
+
+        CGFloat gap = 6.0f;
+        CGFloat bW = floorf((inW - (gap * 3.0f)) / 4.0f);
+        _btnPrev.frame = CGRectMake(padX, cy, bW, 26.0f);
+        _btnPlay.frame = CGRectMake(padX + (bW + gap), cy, bW, 26.0f);
+        _btnNext.frame = CGRectMake(padX + (bW + gap) * 2.0f, cy, bW, 26.0f);
+        _btnRep.frame = CGRectMake(padX + (bW + gap) * 3.0f, cy, bW, 26.0f);
+        cy += 30.0f;
+
+        CGFloat vy = cy;
+        CGFloat wy = cy + 26.0f;
+        cy = wy + 27.0f;
+
+        bW = 34.0f;
+        _btnMute.frame = CGRectMake(padX, vy, 24.0f, 22.0f);
+        _volSlider.frame = CGRectMake(padX + 26.0f, vy, MAX(60.0f, inW - 26.0f - 24.0f - bW - 2.0f), 22.0f);
+        _btnVolUp.frame = CGRectMake(mW - padX - bW - 26.0f, vy, 24.0f, 22.0f);
+        _gainLbl.frame = CGRectMake(mW - padX - bW, vy, bW, 22.0f);
+        _btnWebToggle.frame = CGRectMake(padX, wy, inW, 23.0f);
+    }
+
     CGFloat cH = MAX(120.0f, mH - cy - fH - 4.0f);
 
     _table.frame = CGRectMake(8.0f, cy, mW - 16.0f, cH);
@@ -1318,7 +1337,9 @@ static inline NSString *GetAudioBridgeJS(void) {
 
     CGFloat maxH = MAX(240.0f, sH - 24.0f);
     CGFloat cH = MIN(320.0f, maxH);
-    CGFloat eH = MIN(330.0f, maxH);
+    // FIX v2.3: YouTube expanded → tối đa chiều cao màn hình (trừ 24pt safe area)
+    // để webview to ra dễ nhìn hơn (trước chỉ 330pt, nay dùng gần hết màn hình)
+    CGFloat eH = maxH;
 
     CGFloat tW = exp ? eW : cW;
     CGFloat tH = exp ? eH : cH;
